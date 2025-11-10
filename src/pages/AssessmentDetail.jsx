@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from "react";
-import { Assessment, Customer, Vehicle, User, UserSetting, Job } from "@/entities/all";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,13 +66,13 @@ const DentifierIcon = ({ className = "" }) =>
 export default function AssessmentDetail() {
   const [searchParams] = useSearchParams();
   const assessmentId = searchParams.get('id');
-  const vehicleIndex = searchParams.get('vehicle'); // For multi-vehicle drill-down
+  const vehicleIndex = searchParams.get('vehicle');
   const navigate = useNavigate();
   const [assessment, setAssessment] = useState(null);
   const [customer, setCustomer] = useState(null);
-  const [vehicle, setVehicle] = useState(null); // For single vehicle assessment
-  const [vehicles, setVehicles] = useState({}); // For multi-vehicle assessments, maps vehicle_id to full Vehicle object
-  const [project, setProject] = useState(null); // Keep project state for single vehicle for now
+  const [vehicle, setVehicle] = useState(null);
+  const [vehicles, setVehicles] = useState({});
+  const [project, setProject] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -81,7 +80,7 @@ export default function AssessmentDetail() {
   const [copied, setCopied] = useState(false);
   const [editingStatus, setEditingStatus] = useState(false);
   const [editingPaymentStatus, setEditingPaymentStatus] = useState(false);
-  const [includeNotesInQuote, setIncludeNotesInQuote] = useState(false); // For single vehicle assessment
+  const [includeNotesInQuote, setIncludeNotesInQuote] = useState(false);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isAssigningCustomer, setIsAssigningCustomer] = useState(false);
@@ -90,19 +89,13 @@ export default function AssessmentDetail() {
   const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
   const [isAssigningProject, setIsAssigningProject] = useState(false);
   const [projectList, setProjectList] = useState([]);
-
-  // State for notes editing (repurposed for single vehicle assessment.notes, and per-vehicle in multi-vehicle)
-  const [editedNotes, setEditedNotes] = useState(""); // For overall assessment notes (single vehicle)
-  const [editingNotes, setEditingNotes] = useState(false); // Toggle for overall notes editing (single vehicle)
-  const [vehicleNotes, setVehicleNotes] = useState(""); // For individual vehicle notes in multi-vehicle
-  const [editingVehicleNotes, setEditingVehicleNotes] = useState(false); // Toggle for individual vehicle notes editing
-
-  // New states for multi-vehicle details editing
+  const [editedNotes, setEditedNotes] = useState("");
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [vehicleNotes, setVehicleNotes] = useState("");
+  const [editingVehicleNotes, setEditingVehicleNotes] = useState(false);
   const [editingMultiVehicleDetails, setEditingMultiVehicleDetails] = useState(false);
   const [editedAssessmentName, setEditedAssessmentName] = useState("");
   const [editedDiscount, setEditedDiscount] = useState(0);
-
-  // New states for vehicle editing (used for both single- and multi-vehicle's individual vehicles)
   const [editingVehicle, setEditingVehicle] = useState(false);
   const [editedVehicleData, setEditedVehicleData] = useState(null);
 
@@ -128,20 +121,17 @@ export default function AssessmentDetail() {
     }
 
     try {
-      const foundAssessment = await Assessment.get(assessmentId);
+      const foundAssessment = await base44.entities.Assessment.get(assessmentId);
 
       if (foundAssessment) {
-        // Ensure multi-vehicle assessment's individual vehicles have include_notes_in_quote
         if (foundAssessment.is_multi_vehicle && foundAssessment.vehicles) {
           foundAssessment.vehicles = foundAssessment.vehicles.map((v) => ({
             ...v,
             include_notes_in_quote: v.include_notes_in_quote ?? false
           }));
-          // Initialize for multi-vehicle editing
           setEditedAssessmentName(foundAssessment.assessment_name || '');
           setEditedDiscount(foundAssessment.discount_percentage || 0);
         }
-        // For single-vehicle assessments, if a general include_notes_in_quote is used, ensure it's initialized
         if (!foundAssessment.is_multi_vehicle) {
           setIncludeNotesInQuote(foundAssessment.include_notes_in_quote ?? false);
         }
@@ -150,7 +140,7 @@ export default function AssessmentDetail() {
 
         const promises = [];
         if (foundAssessment.customer_id) {
-          promises.push(Customer.get(foundAssessment.customer_id));
+          promises.push(base44.entities.Customer.get(foundAssessment.customer_id));
         } else {
           promises.push(Promise.resolve(null));
         }
@@ -158,8 +148,7 @@ export default function AssessmentDetail() {
         let vehicleFetchPromise;
         if (foundAssessment.is_multi_vehicle && foundAssessment.vehicles && foundAssessment.vehicles.length > 0) {
           const vehicleIds = foundAssessment.vehicles.map((v) => v.vehicle_id);
-          // Fetch all vehicles and filter them client-side based on IDs
-          vehicleFetchPromise = Vehicle.list().then((allVehicles) => {
+          vehicleFetchPromise = base44.entities.Vehicle.list().then((allVehicles) => {
             const multiVehicleMap = {};
             vehicleIds.forEach((id) => {
               const found = allVehicles.find((v) => v.id === id);
@@ -168,22 +157,21 @@ export default function AssessmentDetail() {
             return multiVehicleMap;
           });
         } else if (foundAssessment.vehicle_id) {
-          // Single vehicle assessment
-          vehicleFetchPromise = Vehicle.get(foundAssessment.vehicle_id);
+          vehicleFetchPromise = base44.entities.Vehicle.get(foundAssessment.vehicle_id);
         } else {
           vehicleFetchPromise = Promise.resolve(null);
         }
         promises.push(vehicleFetchPromise);
 
         if (foundAssessment.job_id) {
-          promises.push(Job.get(foundAssessment.job_id));
+          promises.push(base44.entities.Job.get(foundAssessment.job_id));
         } else {
           promises.push(Promise.resolve(null));
         }
 
-        const currentUser = await User.me();
+        const currentUser = await base44.auth.me();
         if (currentUser && currentUser.email) {
-          const settings = await UserSetting.filter({ user_email: currentUser.email });
+          const settings = await base44.entities.UserSetting.filter({ user_email: currentUser.email });
           promises.push(settings.length > 0 ? Promise.resolve(settings[0]) : Promise.resolve(null));
         } else {
           promises.push(Promise.resolve(null));
@@ -194,11 +182,11 @@ export default function AssessmentDetail() {
         setProject(foundProject);
 
         if (foundAssessment.is_multi_vehicle) {
-          setVehicles(fetchedVehicleData || {}); // fetchedVehicleData is already a map here
-          setVehicle(null); // Ensure single vehicle state is clear
+          setVehicles(fetchedVehicleData || {});
+          setVehicle(null);
         } else {
           setVehicle(fetchedVehicleData);
-          setVehicles({}); // Ensure multi vehicle state is clear
+          setVehicles({});
         }
 
         setUserSettings(foundSettings);
@@ -273,7 +261,7 @@ export default function AssessmentDetail() {
     let statusBadge = assessment.status === 'draft' ? ' (DRAFT)' : '';
 
     let lineItemsDetails = '';
-    let quoteNotes = ''; // New variable to build notes section
+    let quoteNotes = '';
 
     if (assessment.is_multi_vehicle) {
       vehicleInfo = `Multiple Vehicles (${assessment.vehicles.length})`;
@@ -316,14 +304,13 @@ export default function AssessmentDetail() {
         lineItemsDetails = ` - Paintless Dent Repair Service: ${quoteAmount}`;
       }
 
-      // For single vehicle, assessment.notes serves as the vehicle notes
       let notesForSingleVehicle = assessment.notes || '';
       const technicianNoteIndex = notesForSingleVehicle.indexOf('Technician has');
       if (technicianNoteIndex > -1) {
         notesForSingleVehicle = notesForSingleVehicle.substring(0, technicianNoteIndex).trim();
       }
       if (!notesForSingleVehicle) {
-        notesForSingleVehicle = 'Paintless Dent Repair'; // Default if no notes
+        notesForSingleVehicle = 'Paintless Dent Repair';
       }
 
       if (includeNotesInQuote && notesForSingleVehicle) {
@@ -331,7 +318,6 @@ export default function AssessmentDetail() {
       }
     }
 
-    // Add payment link if configured
     let paymentSection = '';
     if (userSettings?.payment_provider && userSettings.payment_provider !== 'None' && userSettings?.payment_link_template) {
       paymentSection = `\n*Pay Online:* ${userSettings.payment_link_template}\n`;
@@ -397,7 +383,7 @@ Powered by Dentifier
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, { status: newStatus });
+      await base44.entities.Assessment.update(assessment.id, { status: newStatus });
       setAssessment((prev) => ({ ...prev, status: newStatus }));
       setEditingStatus(false);
     } catch (error) {
@@ -411,7 +397,7 @@ Powered by Dentifier
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, { payment_status: newPaymentStatus });
+      await base44.entities.Assessment.update(assessment.id, { payment_status: newPaymentStatus });
       setAssessment((prev) => ({ ...prev, payment_status: newPaymentStatus }));
       setEditingPaymentStatus(false);
     } catch (error) {
@@ -425,7 +411,7 @@ Powered by Dentifier
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, {
+      await base44.entities.Assessment.update(assessment.id, {
         customer_id: selectedCustomer.id,
         status: 'quoted'
       });
@@ -443,8 +429,8 @@ Powered by Dentifier
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      const newCustomer = await Customer.create(customerData);
-      await Assessment.update(assessment.id, {
+      const newCustomer = await base44.entities.Customer.create(customerData);
+      await base44.entities.Assessment.update(assessment.id, {
         customer_id: newCustomer.id,
         status: 'quoted'
       });
@@ -461,7 +447,7 @@ Powered by Dentifier
   const toggleAssignCustomer = async (assign) => {
     if (assign) {
       try {
-        const customers = await Customer.list('-created_date');
+        const customers = await base44.entities.Customer.list('-created_date');
         setCustomerList(customers);
         setIsAssigningCustomer(true);
         setShowAddCustomerForm(false);
@@ -479,7 +465,7 @@ Powered by Dentifier
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, { job_id: projectId });
+      await base44.entities.Assessment.update(assessment.id, { job_id: projectId });
       await loadAssessmentDetails();
       setIsAssigningProject(false);
     } catch (error) {
@@ -493,7 +479,7 @@ Powered by Dentifier
   const toggleAssignProject = async (assign) => {
     if (assign) {
       try {
-        const projects = await Job.list('-created_date');
+        const projects = await base44.entities.Job.list('-created_date');
         setProjectList(projects);
         setIsAssigningProject(true);
       } catch (error) {
@@ -509,7 +495,7 @@ Powered by Dentifier
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, { status: 'approved' });
+      await base44.entities.Assessment.update(assessment.id, { status: 'approved' });
       setAssessment((prev) => ({ ...prev, status: 'approved' }));
     } catch (error) {
       console.error("Error approving quote:", error);
@@ -522,7 +508,7 @@ Powered by Dentifier
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, { status: 'declined' });
+      await base44.entities.Assessment.update(assessment.id, { status: 'declined' });
       setAssessment((prev) => ({ ...prev, status: 'declined' }));
     } catch (error) {
       console.error("Error declining quote:", error);
@@ -537,26 +523,23 @@ Powered by Dentifier
     try {
       const updateData = { status: 'completed', payment_status: assessment.payment_status || 'pending' };
 
-      // Only assign invoice number if one doesn't already exist
       if (!assessment.invoice_number) {
         const nextInvoiceNumber = userSettings.next_invoice_number || 1;
         const invoicePrefix = userSettings.invoice_prefix || 'INV-';
         const formattedInvoiceNumber = `${invoicePrefix}${String(nextInvoiceNumber).padStart(4, '0')}`;
         updateData.invoice_number = formattedInvoiceNumber;
 
-        // Update user settings BEFORE updating assessment to prevent duplicates
-        await UserSetting.update(userSettings.id, {
+        await base44.entities.UserSetting.update(userSettings.id, {
           next_invoice_number: nextInvoiceNumber + 1
         });
 
-        // Refresh local userSettings state
         setUserSettings({
           ...userSettings,
           next_invoice_number: nextInvoiceNumber + 1
         });
       }
 
-      await Assessment.update(assessment.id, updateData);
+      await base44.entities.Assessment.update(assessment.id, updateData);
       setAssessment((prev) => ({ ...prev, ...updateData }));
     } catch (error) {
       console.error("Error completing job:", error);
@@ -572,7 +555,7 @@ Powered by Dentifier
     if (window.confirm("Are you sure you want to permanently delete this assessment? This action cannot be undone.")) {
       setIsDeleting(true);
       try {
-        await Assessment.delete(assessment.id);
+        await base44.entities.Assessment.delete(assessment.id);
         navigate(createPageUrl("Quotes"));
       } catch (error) {
         console.error("Error deleting quote:", error);
@@ -583,16 +566,15 @@ Powered by Dentifier
     }
   };
 
-  // Handler for single vehicle assessment notes (assessment.notes)
   const handleSaveNotes = async () => {
     if (!assessment) return;
-    if (editedNotes === (assessment.notes || '')) { // Check if notes actually changed
+    if (editedNotes === (assessment.notes || '')) {
       setEditingNotes(false);
       return;
     }
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, { notes: editedNotes });
+      await base44.entities.Assessment.update(assessment.id, { notes: editedNotes });
       setAssessment((prev) => ({ ...prev, notes: editedNotes }));
       setEditingNotes(false);
     } catch (error) {
@@ -603,14 +585,13 @@ Powered by Dentifier
     }
   };
 
-  // Handler for specific vehicle notes in multi-vehicle assessment
   const handleSaveVehicleNotes = async () => {
     if (!assessment || vehicleIndex === null) return;
 
     const vIndex = parseInt(vehicleIndex);
     const currentVehicleData = assessment.vehicles[vIndex];
 
-    if (vehicleNotes === (currentVehicleData?.notes || '')) { // Check if notes actually changed
+    if (vehicleNotes === (currentVehicleData?.notes || '')) {
       setEditingVehicleNotes(false);
       return;
     }
@@ -621,8 +602,8 @@ Powered by Dentifier
 
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, { vehicles: updatedVehicles });
-      setAssessment((prev) => ({ ...prev, vehicles: updatedVehicles })); // Update local state immediately
+      await base44.entities.Assessment.update(assessment.id, { vehicles: updatedVehicles });
+      setAssessment((prev) => ({ ...prev, vehicles: updatedVehicles }));
       setEditingVehicleNotes(false);
     } catch (error) {
       console.error("Error updating specific vehicle notes:", error);
@@ -632,7 +613,6 @@ Powered by Dentifier
     }
   };
 
-  // Handler for toggling include notes for specific vehicle in a multi-vehicle assessment
   const handleToggleVehicleNotesInQuote = async (includeNotes) => {
     if (!assessment || vehicleIndex === null) return;
 
@@ -643,7 +623,7 @@ Powered by Dentifier
 
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, { vehicles: updatedVehicles });
+      await base44.entities.Assessment.update(assessment.id, { vehicles: updatedVehicles });
       setAssessment((prev) => ({ ...prev, vehicles: updatedVehicles }));
     } catch (error) {
       console.error("Error updating vehicle notes toggle:", error);
@@ -657,7 +637,7 @@ Powered by Dentifier
     if (!assessment || !assessment.is_multi_vehicle) return;
     setIsUpdating(true);
     try {
-      await Assessment.update(assessment.id, {
+      await base44.entities.Assessment.update(assessment.id, {
         assessment_name: editedAssessmentName,
         discount_percentage: parseFloat(editedDiscount) || 0
       });
@@ -693,14 +673,12 @@ Powered by Dentifier
     if (!editedVehicleData || !editedVehicleData.id) return;
     setIsUpdating(true);
     try {
-      // Create a copy and remove empty strings for optional fields
       const dataToUpdate = { ...editedVehicleData };
       for (const key in dataToUpdate) {
         if (dataToUpdate[key] === '') {
-          dataToUpdate[key] = null; // Set empty strings to null for database
+          dataToUpdate[key] = null;
         }
       }
-      // Ensure year is an integer or null
       if (dataToUpdate.year !== null) {
         dataToUpdate.year = parseInt(dataToUpdate.year, 10);
         if (isNaN(dataToUpdate.year)) {
@@ -708,8 +686,8 @@ Powered by Dentifier
         }
       }
 
-      await Vehicle.update(editedVehicleData.id, dataToUpdate);
-      await loadAssessmentDetails(); // Reload all details to get the updated vehicle object
+      await base44.entities.Vehicle.update(editedVehicleData.id, dataToUpdate);
+      await loadAssessmentDetails();
       setEditingVehicle(false);
       setEditedVehicleData(null);
     } catch (error) {
@@ -782,15 +760,13 @@ Powered by Dentifier
     );
   }
 
-  // Check if this is a multi-vehicle assessment and we're viewing the overview
   const isMultiVehicle = assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0;
-  const isViewingOverview = isMultiVehicle && vehicleIndex === null; // vehicleIndex could be string "0", so check for null
+  const isViewingOverview = isMultiVehicle && vehicleIndex === null;
 
-  // If viewing a specific vehicle in a multi-vehicle assessment
   if (isMultiVehicle && vehicleIndex !== null && vehicleIndex !== undefined) {
     const vIndex = parseInt(vehicleIndex);
-    const vehicleData = assessment.vehicles[vIndex]; // This is the vehicle data stored within the assessment
-    const vehicleDetails = vehicles[vehicleData?.vehicle_id]; // This is the full Vehicle object from the DB
+    const vehicleData = assessment.vehicles[vIndex];
+    const vehicleDetails = vehicles[vehicleData?.vehicle_id];
 
     if (!vehicleData || !vehicleDetails) {
       return (
@@ -806,7 +782,6 @@ Powered by Dentifier
       );
     }
 
-    // Render individual vehicle detail view (similar to current single-vehicle view)
     return (
       <div className="p-4 max-w-md mx-auto space-y-4">
         <div className="mb-4">
@@ -827,23 +802,22 @@ Powered by Dentifier
           </p>
         </div>
 
-        {/* Action Buttons for Individual Vehicle */}
         <Card className="bg-slate-900 border-slate-800">
           <CardContent className="p-3">
             <div className="grid grid-cols-2 gap-3">
-              {vehicleData.quote_amount && ['draft', 'quoted', 'approved'].includes(assessment.status) ?
+              {vehicleData.quote_amount && ['draft', 'quoted', 'approved'].includes(assessment.status) ? (
                 <Link to={createPageUrl(`EditQuote?id=${assessmentId}&vehicle=${vehicleIndex}`)} className="w-full">
                   <Button variant="outline" className="w-full h-full flex-col justify-center gap-1 bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300">
                     <Edit className="w-4 h-4" />
                     <span className="text-xs">Edit Quote</span>
                   </Button>
-                </Link> :
-
+                </Link>
+              ) : (
                 <Button variant="outline" disabled className="w-full h-full flex-col justify-center gap-1 border-slate-700 text-slate-500 cursor-not-allowed">
                   <Edit className="w-4 h-4" />
                   <span className="text-xs">Edit Quote</span>
                 </Button>
-              }
+              )}
 
               <Button
                 onClick={() => navigate(createPageUrl(`AssessmentDetail?id=${assessmentId}`))}
@@ -857,7 +831,6 @@ Powered by Dentifier
           </CardContent>
         </Card>
 
-        {/* Vehicle-specific content */}
         {vehicleData.damage_photos && vehicleData.damage_photos.length > 0 &&
           <Card className="bg-slate-900 border-slate-800">
             <CardHeader>
@@ -868,7 +841,7 @@ Powered by Dentifier
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
-                {vehicleData.damage_photos.map((photo, index) =>
+                {vehicleData.damage_photos.map((photo, index) => (
                   <div key={index} className="relative cursor-pointer group" onClick={() => openImageViewer(index)}>
                     <img
                       src={photo}
@@ -883,7 +856,7 @@ Powered by Dentifier
                       Photo {index + 1}
                     </div>
                   </div>
-                )}
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -927,7 +900,7 @@ Powered by Dentifier
                       {vehicleData.damage_analysis.damage_report.dent_summary &&
                         <p className="text-slate-200">{vehicleData.damage_analysis.damage_report.dent_summary}</p>
                       }
-                      {vehicleData.damage_analysis.damage_report.dent_details &&
+                      {vehicleData.damage_analysis.damage_report.dent_details && (
                         <>
                           {vehicleData.damage_analysis.damage_report.dent_details.size_range &&
                             <div>
@@ -948,7 +921,7 @@ Powered by Dentifier
                             </div>
                           }
                         </>
-                      }
+                      )}
                     </div>
                   </div>
                 }
@@ -960,12 +933,12 @@ Powered by Dentifier
                     </p>
                     <div className="bg-slate-800 rounded-lg p-3">
                       <div className="space-y-1">
-                        {vehicleData.damage_analysis.risk_assessment.technical_risks.map((risk, index) =>
+                        {vehicleData.damage_analysis.risk_assessment.technical_risks.map((risk, index) => (
                           <div key={index} className="flex items-center gap-2 text-sm">
                             <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
                             <span className="text-slate-200">{risk}</span>
                           </div>
-                        )}
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -975,7 +948,6 @@ Powered by Dentifier
           </Card>
         }
 
-        {/* Vehicle Notes - Editable with Toggle */}
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
@@ -984,7 +956,7 @@ Powered by Dentifier
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {editingVehicleNotes ?
+            {editingVehicleNotes ? (
               <div className="space-y-3">
                 <textarea
                   value={vehicleNotes}
@@ -998,17 +970,17 @@ Powered by Dentifier
                     disabled={isUpdating}
                     className="flex-1 pink-gradient text-white">
 
-                    {isUpdating ?
+                    {isUpdating ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Saving...
-                      </> :
-
+                      </>
+                    ) : (
                       <>
                         <CheckCircle className="w-4 h-4 mr-2" />
                         Save Notes
                       </>
-                    }
+                    )}
                   </Button>
                   <Button
                     onClick={() => {
@@ -1021,8 +993,8 @@ Powered by Dentifier
                     Cancel
                   </Button>
                 </div>
-              </div> :
-
+              </div>
+            ) : (
               <div>
                 <p className="text-slate-300 whitespace-pre-wrap mb-3">
                   {vehicleData.notes || 'No notes added for this vehicle yet.'}
@@ -1055,7 +1027,7 @@ Powered by Dentifier
                   Edit Notes
                 </Button>
               </div>
-            }
+            )}
           </CardContent>
         </Card>
 
@@ -1068,9 +1040,9 @@ Powered by Dentifier
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {vehicleData.line_items && vehicleData.line_items.length > 0 ?
+              {vehicleData.line_items && vehicleData.line_items.length > 0 ? (
                 <div className="space-y-3 mb-4">
-                  {vehicleData.line_items.map((item, index) =>
+                  {vehicleData.line_items.map((item, index) => (
                     <div key={index} className="flex justify-between items-center p-3 bg-slate-800 rounded-lg">
                       <div className="flex-1">
                         <p className="text-white font-medium">{item.description}</p>
@@ -1080,14 +1052,14 @@ Powered by Dentifier
                         {formatPrice(item.total_price, assessment.currency || 'GBP')}
                       </div>
                     </div>
-                  )}
-                </div> :
-
+                  ))}
+                </div>
+              ) : (
                 <div className="p-3 bg-slate-800 rounded-lg mb-4">
                   <p className="text-white font-medium">Paintless Dent Repair Service</p>
                   <p className="text-slate-400 text-sm">No specific line items for this vehicle.</p>
                 </div>
-              }
+              )}
 
               <div className="text-center border-t border-slate-700 pt-4">
                 <p className="text-3xl font-bold text-green-400 mb-2">
@@ -1110,7 +1082,6 @@ Powered by Dentifier
 
   }
 
-  // Multi-vehicle overview
   if (isViewingOverview) {
     const subtotal = assessment.vehicles.reduce((sum, v) => sum + (v.quote_amount || 0), 0);
     const discountAmount = subtotal * (assessment.discount_percentage || 0) / 100;
@@ -1149,7 +1120,6 @@ Powered by Dentifier
           </div>
         </div>
 
-        {/* Action Buttons for Multi-Vehicle */}
         <Card className="bg-slate-900 border-slate-800">
           <CardContent className="p-3">
             <div className="grid grid-cols-3 gap-2">
@@ -1177,20 +1147,19 @@ Powered by Dentifier
                 variant="destructive"
                 className="w-full h-full flex-col justify-center gap-1">
 
-                {isDeleting ?
-                  <Loader2 className="w-4 h-4 animate-spin" /> :
-
+                {isDeleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
                   <>
                     <Trash2 className="w-4 h-4" />
                     <span className="text-xs">Delete</span>
                   </>
-                }
+                )}
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Edit Multi-Vehicle Details Modal */}
         {editingMultiVehicleDetails &&
           <Card className="bg-slate-900 border-slate-800">
             <CardHeader>
@@ -1227,17 +1196,17 @@ Powered by Dentifier
                     disabled={isUpdating}
                     className="flex-1 pink-gradient text-white">
 
-                    {isUpdating ?
+                    {isUpdating ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Saving...
-                      </> :
-
+                      </>
+                    ) : (
                       <>
                         <Save className="w-4 h-4 mr-2" />
                         Save Changes
                       </>
-                    }
+                    )}
                   </Button>
                   <Button
                     onClick={() => {
@@ -1256,7 +1225,7 @@ Powered by Dentifier
           </Card>
         }
 
-        {customer ?
+        {customer ? (
           <Card className="bg-slate-900 border-slate-800">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
@@ -1286,75 +1255,73 @@ Powered by Dentifier
                 }
               </div>
             </CardContent>
-          </Card> :
-          showAddCustomerForm ?
-            <CustomerForm
-              onSave={handleSaveNewCustomer}
-              onCancel={() => setShowAddCustomerForm(false)} /> :
+          </Card>
+        ) : showAddCustomerForm ? (
+          <CustomerForm
+            onSave={handleSaveNewCustomer}
+            onCancel={() => setShowAddCustomerForm(false)} />
+        ) : isAssigningCustomer ? (
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <UserPlus className="w-5 h-5 text-blue-400" />
+                Assign Customer
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  placeholder="Search customers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-400" />
 
-            isAssigningCustomer ?
-              <Card className="bg-slate-900 border-slate-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <UserPlus className="w-5 h-5 text-blue-400" />
-                    Assign Customer
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search customers..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-400" />
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
+                {filteredCustomers.map((c) => (
+                  <div key={c.id} onClick={() => handleAssignCustomer(c)} className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 cursor-pointer">
+                    <p className="font-medium text-white">{c.business_name || c.name}</p>
+                    {c.business_name && <p className="text-sm text-slate-400">Contact: {c.name}</p>}
+                    {c.email && <p className="text-sm text-slate-400">{c.email}</p>}
+                  </div>
+                ))}
+                {filteredCustomers.length === 0 && searchTerm &&
+                  <p className="text-slate-400 text-sm text-center">No customers found for "{searchTerm}".</p>
+                }
+                {customerList.length > 0 && !searchTerm &&
+                  <p className="text-slate-400 text-sm text-center">Select a customer from the list or search.</p>
+                }
+                {customerList.length === 0 && !searchTerm &&
+                  <p className="text-slate-400 text-sm text-center">No customers available. Create a new customer from the Customers page.</p>
+                }
+              </div>
+              <Button variant="outline" onClick={() => toggleAssignCustomer(false)} className="w-full bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300" disabled={isUpdating}>
+                Cancel
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-slate-900 border-slate-800">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-yellow-400 mb-2">
+                <UserIcon className="w-5 h-5" />
+                <p className="font-medium">No Customer Selected (Draft)</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button onClick={() => toggleAssignCustomer(true)} className="bg-slate-800 hover:bg-white text-white hover:text-black border-slate-700 hover:border-gray-300" variant="outline">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Assign
+                </Button>
+                <Button onClick={() => { setShowAddCustomerForm(true); setIsAssigningCustomer(false); }} className="pink-gradient text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                  </div>
-                  <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
-                    {filteredCustomers.map((c) =>
-                      <div key={c.id} onClick={() => handleAssignCustomer(c)} className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 cursor-pointer">
-                        <p className="font-medium text-white">{c.business_name || c.name}</p>
-                        {c.business_name && <p className="text-sm text-slate-400">Contact: {c.name}</p>}
-                        {c.email && <p className="text-sm text-slate-400">{c.email}</p>}
-                      </div>
-                    )}
-                    {filteredCustomers.length === 0 && searchTerm &&
-                      <p className="text-slate-400 text-sm text-center">No customers found for "{searchTerm}".</p>
-                    }
-                    {customerList.length > 0 && !searchTerm &&
-                      <p className="text-slate-400 text-sm text-center">Select a customer from the list or search.</p>
-                    }
-                    {customerList.length === 0 && !searchTerm &&
-                      <p className="text-slate-400 text-sm text-center">No customers available. Create a new customer from the Customers page.</p>
-                    }
-                  </div>
-                  <Button variant="outline" onClick={() => toggleAssignCustomer(false)} className="w-full bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300" disabled={isUpdating}>
-                    Cancel
-                  </Button>
-                </CardContent>
-              </Card> :
-
-              <Card className="bg-slate-900 border-slate-800">
-                <CardContent className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 text-yellow-400 mb-2">
-                    <UserIcon className="w-5 h-5" />
-                    <p className="font-medium">No Customer Selected (Draft)</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button onClick={() => toggleAssignCustomer(true)} className="bg-slate-800 hover:bg-white text-white hover:text-black border-slate-700 hover:border-gray-300" variant="outline">
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Assign
-                    </Button>
-                    <Button onClick={() => { setShowAddCustomerForm(true); setIsAssigningCustomer(false); }} className="pink-gradient text-white">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add New
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-        }
-
-        {/* Global Vehicle Edit Form for Multi-Vehicle Overview (when editing a vehicle) */}
         {editingVehicle && editedVehicleData && (
           <Card className="bg-slate-900 border-slate-800">
             <CardHeader>
@@ -1460,7 +1427,7 @@ Powered by Dentifier
           </Card>
         )}
 
-        {!editingVehicle && ( // Only show vehicle list if not editing a vehicle
+        {!editingVehicle && (
           <Card className="bg-slate-900 border-slate-800">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
@@ -1492,7 +1459,7 @@ Powered by Dentifier
                       </div>
                       <Link
                         to={createPageUrl(`AssessmentDetail?id=${assessmentId}&vehicle=${index}`)}
-                        className="block mt-2" // Make the link a block element
+                        className="block mt-2"
                       >
                         <Button variant="ghost" size="sm" className="w-full text-slate-400 justify-between hover:text-white hover:bg-slate-700 px-2">
                           View Details
@@ -1541,19 +1508,19 @@ Powered by Dentifier
                 </Button>
               </Link>
               <Button onClick={handleShareQuote} className="w-full bg-rose-600 hover:bg-rose-700 text-white">
-                {copied ?
+                {copied ? (
                   <>
                     <Copy className="w-4 h-4 mr-2" /> Copied!
-                  </> :
-
+                  </>
+                ) : (
                   <>
                     <Share2 className="w-4 h-4 mr-2" /> Share
                   </>
-                }
+                )}
               </Button>
             </div>
           </CardContent>
-          </Card>
+        </Card>
 
         {editingStatus &&
           <Card className="bg-slate-900 border-slate-800">
@@ -1586,6 +1553,7 @@ Powered by Dentifier
             </CardContent>
           </Card>
         }
+
         {assessment.status === 'completed' &&
           <Card className="bg-slate-900 border-slate-800">
             <CardContent className="p-4">
@@ -1668,17 +1636,17 @@ Powered by Dentifier
                 disabled={isUpdating || isDeleting}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
 
-                {isUpdating ?
+                {isUpdating ? (
                   <>
                     <Loader2 className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                     Approving...
-                  </> :
-
+                  </>
+                ) : (
                   <>
                     <Check className="w-4 h-4 mr-2" />
                     Approve Quote
                   </>
-                }
+                )}
               </Button>
               <Button
                 onClick={handleDeclineQuote}
@@ -1686,17 +1654,17 @@ Powered by Dentifier
                 variant="outline"
                 className="w-full bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300">
 
-                {isUpdating ?
+                {isUpdating ? (
                   <>
                     <Loader2 className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2" />
                     Declining...
-                  </> :
-
+                  </>
+                ) : (
                   <>
                     <XCircle className="w-4 h-4 mr-2" />
                     Mark as Declined
                   </>
-                }
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -1720,17 +1688,17 @@ Powered by Dentifier
                 disabled={isUpdating || isDeleting}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold">
 
-                {isUpdating ?
+                {isUpdating ? (
                   <>
                     <Loader2 className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                     Completing...
-                  </> :
-
+                  </>
+                ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Mark as Complete
                   </>
-                }
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -1766,31 +1734,28 @@ Powered by Dentifier
 
   }
 
-  // Single vehicle assessment (existing code continues below)
   const displayIdentifier = getDisplayIdentifier(assessment);
 
   return (
     <div className="p-4 max-w-md mx-auto space-y-4">
-      {/* Navigation - Back button */}
       <div className="mb-4">
-        {assessment.job_id ?
+        {assessment.job_id ? (
           <Link to={createPageUrl(`ProjectDetail?id=${assessment.job_id}`)}>
             <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-800 px-2 py-1 h-auto">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Project
             </Button>
-          </Link> :
-
+          </Link>
+        ) : (
           <Link to={createPageUrl("Quotes")}>
             <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-800 px-2 py-1 h-auto">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Quotes
             </Button>
           </Link>
-        }
+        )}
       </div>
 
-      {/* Quote/Invoice #, Status, Date */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">{displayIdentifier}</h1>
         {assessment.assessment_name && (
@@ -1817,23 +1782,22 @@ Powered by Dentifier
         </div>
       </div>
 
-      {/* 1. Edit Quote and Change Status Block */}
       <Card className="bg-slate-900 border-slate-800">
         <CardContent className="p-3">
           <div className="grid grid-cols-2 gap-3">
-            {assessment.quote_amount && ['draft', 'quoted', 'approved'].includes(assessment.status) ?
+            {assessment.quote_amount && ['draft', 'quoted', 'approved'].includes(assessment.status) ? (
               <Link to={createPageUrl(`EditQuote?id=${assessmentId}`)} className="w-full">
                 <Button variant="outline" className="w-full h-full flex-col justify-center gap-1 bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300">
                   <Edit className="w-4 h-4" />
                   <span className="text-xs">Edit Quote</span>
                 </Button>
-              </Link> :
-
+              </Link>
+            ) : (
               <Button variant="outline" disabled className="w-full h-full flex-col justify-center gap-1 border-slate-700 text-slate-500 cursor-not-allowed">
                 <Edit className="w-4 h-4" />
                 <span className="text-xs">Edit Quote</span>
               </Button>
-            }
+            )}
 
             <Button
               onClick={() => setEditingStatus(true)}
@@ -1847,7 +1811,6 @@ Powered by Dentifier
         </CardContent>
       </Card>
 
-      {/* Status Editing Modal */}
       {editingStatus &&
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
@@ -1880,7 +1843,6 @@ Powered by Dentifier
         </Card>
       }
 
-      {/* Payment Status (if completed) */}
       {assessment.status === 'completed' &&
         <Card className="bg-slate-900 border-slate-800">
           <CardContent className="p-4">
@@ -1961,9 +1923,9 @@ Powered by Dentifier
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {assessment.line_items && assessment.line_items.length > 0 ?
+            {assessment.line_items && assessment.line_items.length > 0 ? (
               <div className="space-y-3 mb-4">
-                {assessment.line_items.map((item, index) =>
+                {assessment.line_items.map((item, index) => (
                   <div key={index} className="flex justify-between items-center p-3 bg-slate-800 rounded-lg">
                     <div className="flex-1">
                       <p className="text-white font-medium">{item.description}</p>
@@ -1974,13 +1936,13 @@ Powered by Dentifier
                     </div>
                   </div>
                 ))}
-              </div> :
-
+              </div>
+            ) : (
               <div className="p-3 bg-slate-800 rounded-lg mb-4">
                 <p className="text-white font-medium">Paintless Dent Repair Service</p>
                 <p className="text-slate-400 text-sm">{assessment.notes || 'Standard PDR service'}</p>
               </div>
-            }
+            )}
 
             {assessment.notes &&
               <div className="flex items-center justify-between mt-6 mb-4 p-3 bg-slate-800 rounded-lg">
@@ -2010,22 +1972,21 @@ Powered by Dentifier
                 </Button>
               </Link>
               <Button onClick={handleShareQuote} className="w-full bg-rose-600 hover:bg-rose-700 text-white">
-                {copied ?
+                {copied ? (
                   <>
                     <Copy className="w-4 h-4 mr-2" /> Copied!
-                  </> :
-
+                  </>
+                ) : (
                   <>
                     <Share2 className="w-4 h-4 mr-2" /> Share
                   </>
-                }
+                )}
               </Button>
             </div>
           </CardContent>
         </Card>
       }
 
-      {/* Assessment Notes - Editable (for single vehicle) */}
       <Card className="bg-slate-900 border-slate-800">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
@@ -2037,7 +1998,7 @@ Powered by Dentifier
           <p className="text-slate-400 text-sm mb-3">
             Fill in any extra information you would like to refer to or add to the quote.
           </p>
-          {editingNotes ?
+          {editingNotes ? (
             <div className="space-y-3">
               <textarea
                 value={editedNotes}
@@ -2051,22 +2012,22 @@ Powered by Dentifier
                   disabled={isUpdating}
                   className="flex-1 pink-gradient text-white">
 
-                  {isUpdating ?
+                  {isUpdating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Saving...
-                    </> :
-
+                    </>
+                  ) : (
                     <>
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Save Notes
                     </>
-                  }
+                  )}
                 </Button>
                 <Button
                   onClick={() => {
                     setEditingNotes(false);
-                    setEditedNotes(assessment.notes || ''); // Reset to original if cancelled
+                    setEditedNotes(assessment.notes || '');
                   }}
                   variant="outline"
                   className="flex-1 bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black">
@@ -2074,15 +2035,15 @@ Powered by Dentifier
                   Cancel
                 </Button>
               </div>
-            </div> :
-
+            </div>
+          ) : (
             <div>
               <p className="text-slate-300 whitespace-pre-wrap mb-3">
                 {assessment.notes || 'No assessment notes added yet.'}
               </p>
               <Button
                 onClick={() => {
-                  setEditedNotes(assessment.notes || ''); // Initialize notes for editing
+                  setEditedNotes(assessment.notes || '');
                   setEditingNotes(true);
                 }}
                 variant="outline"
@@ -2092,11 +2053,11 @@ Powered by Dentifier
                 Edit Notes
               </Button>
             </div>
-          }
+          )}
         </CardContent>
-        </Card>
+      </Card>
 
-      {customer ?
+      {customer ? (
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
@@ -2126,73 +2087,72 @@ Powered by Dentifier
               }
             </div>
           </CardContent>
-        </Card> :
-        showAddCustomerForm ?
-          <CustomerForm
-            onSave={handleSaveNewCustomer}
-            onCancel={() => setShowAddCustomerForm(false)} /> :
+        </Card>
+      ) : showAddCustomerForm ? (
+        <CustomerForm
+          onSave={handleSaveNewCustomer}
+          onCancel={() => setShowAddCustomerForm(false)} />
+      ) : isAssigningCustomer ? (
+        <Card className="bg-slate-900 border-slate-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <UserPlus className="w-5 h-5 text-blue-400" />
+              Assign Customer
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                placeholder="Search customers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-400" />
 
-          isAssigningCustomer ?
-            <Card className="bg-slate-900 border-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <UserPlus className="w-5 h-5 text-blue-400" />
-                  Assign Customer
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search customers..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-400" />
-
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
+              {filteredCustomers.map((c) => (
+                <div key={c.id} onClick={() => handleAssignCustomer(c)} className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 cursor-pointer">
+                  <p className="font-medium text-white">{c.business_name || c.name}</p>
+                  {c.business_name && <p className="text-sm text-slate-400">Contact: {c.name}</p>}
+                  {c.email && <p className="text-sm text-slate-400">{c.email}</p>}
                 </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
-                  {filteredCustomers.map((c) =>
-                    <div key={c.id} onClick={() => handleAssignCustomer(c)} className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 cursor-pointer">
-                      <p className="font-medium text-white">{c.business_name || c.name}</p>
-                      {c.business_name && <p className="text-sm text-slate-400">Contact: {c.name}</p>}
-                      {c.email && <p className="text-sm text-slate-400">{c.email}</p>}
-                    </div>
-                  )}
-                  {filteredCustomers.length === 0 && searchTerm &&
-                    <p className="text-slate-400 text-sm text-center">No customers found for "{searchTerm}".</p>
-                  }
-                  {customerList.length > 0 && !searchTerm &&
-                    <p className="text-slate-400 text-sm text-center">Select a customer from the list or search.</p>
-                  }
-                  {customerList.length === 0 && !searchTerm &&
-                    <p className="text-slate-400 text-sm text-center">No customers available. Create a new customer from the Customers page.</p>
-                  }
-                </div>
-                <Button variant="outline" onClick={() => toggleAssignCustomer(false)} className="w-full bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300" disabled={isUpdating}>
-                  Cancel
-                </Button>
-              </CardContent>
-            </Card> :
-
-            <Card className="bg-slate-900 border-slate-800">
-              <CardContent className="p-4 text-center">
-                <div className="flex items-center justify-center gap-2 text-yellow-400 mb-2">
-                  <UserIcon className="w-5 h-5" />
-                  <p className="font-medium">No Customer Selected (Draft)</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button onClick={() => toggleAssignCustomer(true)} className="bg-slate-800 hover:bg-white text-white hover:text-black border-slate-700 hover:border-gray-300" variant="outline">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Assign
-                  </Button>
-                  <Button onClick={() => { setShowAddCustomerForm(true); setIsAssigningCustomer(false); }} className="pink-gradient text-white">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-      }
+              ))}
+              {filteredCustomers.length === 0 && searchTerm &&
+                <p className="text-slate-400 text-sm text-center">No customers found for "{searchTerm}".</p>
+              }
+              {customerList.length > 0 && !searchTerm &&
+                <p className="text-slate-400 text-sm text-center">Select a customer from the list or search.</p>
+              }
+              {customerList.length === 0 && !searchTerm &&
+                <p className="text-slate-400 text-sm text-center">No customers available. Create a new customer from the Customers page.</p>
+              }
+            </div>
+            <Button variant="outline" onClick={() => toggleAssignCustomer(false)} className="w-full bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300" disabled={isUpdating}>
+              Cancel
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-slate-900 border-slate-800">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 text-yellow-400 mb-2">
+              <UserIcon className="w-5 h-5" />
+              <p className="font-medium">No Customer Selected (Draft)</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={() => toggleAssignCustomer(true)} className="bg-slate-800 hover:bg-white text-white hover:text-black border-slate-700 hover:border-gray-300" variant="outline">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Assign
+              </Button>
+              <Button onClick={() => { setShowAddCustomerForm(true); setIsAssigningCustomer(false); }} className="pink-gradient text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add New
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {editingVehicle && editedVehicleData && (
         <Card className="bg-slate-900 border-slate-800">
@@ -2334,7 +2294,7 @@ Powered by Dentifier
           </CardContent>
         </Card>
       ) : (
-        !editingVehicle && ( // Only show "No Vehicle" card if not editing
+        !editingVehicle && (
           <Card className="bg-slate-900 border-slate-800">
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center gap-2 text-yellow-400 mb-2">
@@ -2347,7 +2307,6 @@ Powered by Dentifier
         )
       )}
 
-
       {assessment.damage_photos && assessment.damage_photos.length > 0 &&
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
@@ -2358,7 +2317,7 @@ Powered by Dentifier
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              {assessment.damage_photos.map((photo, index) =>
+              {assessment.damage_photos.map((photo, index) => (
                 <div key={index} className="relative cursor-pointer group" onClick={() => openImageViewer(index)}>
                   <img
                     src={photo}
@@ -2373,13 +2332,12 @@ Powered by Dentifier
                     Photo {index + 1}
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </CardContent>
         </Card>
       }
 
-      {/* 7. Dentifier Analysis Block (with Calculation Breakdown as Tab) */}
       {assessment.damage_analysis &&
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
@@ -2442,7 +2400,7 @@ Powered by Dentifier
                           <span className="text-slate-200">{assessment.damage_analysis.damage_report.dent_summary}</span>
                         </div>
                       }
-                      {assessment.damage_analysis.damage_report.dent_details &&
+                      {assessment.damage_analysis.damage_report.dent_details && (
                         <>
                           {assessment.damage_analysis.damage_report.dent_details.size_range &&
                             <div>
@@ -2463,7 +2421,7 @@ Powered by Dentifier
                             </div>
                           }
                         </>
-                      }
+                      )}
                     </div>
                   </div>
                 }
@@ -2495,12 +2453,12 @@ Powered by Dentifier
                     </p>
                     <div className="bg-slate-800 rounded-lg p-3">
                       <div className="space-y-1">
-                        {assessment.damage_analysis.risk_assessment.technical_risks.map((risk, index) =>
+                        {assessment.damage_analysis.risk_assessment.technical_risks.map((risk, index) => (
                           <div key={index} className="flex items-center gap-2 text-sm">
                             <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
                             <span className="text-slate-200">{risk}</span>
                           </div>
-                        )}
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -2508,20 +2466,20 @@ Powered by Dentifier
               </TabsContent>
 
               <TabsContent value="breakdown" className="mt-4">
-                {assessment.calculation_breakdown && assessment.calculation_breakdown.length > 0 ?
+                {assessment.calculation_breakdown && assessment.calculation_breakdown.length > 0 ? (
                   <CalculationBreakdown
                     breakdownData={assessment.calculation_breakdown}
                     currency={assessment.currency}
-                  /> :
+                  />
+                ) : (
                   <p className="text-slate-400 text-sm text-center py-4">No calculation breakdown available</p>
-                }
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       }
 
-      {/* Project Assignment (if needed) */}
       {isAssigningProject && !project &&
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
@@ -2531,7 +2489,7 @@ Powered by Dentifier
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {projectList.length > 0 ?
+            {projectList.length > 0 ? (
               <div className="space-y-3">
                 <Label htmlFor="project-select" className="text-white">Select a Project</Label>
                 <Select onValueChange={handleAssignToProject} disabled={isUpdating}>
@@ -2539,11 +2497,11 @@ Powered by Dentifier
                     <SelectValue placeholder="Choose an open project..." />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700">
-                    {projectList.map((p) =>
+                    {projectList.map((p) => (
                       <SelectItem key={p.id} value={p.id} className="text-white hover:bg-slate-700">
                         {p.job_name}
                       </SelectItem>
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
                 <Button
@@ -2554,15 +2512,15 @@ Powered by Dentifier
 
                   Cancel
                 </Button>
-              </div> :
-
+              </div>
+            ) : (
               <div className="text-center">
                 <p className="text-slate-400 mb-4">No open projects available. Create one to link assessments.</p>
                 <Link to={createPageUrl("CreateProject")}>
                   <Button className="pink-gradient text-white">Create New Project</Button>
                 </Link>
               </div>
-            }
+            )}
           </CardContent>
         </Card>
       }
@@ -2578,17 +2536,17 @@ Powered by Dentifier
               disabled={isUpdating || isDeleting}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
 
-              {isUpdating ?
+              {isUpdating ? (
                 <>
                   <Loader2 className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                   Approving...
-                </> :
-
+                </>
+              ) : (
                 <>
                   <Check className="w-4 h-4 mr-2" />
                   Approve Quote
                 </>
-              }
+              )}
             </Button>
             <Button
               onClick={handleDeclineQuote}
@@ -2596,17 +2554,17 @@ Powered by Dentifier
               variant="outline"
               className="w-full bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300">
 
-              {isUpdating ?
+              {isUpdating ? (
                 <>
                   <Loader2 className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2" />
                   Declining...
-                </> :
-
+                </>
+              ) : (
                 <>
                   <XCircle className="w-4 h-4 mr-2" />
                   Mark as Declined
                 </>
-              }
+              )}
             </Button>
             <Button
               onClick={handleDeleteQuote}
@@ -2614,17 +2572,17 @@ Powered by Dentifier
               variant="destructive"
               className="w-full">
 
-              {isDeleting ?
+              {isDeleting ? (
                 <>
                   <Loader2 className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                   Deleting...
-                </> :
-
+                </>
+              ) : (
                 <>
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Quote
                 </>
-              }
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -2648,17 +2606,17 @@ Powered by Dentifier
               disabled={isUpdating || isDeleting}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold">
 
-              {isUpdating ?
+              {isUpdating ? (
                 <>
                   <Loader2 className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                   Completing...
-                </> :
-
+                </>
+              ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4 mr-2" />
                   Mark as Complete
                 </>
-              }
+              )}
             </Button>
           </CardContent>
         </Card>
