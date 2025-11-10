@@ -1,0 +1,313 @@
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import {
+  Camera,
+  Users,
+  FileText,
+  TrendingUp,
+  Clock,
+  Coins,
+  Plus,
+  ArrowRight } from
+"lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+export default function Dashboard() {
+  const [stats, setStats] = useState({
+    totalAppraisals: 0,
+    totalClients: 0,
+    totalRevenue: 0,
+    avgQuoteValue: 0,
+    currency: 'GBP'
+  });
+  const [recentAppraisals, setRecentAppraisals] = useState([]);
+  const [customersMap, setCustomersMap] = useState({});
+  const [vehiclesMap, setVehiclesMap] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [assessmentsData, customersData, vehiclesData] = await Promise.all([
+        base44.entities.Assessment.list('-created_date'),
+        base44.entities.Customer.list(),
+        base44.entities.Vehicle.list()
+      ]);
+
+      const customersMap = customersData.reduce((map, customer) => {
+        map[customer.id] = customer;
+        return map;
+      }, {});
+      setCustomersMap(customersMap);
+
+      const vehiclesMap = vehiclesData.reduce((map, vehicle) => {
+        map[vehicle.id] = vehicle;
+        return map;
+      }, {});
+      setVehiclesMap(vehiclesMap);
+
+      // Get current month start and end dates
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+      // Filter completed assessments from this month
+      const completedAssessments = assessmentsData.filter((a) => {
+        const assessmentDate = new Date(a.created_date);
+        return a.status === 'completed' && assessmentDate >= monthStart && assessmentDate <= monthEnd;
+      });
+
+      const revenueByCurrency = {};
+      completedAssessments.forEach((assessment) => {
+        const currency = assessment.currency || 'GBP';
+        const amount = assessment.quote_amount || 0;
+
+        if (!revenueByCurrency[currency]) {
+          revenueByCurrency[currency] = 0;
+        }
+        revenueByCurrency[currency] += amount;
+      });
+
+      const totalRevenueInfo = Object.entries(revenueByCurrency).
+      reduce((max, [currency, amount]) =>
+      amount > max.amount ? { currency, amount } : max,
+      { currency: 'GBP', amount: 0 }
+      );
+
+      setStats({
+        totalAppraisals: assessmentsData.length,
+        totalClients: customersData.length,
+        totalRevenue: totalRevenueInfo.amount,
+        currency: totalRevenueInfo.currency,
+        avgQuoteValue: completedAssessments.length > 0 ? totalRevenueInfo.amount / completedAssessments.length : 0
+      });
+
+      setRecentAppraisals(assessmentsData.slice(0, 5));
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCurrencySymbol = (currency) => {
+    const symbols = {
+      'GBP': '£',
+      'USD': '$',
+      'EUR': '€',
+      'CAD': 'C$',
+      'AUD': 'A$'
+    };
+    return symbols[currency] || '£';
+  };
+
+  const formatCurrency = (amount, currency) => {
+    const symbol = getCurrencySymbol(currency);
+    return `${symbol}${Math.round(amount)}`;
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+      case 'approved':
+        return 'bg-green-500 text-white';
+      case 'quoted':
+        return 'bg-blue-500 text-white';
+      case 'declined':
+        return 'bg-red-500 text-white';
+      case 'draft':
+        return 'bg-gray-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getVehicleDisplay = (assessment) => {
+    if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
+      return `${assessment.vehicles.length} Vehicles`;
+    } else if (assessment.vehicle_id) {
+      const vehicle = vehiclesMap[assessment.vehicle_id];
+      return vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'Vehicle details loading...';
+    }
+    return 'N/A';
+  };
+
+  const getDisplayIdentifier = (assessment) => {
+    return assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
+  };
+
+  const StatCard = ({ title, value, icon: Icon, color, trend }) =>
+  <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-slate-400 text-sm font-medium">{title}</p>
+            <p className="text-2xl font-bold text-white mt-1">{value}</p>
+            {trend &&
+          <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" />
+                {trend}
+              </p>
+          }
+          </div>
+          <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
+            <Icon className="w-6 h-6 text-white" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>;
+
+
+  return (
+    <div className="p-4 max-w-md mx-auto space-y-6">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-br from-rose-600 to-rose-500 rounded-2xl p-6 text-white custom-shadow">
+        <h2 className="text-2xl font-bold mb-2">Welcome Back!</h2>
+        <p className="text-rose-100 mb-4">Ready to assess some dents? Let's get started.</p>
+        <Link to={createPageUrl("Assessment")}>
+          <Button className="bg-white text-rose-600 hover:bg-rose-50 font-semibold">
+            <Camera className="w-4 h-4 mr-2" />
+            New Assessment
+          </Button>
+        </Link>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <Link to={createPageUrl("Assessment")}>
+            <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 h-full">
+              <CardContent className="p-4 text-center">
+                <Camera className="w-8 h-8 text-rose-500 mx-auto mb-2" />
+                <p className="text-white font-medium">Take Photos</p>
+                <p className="text-slate-400 text-xs">Start assessment</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to={createPageUrl("Customers")}>
+            <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 h-full">
+              <CardContent className="p-4 text-center">
+                <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <p className="text-white font-medium">Clients</p>
+                <p className="text-slate-400 text-xs">Manage clients</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-white">Overview</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            title="Assessments"
+            value={stats.totalAppraisals}
+            icon={FileText}
+            color="bg-gradient-to-br from-purple-500 to-purple-600"
+            trend="+12% this week" />
+
+
+          <StatCard
+            title="Clients"
+            value={stats.totalClients}
+            icon={Users}
+            color="bg-gradient-to-br from-blue-500 to-blue-600" />
+
+
+          <StatCard
+            title="Revenue"
+            value={formatCurrency(stats.totalRevenue, stats.currency)}
+            icon={Coins}
+            color="bg-gradient-to-br from-green-500 to-green-600"
+            trend="+8% this month" />
+
+
+          <StatCard
+            title="Avg Quote"
+            value={formatCurrency(stats.avgQuoteValue, stats.currency)}
+            icon={Clock}
+            color="bg-gradient-to-br from-orange-500 to-orange-600" />
+
+        </div>
+      </div>
+
+      {/* Recent Appraisals */}
+      {recentAppraisals.length > 0 &&
+      <div className="mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold text-white">Recent Assessments</h2>
+            <Link to={createPageUrl("Quotes")}>
+              <Button variant="ghost" className="text-rose-400 hover:text-white hover:bg-slate-800 px-2 py-1 h-auto text-sm">
+                View All
+                <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {recentAppraisals.slice(0, 3).map((assessment) => {
+            const customer = customersMap[assessment.customer_id];
+            const customerName = customer ? (customer.business_name || customer.name) :
+            (assessment.customer_id ? 'Client details loading...' : 'Draft Assessment');
+
+
+            if (!assessment.id || assessment.id === 'undefined') {
+              return null;
+            }
+
+            const displayIdentifier = getDisplayIdentifier(assessment);
+
+            return (
+              <Link
+                key={assessment.id}
+                to={createPageUrl(`AssessmentDetail?id=${assessment.id}`)}
+                className="block"
+              >
+                  <Card className="bg-slate-900 text-card-foreground my-4 rounded-lg border shadow-sm border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 cursor-pointer">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-white font-medium">{displayIdentifier}</h4>
+                            <Badge className={`text-xs ${getStatusColor(assessment.status)}`}>
+                              {assessment.status.replace(/_/g, ' ')}
+                            </Badge>
+                          </div>
+                          <p className="text-white font-medium truncate mb-1">
+                            {getVehicleDisplay(assessment)}
+                          </p>
+                          <p className="text-slate-400 text-sm truncate">
+                            {customerName}
+                          </p>
+                          {customer?.business_name && (
+                            <p className="text-slate-500 text-xs truncate">Contact: {customer.name}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 ml-4">
+                          {assessment.quote_amount > 0 &&
+                        <span className={`font-semibold whitespace-nowrap ${assessment.status === 'declined' ? 'text-slate-500 line-through' : 'text-green-400'}`}>
+                              {formatCurrency(assessment.quote_amount, assessment.currency || 'GBP')}
+                            </span>
+                        }
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>);
+
+          })}
+          </div>
+        </div>
+      }
+    </div>);
+
+}
