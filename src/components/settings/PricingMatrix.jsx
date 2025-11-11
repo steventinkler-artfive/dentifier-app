@@ -22,7 +22,7 @@ const SIZE_RANGE_OPTIONS = [
 ];
 
 export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChange, onCustomTypesChange, currency, worksOnAluminum }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [isAddingCustomType, setIsAddingCustomType] = useState(false);
   const [newCustomTypeName, setNewCustomTypeName] = useState("");
 
@@ -89,7 +89,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader 
-        className="cursor-pointer hover:bg-slate-800/50 transition-colors"
+        className="cursor-pointer hover:bg-slate-800 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
@@ -99,7 +99,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
           <Button
             variant="ghost"
             size="sm"
-            className="text-slate-400 hover:text-white"
+            className="text-slate-400 hover:text-white hover:bg-slate-700"
             onClick={(e) => {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
@@ -112,10 +112,10 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
             )}
           </Button>
         </div>
-        <div className="bg-blue-900/30 border border-blue-800 rounded-lg p-3 mt-2">
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 mt-2">
           <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-blue-300 space-y-1">
+            <AlertCircle className="w-4 h-4 text-slate-300 mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-slate-200 space-y-1">
               <p className="font-medium">Matrix prices are for steel panels (market rate)</p>
               <p>• Aluminum repairs automatically calculated at 1.35x steel price</p>
               <p>• These are customer-facing prices, adjusted for complexity during quoting</p>
@@ -138,7 +138,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteCustomType(type)}
-                      className="h-5 w-5 p-0 hover:bg-red-900/50 text-slate-400 hover:text-red-400"
+                      className="h-5 w-5 p-0 hover:bg-red-900 text-slate-400 hover:text-red-300"
                     >
                       <Trash2 className="w-3 h-3" />
                     </Button>
@@ -221,7 +221,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveEntry(index)}
-                    className="h-9 w-9 p-0 hover:bg-red-900/50 text-slate-400 hover:text-red-400"
+                    className="h-9 w-9 p-0 hover:bg-red-900 text-slate-400 hover:text-red-300"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
