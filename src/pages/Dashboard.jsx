@@ -60,8 +60,13 @@ export default function Dashboard() {
       const yearStart = new Date(now.getFullYear(), 0, 1);
       const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
 
-      // Filter assessments that are actual quotes (not drafts)
-      const actualQuotes = assessmentsData.filter(a => a.status !== 'draft');
+      // Filter quotes from this month (not drafts)
+      const quotesThisMonth = assessmentsData.filter((a) => {
+        const assessmentDate = new Date(a.created_date);
+        return a.status !== 'draft' && 
+               assessmentDate >= monthStart && 
+               assessmentDate <= monthEnd;
+      });
 
       // Filter completed assessments from this month for revenue
       const completedThisMonth = assessmentsData.filter((a) => {
@@ -118,7 +123,7 @@ export default function Dashboard() {
       );
 
       setStats({
-        totalQuotes: actualQuotes.length,
+        totalQuotes: quotesThisMonth.length,
         totalCustomers: customersData.length,
         totalRevenue: totalRevenueInfo.amount,
         currency: totalRevenueInfo.currency,
@@ -259,7 +264,7 @@ export default function Dashboard() {
             value={stats.totalQuotes}
             icon={FileText}
             color="bg-gradient-to-br from-purple-500 to-purple-600"
-            trend="+12% this week"
+            trend="This month"
             linkTo={createPageUrl("Quotes")} />
 
           <StatCard
@@ -275,7 +280,7 @@ export default function Dashboard() {
             value={formatCurrency(stats.totalRevenue, stats.currency)}
             icon={Coins}
             color="bg-gradient-to-br from-green-500 to-green-600"
-            trend="+8% this month"
+            trend="This month"
             linkTo={createPageUrl("Reports")} />
 
           <StatCard
