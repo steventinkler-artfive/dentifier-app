@@ -18,8 +18,8 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
-    totalAppraisals: 0,
-    totalClients: 0,
+    totalQuotes: 0,
+    totalCustomers: 0,
     totalRevenue: 0,
     avgQuoteValue: 0,
     currency: 'GBP'
@@ -58,6 +58,9 @@ export default function Dashboard() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
+      // Filter assessments that are actual quotes (not drafts)
+      const actualQuotes = assessmentsData.filter(a => a.status !== 'draft');
+
       // Filter completed assessments from this month
       const completedAssessments = assessmentsData.filter((a) => {
         const assessmentDate = new Date(a.created_date);
@@ -82,8 +85,8 @@ export default function Dashboard() {
       );
 
       setStats({
-        totalAppraisals: assessmentsData.length,
-        totalClients: customersData.length,
+        totalQuotes: actualQuotes.length,
+        totalCustomers: customersData.length,
         totalRevenue: totalRevenueInfo.amount,
         currency: totalRevenueInfo.currency,
         avgQuoteValue: completedAssessments.length > 0 ? totalRevenueInfo.amount / completedAssessments.length : 0
@@ -140,29 +143,38 @@ export default function Dashboard() {
   };
 
   const getDisplayIdentifier = (assessment) => {
-    return assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
+    // Same logic as AssessmentDetail and Quotes pages
+    if (assessment.status === 'completed') {
+      return assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
+    }
+    return assessment.quote_number || `#${assessment.id.slice(-6)}`;
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, trend }) =>
-  <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-slate-400 text-sm font-medium">{title}</p>
-            <p className="text-2xl font-bold text-white mt-1">{value}</p>
-            {trend &&
-          <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" />
-                {trend}
-              </p>
-          }
+  const StatCard = ({ title, value, icon: Icon, color, trend, linkTo }) => {
+    const cardContent = (
+      <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-sm font-medium">{title}</p>
+              <p className="text-2xl font-bold text-white mt-1">{value}</p>
+              {trend &&
+            <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  {trend}
+                </p>
+            }
+            </div>
+            <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
+              <Icon className="w-6 h-6 text-white" />
+            </div>
           </div>
-          <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>;
+        </CardContent>
+      </Card>
+    );
+
+    return linkTo ? <Link to={linkTo} className="block">{cardContent}</Link> : cardContent;
+  };
 
 
   return (
@@ -197,8 +209,8 @@ export default function Dashboard() {
             <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 h-full">
               <CardContent className="p-4 text-center">
                 <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="text-white font-medium">Clients</p>
-                <p className="text-slate-400 text-xs">Manage clients</p>
+                <p className="text-white font-medium">Customers</p>
+                <p className="text-slate-400 text-xs">Manage customers</p>
               </CardContent>
             </Card>
           </Link>
@@ -210,18 +222,20 @@ export default function Dashboard() {
         <h3 className="text-lg font-semibold text-white">Overview</h3>
         <div className="grid grid-cols-2 gap-3">
           <StatCard
-            title="Assessments"
-            value={stats.totalAppraisals}
+            title="Quotes"
+            value={stats.totalQuotes}
             icon={FileText}
             color="bg-gradient-to-br from-purple-500 to-purple-600"
-            trend="+12% this week" />
+            trend="+12% this week"
+            linkTo={createPageUrl("Quotes")} />
 
 
           <StatCard
-            title="Clients"
-            value={stats.totalClients}
+            title="Customers"
+            value={stats.totalCustomers}
             icon={Users}
-            color="bg-gradient-to-br from-blue-500 to-blue-600" />
+            color="bg-gradient-to-br from-blue-500 to-blue-600"
+            linkTo={createPageUrl("Customers")} />
 
 
           <StatCard
@@ -229,14 +243,16 @@ export default function Dashboard() {
             value={formatCurrency(stats.totalRevenue, stats.currency)}
             icon={Coins}
             color="bg-gradient-to-br from-green-500 to-green-600"
-            trend="+8% this month" />
+            trend="+8% this month"
+            linkTo={createPageUrl("Reports")} />
 
 
           <StatCard
             title="Avg Quote"
             value={formatCurrency(stats.avgQuoteValue, stats.currency)}
             icon={Clock}
-            color="bg-gradient-to-br from-orange-500 to-orange-600" />
+            color="bg-gradient-to-br from-orange-500 to-orange-600"
+            linkTo={createPageUrl("Reports")} />
 
         </div>
       </div>
@@ -245,7 +261,7 @@ export default function Dashboard() {
       {recentAppraisals.length > 0 &&
       <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold text-white">Recent Assessments</h2>
+            <h2 className="text-lg font-semibold text-white">Recent Quotes</h2>
             <Link to={createPageUrl("Quotes")}>
               <Button variant="ghost" className="text-rose-400 hover:text-white hover:bg-slate-800 px-2 py-1 h-auto text-sm">
                 View All
@@ -257,7 +273,7 @@ export default function Dashboard() {
             {recentAppraisals.slice(0, 3).map((assessment) => {
             const customer = customersMap[assessment.customer_id];
             const customerName = customer ? (customer.business_name || customer.name) :
-            (assessment.customer_id ? 'Client details loading...' : 'Draft Assessment');
+            (assessment.customer_id ? 'Customer details loading...' : 'Draft Assessment');
 
 
             if (!assessment.id || assessment.id === 'undefined') {
