@@ -89,7 +89,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader 
-        className="cursor-pointer hover:bg-slate-800 transition-colors"
+        className="cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
