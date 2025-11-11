@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 
@@ -476,474 +477,505 @@ export default function Settings() {
                 </div>
             )}
 
-            {/* Business Profile */}
-            <Card className="bg-slate-900 border-slate-800">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white"><Building className="w-5 h-5 text-blue-400" />Business Profile</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-white">Business Name</Label>
-                        <Input value={formData.business_name} onChange={e => handleInputChange('business_name', e.target.value)} placeholder="e.g., Acme PDR" className="bg-slate-800 border-slate-700 text-white" />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-white">Business Logo</Label>
-                        <div className="flex flex-col gap-3">
-                            {logoPreview && (
-                            <div className="relative w-48 h-24 bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
-                                <img src={logoPreview} alt="Business Logo" className="max-w-full max-h-full object-contain" />
-                            </div>
-                            )}
-                            <div className="flex gap-2">
-                            <Button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                variant="outline"
-                                className="bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300"
-                                disabled={logoUploading}
-                            >
-                                {logoUploading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Uploading...
-                                </>
-                                ) : (
-                                <>
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    {logoPreview ? 'Change Logo' : 'Upload Logo'}
-                                </>
-                                )}
-                            </Button>
-                            {logoPreview && (
-                                <Button
-                                type="button"
-                                onClick={() => { handleInputChange('business_logo_url', ''); setLogoPreview(null); }}
-                                variant="outline"
-                                className="bg-red-900 border-red-700 text-red-300 hover:bg-red-800 hover:text-white hover:border-red-600"
-                                >
-                                Remove
-                                </Button>
-                            )}
-                            </div>
-                            <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/png,image/jpeg,image/jpg"
-                            className="hidden"
-                            onChange={handleLogoUpload}
-                            />
-                            <p className="text-slate-400 text-sm">Recommended: PNG with transparent background. Also accepts JPG/JPEG. Max 2MB</p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-white">Business Address</Label>
-                        <Textarea
-                            value={formData.business_address}
-                            onChange={(e) => handleInputChange('business_address', e.target.value)}
-                            placeholder="123 Main Street&#10;City, Postcode&#10;United Kingdom"
-                            rows={3}
-                            className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-white">Contact Email</Label>
-                        <Input
-                            type="email"
-                            value={formData.contact_email}
-                            onChange={(e) => handleInputChange('contact_email', e.target.value)}
-                            placeholder="contact@yourbusiness.co.uk"
-                            className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Banking Details */}
-            <Card className="bg-slate-900 border-slate-800">
-                <CardHeader>
-                    <CardTitle className="text-white">Banking Details</CardTitle>
-                    <p className="text-slate-400 text-sm">For invoice payments (will appear on completed work invoices)</p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-white">Account Name</Label>
-                        <Input value={formData.bank_account_name} onChange={e => handleInputChange('bank_account_name', e.target.value)} placeholder="Business Account Name" className="bg-slate-800 border-slate-700 text-white" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-white">Account Number</Label>
-                            <Input value={formData.bank_account_number} onChange={e => handleInputChange('bank_account_number', e.target.value)} placeholder="12345678" className="bg-slate-800 border-slate-700 text-white" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-white">Sort Code</Label>
-                            <Input value={formData.bank_sort_code} onChange={e => handleInputChange('bank_sort_code', e.target.value)} placeholder="12-34-56" className="bg-slate-800 border-slate-700 text-white" />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-white">IBAN (Optional)</Label>
-                        <Input value={formData.bank_iban} onChange={e => handleInputChange('bank_iban', e.target.value)} placeholder="GB29 NWBK 6016 1331 9268 19" className="bg-slate-800 border-slate-700 text-white" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-white">SWIFT/BIC Code (Optional)</Label>
-                        <Input value={formData.bank_swift_code} onChange={e => handleInputChange('bank_swift_code', e.target.value)} placeholder="NWBKGB2L" className="bg-slate-800 border-slate-700 text-white" />
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Payment Integration Section */}
-            <Card className="bg-slate-900 border-slate-800">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                        <CreditCard className="w-5 h-5 text-green-400" />
-                        Payment Integration
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="payment_provider" className="text-white">Payment Provider</Label>
-                        <Select
-                            value={formData.payment_provider || 'None'}
-                            onValueChange={(value) => handleInputChange('payment_provider', value)}
-                        >
-                            <SelectTrigger id="payment_provider" className="bg-slate-800 border-slate-700 text-white">
-                                <SelectValue placeholder="Select payment provider" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-slate-800 border-slate-700">
-                                <SelectItem value="None" className="text-white hover:bg-slate-700">None</SelectItem>
-                                <SelectItem value="Stripe" className="text-white hover:bg-slate-700">Stripe</SelectItem>
-                                <SelectItem value="Square" className="text-white hover:bg-slate-700">Square</SelectItem>
-                                <SelectItem value="PayPal" className="text-white hover:bg-slate-700">PayPal</SelectItem>
-                                <SelectItem value="Other" className="text-white hover:bg-slate-700">Other</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p className="text-xs text-slate-400">
-                            Choose your preferred payment provider for customer invoices.
-                        </p>
-                    </div>
-
-                    {formData.payment_provider && formData.payment_provider !== 'None' && (
-                        <div className="space-y-2">
-                            <Label htmlFor="payment_link_template" className="text-white">Payment Link</Label>
-                            <Input
-                                id="payment_link_template"
-                                value={formData.payment_link_template || ''}
-                                onChange={(e) => handleInputChange('payment_link_template', e.target.value)}
-                                placeholder="https://..."
-                                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
-                            />
-                            <div className="bg-slate-800 rounded-lg p-3 space-y-2">
-                                <p className="text-xs text-slate-300 font-medium">How to get your payment link:</p>
-                                {formData.payment_provider === 'Stripe' && (
-                                    <div className="text-xs text-slate-400 space-y-1">
-                                        <p>1. Log in to your Stripe Dashboard</p>
-                                        <p>2. Go to "Payment Links" in the left sidebar</p>
-                                        <p>3. Create a new payment link for your PDR services</p>
-                                        <p>4. Copy the shareable link and paste it here</p>
-                                        <p className="text-slate-500 italic mt-2">Example: https://buy.stripe.com/test_abc123</p>
-                                    </div>
-                                )}
-                                {formData.payment_provider === 'Square' && (
-                                    <div className="text-xs text-slate-400 space-y-1">
-                                        <p>1. Log in to your Square Dashboard</p>
-                                        <p>2. Go to "Online" → "Checkout"</p>
-                                        <p>3. Create a checkout link for your services</p>
-                                        <p>4. Copy the link and paste it here</p>
-                                        <p className="text-slate-500 italic mt-2">Example: https://square.link/u/abc123</p>
-                                    </div>
-                                )}
-                                {formData.payment_provider === 'PayPal' && (
-                                    <div className="text-xs text-slate-400 space-y-1">
-                                        <p>1. Set up PayPal.Me from your PayPal account</p>
-                                        <p>2. Your PayPal.Me link is your unique URL</p>
-                                        <p>3. Copy your PayPal.Me link and paste it here</p>
-                                        <p className="text-slate-500 italic mt-2">Example: https://paypal.me/yourbusiness</p>
-                                    </div>
-                                )}
-                                {formData.payment_provider === 'Other' && (
-                                    <div className="text-xs text-slate-400">
-                                        <p>Paste your payment link from your chosen provider.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+            <Tabs defaultValue="company" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-4">
+                    <TabsTrigger value="company" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                        Company info
+                    </TabsTrigger>
+                    <TabsTrigger value="pricing" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                        Pricing & quoting
+                    </TabsTrigger>
+                </TabsList>
+                
+                <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-6">
+                    <TabsTrigger value="technician" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                        Technician details
+                    </TabsTrigger>
+                    {user?.role === 'admin' && (
+                        <TabsTrigger value="admin" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                            Admin
+                        </TabsTrigger>
                     )}
-                </CardContent>
-            </Card>
+                </TabsList>
 
-            {/* Pricing & Tax */}
-            <Card className="bg-slate-900 border-slate-800">
-                <CardHeader>
-                    <CardTitle className="text-white">Pricing & Tax</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-white">Hourly Rate</Label>
-                            <Input type="number" value={formData.hourly_rate} onChange={e => handleInputChange('hourly_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-white">Base Cost / Call-out</Label>
-                            <Input type="number" value={formData.base_cost} onChange={e => handleInputChange('base_cost', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-white">Default Panel Price</Label>
-                        <Input type="number" value={formData.default_panel_price} onChange={e => handleInputChange('default_panel_price', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
-                        <p className="text-slate-400 text-xs">Used when "Charge Per Panel" option is selected during assessments</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-white">Currency</Label>
-                            <Select value={formData.currency} onValueChange={value => handleInputChange('currency', value)}>
-                                <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
-                                <SelectContent className="bg-slate-800 border-slate-700">
-                                    <SelectItem value="GBP" className="text-white">GBP (£)</SelectItem>
-                                    <SelectItem value="USD" className="text-white">USD ($)</SelectItem>
-                                    <SelectItem value="EUR" className="text-white">EUR (€)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                     <div className="flex items-center space-x-2">
-                        <Switch 
-                            id="vat-registered" 
-                            checked={formData.is_vat_registered} 
-                            onCheckedChange={checked => handleInputChange('is_vat_registered', checked)}
-                            className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-600"
-                        />
-                        <Label htmlFor="vat-registered" className="text-white">I am VAT/Tax registered</Label>
-                    </div>
-                    {formData.is_vat_registered && (
-                         <div className="space-y-2">
-                            <Label className="text-white">Tax Rate (%)</Label>
-                            <Input type="number" value={formData.tax_rate} onChange={e => handleInputChange('tax_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                {/* Tab 1: Company Info */}
+                <TabsContent value="company" className="space-y-6">
+                    {/* Business Profile */}
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-white"><Building className="w-5 h-5 text-blue-400" />Business Profile</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-white">Business Name</Label>
+                                <Input value={formData.business_name} onChange={e => handleInputChange('business_name', e.target.value)} placeholder="e.g., Acme PDR" className="bg-slate-800 border-slate-700 text-white" />
+                            </div>
 
-            {/* Pricing Matrix - NEW SECTION */}
-            <PricingMatrix
-                pricingMatrix={formData.pricing_matrix || []}
-                customDamageTypes={formData.custom_damage_types || []}
-                onChange={(matrix) => handleInputChange('pricing_matrix', matrix)}
-                onCustomTypesChange={(types) => handleInputChange('custom_damage_types', types)}
-                currency={formData.currency}
-                worksOnAluminum={formData.works_on_aluminum_panels}
-            />
-
-            {/* Quote & Invoice Numbering */}
-            <Card className="bg-slate-900 border-slate-800">
-                <CardHeader>
-                    <CardTitle className="text-white">Quote & Invoice Numbering</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-white">Quote Prefix</Label>
-                            <Input 
-                                value={formData.quote_prefix} 
-                                onChange={e => handleInputChange('quote_prefix', e.target.value)} 
-                                placeholder="Q-"
-                                className="bg-slate-800 border-slate-700 text-white" 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-white">Next Quote Number</Label>
-                            <Input 
-                                type="number" 
-                                min="1"
-                                value={formData.next_quote_number} 
-                                onChange={e => handleInputChange('next_quote_number', parseInt(e.target.value) || 1)} 
-                                className="bg-slate-800 border-slate-700 text-white" 
-                            />
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-white">Invoice Prefix</Label>
-                            <Input 
-                                value={formData.invoice_prefix} 
-                                onChange={e => handleInputChange('invoice_prefix', e.target.value)} 
-                                placeholder="INV-"
-                                className="bg-slate-800 border-slate-700 text-white" 
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-white">Next Invoice Number</Label>
-                            <Input 
-                                type="number" 
-                                min="1"
-                                value={formData.next_invoice_number} 
-                                onChange={e => handleInputChange('next_invoice_number', parseInt(e.target.value) || 1)} 
-                                className="bg-slate-800 border-slate-700 text-white" 
-                            />
-                        </div>
-                    </div>
-
-                    <div className="p-3 bg-slate-800 rounded-lg">
-                        <Label className="text-slate-400 text-xs">Your next invoice reference</Label>
-                        <p className="text-white font-medium mt-1">
-                            {formData.invoice_prefix}{String(formData.next_invoice_number).padStart(4, '0')}
-                        </p>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-white">Invoice Footer</Label>
-                        <Textarea
-                            value={formData.invoice_footer}
-                            onChange={(e) => handleInputChange('invoice_footer', e.target.value)}
-                            placeholder="Please pay within 30 days of receipt of invoice."
-                            rows={3}
-                            className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
-                        />
-                        <p className="text-slate-400 text-xs">This message will appear at the bottom of completed invoices</p>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Technician Profile */}
-            <Card className="bg-slate-900 border-slate-800">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white"><Wrench className="w-5 h-5 text-blue-400" />Technician Profile</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="years-experience" className="text-white">Years of Experience</Label>
-                        <Input
-                            id="years-experience"
-                            type="number"
-                            min="0"
-                            value={formData.years_experience || ''}
-                            onChange={(e) => handleInputChange('years_experience', parseFloat(e.target.value) || 0)}
-                            className="bg-slate-800 border-slate-700 text-white"
-                            placeholder="e.g., 5"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="max-dent-size" className="text-white">Maximum Dent Size You Work On</Label>
-                        <Select
-                            value={formData.max_supported_dent_size || 'all sizes'}
-                            onValueChange={(value) => handleInputChange('max_supported_dent_size', value)}
-                        >
-                            <SelectTrigger id="max-dent-size" className="bg-slate-800 border-slate-700 text-white">
-                                <SelectValue placeholder="Select maximum dent size" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-slate-800 border-slate-700">
-                                <SelectItem value="up to 10mm" className="text-white hover:bg-slate-700">Up to 10mm (Micro Dents)</SelectItem>
-                                <SelectItem value="up to 25mm" className="text-white hover:bg-slate-700">Up to 25mm (Small Dents)</SelectItem>
-                                <SelectItem value="up to 50mm" className="text-white hover:bg-slate-700">Up to 50mm (Medium Dents)</SelectItem>
-                                <SelectItem value="up to 80mm" className="text-white hover:bg-slate-700">Up to 80mm (Medium-Large)</SelectItem>
-                                <SelectItem value="up to 120mm" className="text-white hover:bg-slate-700">Up to 120mm (Large Dents)</SelectItem>
-                                <SelectItem value="up to 200mm" className="text-white hover:bg-slate-700">Up to 200mm (Extra Large)</SelectItem>
-                                <SelectItem value="up to 300mm" className="text-white hover:bg-slate-700">Up to 300mm (Giant Dents)</SelectItem>
-                                <SelectItem value="up to 500mm" className="text-white hover:bg-slate-700">Up to 500mm (Super Dents)</SelectItem>
-                                <SelectItem value="up to 750mm" className="text-white hover:bg-slate-700">Up to 750mm (Massive Dents)</SelectItem>
-                                <SelectItem value="up to 1000mm" className="text-white hover:bg-slate-700">Up to 1000mm (Extreme Dents)</SelectItem>
-                                <SelectItem value="all sizes" className="text-white hover:bg-slate-700">All Sizes (No Limit)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p className="text-slate-400 text-sm">
-                            Dentifier will flag damage items exceeding this size for your review
-                        </p>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="checkbox"
-                            id="aluminum-panels-checkbox" // Added ID for accessibility and label association
-                            checked={formData.works_on_aluminum_panels || false}
-                            onChange={(e) => handleInputChange('works_on_aluminum_panels', e.target.checked)}
-                            className="w-4 h-4 rounded border-2 border-slate-600 bg-slate-800 text-green-600 focus:ring-green-500" // Added classes for styling
-                        />
-                        <Label htmlFor="aluminum-panels-checkbox" className="text-white">I work on aluminum panels</Label>
-                    </div>
-                    <div>
-                        <Label className="text-white block mb-2">Available PDR Tools</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {PDR_TOOLS.map(tool => (
-                                <div key={tool} className="flex items-center space-x-2">
-                                    <Checkbox 
-                                        id={tool} 
-                                        checked={formData.available_pdr_tools.includes(tool)} 
-                                        onCheckedChange={checked => handleArrayChange('available_pdr_tools', tool, checked)}
-                                        className="border-2 border-slate-600 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                            <div className="space-y-2">
+                                <Label className="text-white">Business Logo</Label>
+                                <div className="flex flex-col gap-3">
+                                    {logoPreview && (
+                                    <div className="relative w-48 h-24 bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
+                                        <img src={logoPreview} alt="Business Logo" className="max-w-full max-h-full object-contain" />
+                                    </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        variant="outline"
+                                        className="bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300"
+                                        disabled={logoUploading}
+                                    >
+                                        {logoUploading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Uploading...
+                                        </>
+                                        ) : (
+                                        <>
+                                            <Upload className="w-4 h-4 mr-2" />
+                                            {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                                        </>
+                                        )}
+                                    </Button>
+                                    {logoPreview && (
+                                        <Button
+                                        type="button"
+                                        onClick={() => { handleInputChange('business_logo_url', ''); setLogoPreview(null); }}
+                                        variant="outline"
+                                        className="bg-red-900 border-red-700 text-red-300 hover:bg-red-800 hover:text-white hover:border-red-600"
+                                        >
+                                        Remove
+                                        </Button>
+                                    )}
+                                    </div>
+                                    <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/jpg"
+                                    className="hidden"
+                                    onChange={handleLogoUpload}
                                     />
-                                    <Label htmlFor={tool} className="text-sm text-slate-300">{tool}</Label>
+                                    <p className="text-slate-400 text-sm">Recommended: PNG with transparent background. Also accepts JPG/JPEG. Max 2MB</p>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        <Label className="text-white block mb-2">Damage Type Skills</Label>
-                        <div className="space-y-3">
-                            {DAMAGE_SKILL_TYPES.map(type => (
-                                <div key={type} className="grid grid-cols-2 items-center gap-4">
-                                    <Label className="text-sm text-slate-300">{type}</Label>
-                                    <Select value={getSkillLevel(type)} onValueChange={level => handleSkillLevelChange(type, level)}>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-white">Business Address</Label>
+                                <Textarea
+                                    value={formData.business_address}
+                                    onChange={(e) => handleInputChange('business_address', e.target.value)}
+                                    placeholder="123 Main Street&#10;City, Postcode&#10;United Kingdom"
+                                    rows={3}
+                                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-white">Contact Email</Label>
+                                <Input
+                                    type="email"
+                                    value={formData.contact_email}
+                                    onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                                    placeholder="contact@yourbusiness.co.uk"
+                                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Banking Details */}
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardHeader>
+                            <CardTitle className="text-white">Banking Details</CardTitle>
+                            <p className="text-slate-400 text-sm">For invoice payments (will appear on completed work invoices)</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-white">Account Name</Label>
+                                <Input value={formData.bank_account_name} onChange={e => handleInputChange('bank_account_name', e.target.value)} placeholder="Business Account Name" className="bg-slate-800 border-slate-700 text-white" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-white">Account Number</Label>
+                                    <Input value={formData.bank_account_number} onChange={e => handleInputChange('bank_account_number', e.target.value)} placeholder="12345678" className="bg-slate-800 border-slate-700 text-white" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-white">Sort Code</Label>
+                                    <Input value={formData.bank_sort_code} onChange={e => handleInputChange('bank_sort_code', e.target.value)} placeholder="12-34-56" className="bg-slate-800 border-slate-700 text-white" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-white">IBAN (Optional)</Label>
+                                <Input value={formData.bank_iban} onChange={e => handleInputChange('bank_iban', e.target.value)} placeholder="GB29 NWBK 6016 1331 9268 19" className="bg-slate-800 border-slate-700 text-white" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-white">SWIFT/BIC Code (Optional)</Label>
+                                <Input value={formData.bank_swift_code} onChange={e => handleInputChange('bank_swift_code', e.target.value)} placeholder="NWBKGB2L" className="bg-slate-800 border-slate-700 text-white" />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Payment Integration Section */}
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-white">
+                                <CreditCard className="w-5 h-5 text-green-400" />
+                                Payment Integration
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="payment_provider" className="text-white">Payment Provider</Label>
+                                <Select
+                                    value={formData.payment_provider || 'None'}
+                                    onValueChange={(value) => handleInputChange('payment_provider', value)}
+                                >
+                                    <SelectTrigger id="payment_provider" className="bg-slate-800 border-slate-700 text-white">
+                                        <SelectValue placeholder="Select payment provider" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-800 border-slate-700">
+                                        <SelectItem value="None" className="text-white hover:bg-slate-700">None</SelectItem>
+                                        <SelectItem value="Stripe" className="text-white hover:bg-slate-700">Stripe</SelectItem>
+                                        <SelectItem value="Square" className="text-white hover:bg-slate-700">Square</SelectItem>
+                                        <SelectItem value="PayPal" className="text-white hover:bg-slate-700">PayPal</SelectItem>
+                                        <SelectItem value="Other" className="text-white hover:bg-slate-700">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-slate-400">
+                                    Choose your preferred payment provider for customer invoices.
+                                </p>
+                            </div>
+
+                            {formData.payment_provider && formData.payment_provider !== 'None' && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="payment_link_template" className="text-white">Payment Link</Label>
+                                    <Input
+                                        id="payment_link_template"
+                                        value={formData.payment_link_template || ''}
+                                        onChange={(e) => handleInputChange('payment_link_template', e.target.value)}
+                                        placeholder="https://..."
+                                        className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                                    />
+                                    <div className="bg-slate-800 rounded-lg p-3 space-y-2">
+                                        <p className="text-xs text-slate-300 font-medium">How to get your payment link:</p>
+                                        {formData.payment_provider === 'Stripe' && (
+                                            <div className="text-xs text-slate-400 space-y-1">
+                                                <p>1. Log in to your Stripe Dashboard</p>
+                                                <p>2. Go to "Payment Links" in the left sidebar</p>
+                                                <p>3. Create a new payment link for your PDR services</p>
+                                                <p>4. Copy the shareable link and paste it here</p>
+                                                <p className="text-slate-500 italic mt-2">Example: https://buy.stripe.com/test_abc123</p>
+                                            </div>
+                                        )}
+                                        {formData.payment_provider === 'Square' && (
+                                            <div className="text-xs text-slate-400 space-y-1">
+                                                <p>1. Log in to your Square Dashboard</p>
+                                                <p>2. Go to "Online" → "Checkout"</p>
+                                                <p>3. Create a checkout link for your services</p>
+                                                <p>4. Copy the link and paste it here</p>
+                                                <p className="text-slate-500 italic mt-2">Example: https://square.link/u/abc123</p>
+                                            </div>
+                                        )}
+                                        {formData.payment_provider === 'PayPal' && (
+                                            <div className="text-xs text-slate-400 space-y-1">
+                                                <p>1. Set up PayPal.Me from your PayPal account</p>
+                                                <p>2. Your PayPal.Me link is your unique URL</p>
+                                                <p>3. Copy your PayPal.Me link and paste it here</p>
+                                                <p className="text-slate-500 italic mt-2">Example: https://paypal.me/yourbusiness</p>
+                                            </div>
+                                        )}
+                                        {formData.payment_provider === 'Other' && (
+                                            <div className="text-xs text-slate-400">
+                                                <p>Paste your payment link from your chosen provider.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Tab 2: Pricing & Quoting */}
+                <TabsContent value="pricing" className="space-y-6">
+                    {/* Pricing & Tax */}
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardHeader>
+                            <CardTitle className="text-white">Pricing & Tax</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-white">Hourly Rate</Label>
+                                    <Input type="number" value={formData.hourly_rate} onChange={e => handleInputChange('hourly_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-white">Base Cost / Call-out</Label>
+                                    <Input type="number" value={formData.base_cost} onChange={e => handleInputChange('base_cost', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-white">Default Panel Price</Label>
+                                <Input type="number" value={formData.default_panel_price} onChange={e => handleInputChange('default_panel_price', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                <p className="text-slate-400 text-xs">Used when "Charge Per Panel" option is selected during assessments</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-white">Currency</Label>
+                                    <Select value={formData.currency} onValueChange={value => handleInputChange('currency', value)}>
                                         <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
                                         <SelectContent className="bg-slate-800 border-slate-700">
-                                            {SKILL_LEVELS.map(level => <SelectItem key={level} value={level} className="text-white">{level}</SelectItem>)}
+                                            <SelectItem value="GBP" className="text-white">GBP (£)</SelectItem>
+                                            <SelectItem value="USD" className="text-white">USD ($)</SelectItem>
+                                            <SelectItem value="EUR" className="text-white">EUR (€)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        <Label className="text-white block mb-2">Primary Vehicle Types</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {VEHICLE_TYPES.map(type => (
-                                <div key={type} className="flex items-center space-x-2">
-                                    <Checkbox 
-                                        id={type} 
-                                        checked={formData.primary_vehicle_types.includes(type)} 
-                                        onCheckedChange={checked => handleArrayChange('primary_vehicle_types', type, checked)}
-                                        className="border-2 border-slate-600 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                                    />
-                                    <Label htmlFor={type} className="text-sm text-slate-300">{type}</Label>
+                            </div>
+                             <div className="flex items-center space-x-2">
+                                <Switch 
+                                    id="vat-registered" 
+                                    checked={formData.is_vat_registered} 
+                                    onCheckedChange={checked => handleInputChange('is_vat_registered', checked)}
+                                    className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-600"
+                                />
+                                <Label htmlFor="vat-registered" className="text-white">I am VAT/Tax registered</Label>
+                            </div>
+                            {formData.is_vat_registered && (
+                                 <div className="space-y-2">
+                                    <Label className="text-white">Tax Rate (%)</Label>
+                                    <Input type="number" value={formData.tax_rate} onChange={e => handleInputChange('tax_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Dentifier Settings (Admin Only) */}
-            {user?.role === 'admin' && (
-                <>
-                    <Card className="bg-slate-900 border-slate-800">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-white">
-                                <DentifierIcon className="w-5 h-5 text-rose-400" />
-                                Dentifier Analysis Instructions (Admin)
-                            </CardTitle>
-                            <p className="text-slate-400 text-sm">This prompt is used by Dentifier to analyse damage photos.</p>
-                        </CardHeader>
-                        <CardContent>
-                            <Textarea value={formData.llm_analysis_instructions} onChange={e => handleInputChange('llm_analysis_instructions', e.target.value)} className="bg-slate-800 border-slate-700 text-white h-64 font-mono text-xs" />
+                            )}
                         </CardContent>
                     </Card>
 
+                    {/* Pricing Matrix - NEW SECTION */}
+                    <PricingMatrix
+                        pricingMatrix={formData.pricing_matrix || []}
+                        customDamageTypes={formData.custom_damage_types || []}
+                        onChange={(matrix) => handleInputChange('pricing_matrix', matrix)}
+                        onCustomTypesChange={(types) => handleInputChange('custom_damage_types', types)}
+                        currency={formData.currency}
+                        worksOnAluminum={formData.works_on_aluminum_panels}
+                    />
+
+                    {/* Quote & Invoice Numbering */}
                     <Card className="bg-slate-900 border-slate-800">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-white">
-                                <DentifierIcon className="w-5 h-5 text-rose-400" />
-                                Dentifier Quoting Instructions (Admin)
-                            </CardTitle>
-                             <p className="text-slate-400 text-sm">This prompt tells Dentifier how to generate a quote from its analysis.</p>
+                            <CardTitle className="text-white">Quote & Invoice Numbering</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <Textarea value={formData.llm_quote_instructions} onChange={e => handleInputChange('llm_quote_instructions', e.target.value)} className="bg-slate-800 border-slate-700 text-white h-64 font-mono text-xs" />
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-white">Quote Prefix</Label>
+                                    <Input 
+                                        value={formData.quote_prefix} 
+                                        onChange={e => handleInputChange('quote_prefix', e.target.value)} 
+                                        placeholder="Q-"
+                                        className="bg-slate-800 border-slate-700 text-white" 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-white">Next Quote Number</Label>
+                                    <Input 
+                                        type="number" 
+                                        min="1"
+                                        value={formData.next_quote_number} 
+                                        onChange={e => handleInputChange('next_quote_number', parseInt(e.target.value) || 1)} 
+                                        className="bg-slate-800 border-slate-700 text-white" 
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-white">Invoice Prefix</Label>
+                                    <Input 
+                                        value={formData.invoice_prefix} 
+                                        onChange={e => handleInputChange('invoice_prefix', e.target.value)} 
+                                        placeholder="INV-"
+                                        className="bg-slate-800 border-slate-700 text-white" 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-white">Next Invoice Number</Label>
+                                    <Input 
+                                        type="number" 
+                                        min="1"
+                                        value={formData.next_invoice_number} 
+                                        onChange={e => handleInputChange('next_invoice_number', parseInt(e.target.value) || 1)} 
+                                        className="bg-slate-800 border-slate-700 text-white" 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="p-3 bg-slate-800 rounded-lg">
+                                <Label className="text-slate-400 text-xs">Your next invoice reference</Label>
+                                <p className="text-white font-medium mt-1">
+                                    {formData.invoice_prefix}{String(formData.next_invoice_number).padStart(4, '0')}
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-white">Invoice Footer</Label>
+                                <Textarea
+                                    value={formData.invoice_footer}
+                                    onChange={(e) => handleInputChange('invoice_footer', e.target.value)}
+                                    placeholder="Please pay within 30 days of receipt of invoice."
+                                    rows={3}
+                                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                                />
+                                <p className="text-slate-400 text-xs">This message will appear at the bottom of completed invoices</p>
+                            </div>
                         </CardContent>
                     </Card>
-                </>
-            )}
+                </TabsContent>
+
+                {/* Tab 3: Technician Details */}
+                <TabsContent value="technician" className="space-y-6">
+                    {/* Technician Profile */}
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-white"><Wrench className="w-5 h-5 text-blue-400" />Technician Profile</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="years-experience" className="text-white">Years of Experience</Label>
+                                <Input
+                                    id="years-experience"
+                                    type="number"
+                                    min="0"
+                                    value={formData.years_experience || ''}
+                                    onChange={(e) => handleInputChange('years_experience', parseFloat(e.target.value) || 0)}
+                                    className="bg-slate-800 border-slate-700 text-white"
+                                    placeholder="e.g., 5"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="max-dent-size" className="text-white">Maximum Dent Size You Work On</Label>
+                                <Select
+                                    value={formData.max_supported_dent_size || 'all sizes'}
+                                    onValueChange={(value) => handleInputChange('max_supported_dent_size', value)}
+                                >
+                                    <SelectTrigger id="max-dent-size" className="bg-slate-800 border-slate-700 text-white">
+                                        <SelectValue placeholder="Select maximum dent size" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-800 border-slate-700">
+                                        <SelectItem value="up to 10mm" className="text-white hover:bg-slate-700">Up to 10mm (Micro Dents)</SelectItem>
+                                        <SelectItem value="up to 25mm" className="text-white hover:bg-slate-700">Up to 25mm (Small Dents)</SelectItem>
+                                        <SelectItem value="up to 50mm" className="text-white hover:bg-slate-700">Up to 50mm (Medium Dents)</SelectItem>
+                                        <SelectItem value="up to 80mm" className="text-white hover:bg-slate-700">Up to 80mm (Medium-Large)</SelectItem>
+                                        <SelectItem value="up to 120mm" className="text-white hover:bg-slate-700">Up to 120mm (Large Dents)</SelectItem>
+                                        <SelectItem value="up to 200mm" className="text-white hover:bg-slate-700">Up to 200mm (Extra Large)</SelectItem>
+                                        <SelectItem value="up to 300mm" className="text-white hover:bg-slate-700">Up to 300mm (Giant Dents)</SelectItem>
+                                        <SelectItem value="up to 500mm" className="text-white hover:bg-slate-700">Up to 500mm (Super Dents)</SelectItem>
+                                        <SelectItem value="up to 750mm" className="text-white hover:bg-slate-700">Up to 750mm (Massive Dents)</SelectItem>
+                                        <SelectItem value="up to 1000mm" className="text-white hover:bg-slate-700">Up to 1000mm (Extreme Dents)</SelectItem>
+                                        <SelectItem value="all sizes" className="text-white hover:bg-slate-700">All Sizes (No Limit)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-slate-400 text-sm">
+                                    Dentifier will flag damage items exceeding this size for your review
+                                </p>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    id="aluminum-panels-checkbox" // Added ID for accessibility and label association
+                                    checked={formData.works_on_aluminum_panels || false}
+                                    onChange={(e) => handleInputChange('works_on_aluminum_panels', e.target.checked)}
+                                    className="w-4 h-4 rounded border-2 border-slate-600 bg-slate-800 text-green-600 focus:ring-green-500" // Added classes for styling
+                                />
+                                <Label htmlFor="aluminum-panels-checkbox" className="text-white">I work on aluminum panels</Label>
+                            </div>
+                            <div>
+                                <Label className="text-white block mb-2">Available PDR Tools</Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {PDR_TOOLS.map(tool => (
+                                        <div key={tool} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={tool} 
+                                                checked={formData.available_pdr_tools.includes(tool)} 
+                                                onCheckedChange={checked => handleArrayChange('available_pdr_tools', tool, checked)}
+                                                className="border-2 border-slate-600 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                            />
+                                            <Label htmlFor={tool} className="text-sm text-slate-300">{tool}</Label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <Label className="text-white block mb-2">Damage Type Skills</Label>
+                                <div className="space-y-3">
+                                    {DAMAGE_SKILL_TYPES.map(type => (
+                                        <div key={type} className="grid grid-cols-2 items-center gap-4">
+                                            <Label className="text-sm text-slate-300">{type}</Label>
+                                            <Select value={getSkillLevel(type)} onValueChange={level => handleSkillLevelChange(type, level)}>
+                                                <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
+                                                <SelectContent className="bg-slate-800 border-slate-700">
+                                                    {SKILL_LEVELS.map(level => <SelectItem key={level} value={level} className="text-white">{level}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <Label className="text-white block mb-2">Primary Vehicle Types</Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {VEHICLE_TYPES.map(type => (
+                                        <div key={type} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={type} 
+                                                checked={formData.primary_vehicle_types.includes(type)} 
+                                                onCheckedChange={checked => handleArrayChange('primary_vehicle_types', type, checked)}
+                                                className="border-2 border-slate-600 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                            />
+                                            <Label htmlFor={type} className="text-sm text-slate-300">{type}</Label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Tab 4: Admin (Only for admin users) */}
+                {user?.role === 'admin' && (
+                    <TabsContent value="admin" className="space-y-6">
+                        <Card className="bg-slate-900 border-slate-800">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-white">
+                                    <DentifierIcon className="w-5 h-5 text-rose-400" />
+                                    Dentifier Analysis Instructions (Admin)
+                                </CardTitle>
+                                <p className="text-slate-400 text-sm">This prompt is used by Dentifier to analyse damage photos.</p>
+                            </CardHeader>
+                            <CardContent>
+                                <Textarea value={formData.llm_analysis_instructions} onChange={e => handleInputChange('llm_analysis_instructions', e.target.value)} className="bg-slate-800 border-slate-700 text-white h-64 font-mono text-xs" />
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-slate-900 border-slate-800">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-white">
+                                    <DentifierIcon className="w-5 h-5 text-rose-400" />
+                                    Dentifier Quoting Instructions (Admin)
+                                </CardTitle>
+                                 <p className="text-slate-400 text-sm">This prompt tells Dentifier how to generate a quote from its analysis.</p>
+                            </CardHeader>
+                            <CardContent>
+                                <Textarea value={formData.llm_quote_instructions} onChange={e => handleInputChange('llm_quote_instructions', e.target.value)} className="bg-slate-800 border-slate-700 text-white h-64 font-mono text-xs" />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                )}
+            </Tabs>
             
             <Button onClick={handleSave} disabled={saving} className="w-full pink-gradient text-white font-semibold">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
