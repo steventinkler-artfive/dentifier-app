@@ -22,12 +22,9 @@ import {
   FileText,
   Mail,
   Phone,
-  Target,
   Check,
   CheckCircle,
   Share2,
-  Copy,
-  XCircle,
   Trash2,
   CheckCircle2,
   Edit,
@@ -35,14 +32,12 @@ import {
   Search,
   UserPlus,
   Plus,
-  Settings as SettingsIcon,
   Briefcase,
   Loader2,
-  CreditCard,
   ArrowRight,
   Calculator,
   Save,
-  Clock
+  Edit2
 } from "lucide-react";
 
 const DentifierIcon = ({ className = "" }) => (
@@ -91,6 +86,7 @@ export default function AssessmentDetail() {
   const [editingMultiVehicleDetails, setEditingMultiVehicleDetails] = useState(false);
   const [editedAssessmentName, setEditedAssessmentName] = useState("");
   const [editedDiscount, setEditedDiscount] = useState(0);
+  const [detailsTab, setDetailsTab] = useState("analysis");
 
   const openImageViewer = (index) => {
     setSelectedImageIndex(index);
@@ -124,10 +120,8 @@ export default function AssessmentDetail() {
           setEditedAssessmentName(foundAssessment.assessment_name || '');
           setEditedDiscount(foundAssessment.discount_percentage || 0);
         }
-        if (!foundAssessment.is_multi_vehicle) {
-          setIncludeNotesInQuote(foundAssessment.include_notes_in_quote ?? false);
-        }
-
+        
+        setIncludeNotesInQuote(foundAssessment.include_notes_in_quote ?? false);
         setAssessment(foundAssessment);
         setEditedNotes(foundAssessment.notes || '');
 
@@ -312,7 +306,10 @@ export default function AssessmentDetail() {
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await base44.entities.Assessment.update(assessment.id, { notes: editedNotes });
+      await base44.entities.Assessment.update(assessment.id, { 
+        notes: editedNotes,
+        include_notes_in_quote: includeNotesInQuote 
+      });
       await loadAssessmentDetails();
       setEditingNotes(false);
     } catch (error) {
@@ -320,6 +317,23 @@ export default function AssessmentDetail() {
       alert('Failed to save notes');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleToggleNotesInQuote = async () => {
+    if (!assessment) return;
+    const newValue = !includeNotesInQuote;
+    setIncludeNotesInQuote(newValue);
+    
+    try {
+      await base44.entities.Assessment.update(assessment.id, { 
+        include_notes_in_quote: newValue 
+      });
+      await loadAssessmentDetails();
+    } catch (error) {
+      console.error('Error updating notes setting:', error);
+      alert('Failed to update notes setting');
+      setIncludeNotesInQuote(!newValue);
     }
   };
 
@@ -341,11 +355,28 @@ export default function AssessmentDetail() {
     }
   };
 
-  const handleCopyLink = () => {
+  const handleShare = async () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Quote ${assessment.quote_number || assessment.invoice_number || assessment.id.slice(-6)}`,
+          text: `View quote for ${customer?.name || 'customer'}`,
+          url: url
+        });
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          navigator.clipboard.writeText(url);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const getCurrencySymbol = (currency) => {
@@ -436,25 +467,15 @@ export default function AssessmentDetail() {
             Back
           </Button>
         </Link>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleCopyLink}
-            className="text-slate-400 hover:text-white hover:bg-slate-800"
-          >
-            {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-          >
-            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+        >
+          {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+        </Button>
       </div>
 
       {/* Title Card */}
@@ -491,12 +512,21 @@ export default function AssessmentDetail() {
                   </SelectContent>
                 </Select>
               ) : (
-                <Badge
-                  className={`${getStatusColor(assessment.status)} cursor-pointer text-xs`}
-                  onClick={() => setEditingStatus(true)}
-                >
-                  {assessment.status}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    className={`${getStatusColor(assessment.status)} text-xs`}
+                  >
+                    {assessment.status}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditingStatus(true)}
+                    className="h-6 w-6 text-slate-400 hover:text-white"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </Button>
+                </div>
               )}
               
               {assessment.status === 'completed' && (
@@ -515,47 +545,217 @@ export default function AssessmentDetail() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Badge
-                    className={`${assessment.payment_status === 'paid' ? 'bg-green-600' : 'bg-yellow-600'} cursor-pointer text-xs`}
-                    onClick={() => setEditingPaymentStatus(true)}
-                  >
-                    {assessment.payment_status === 'paid' ? 'Paid' : 'Pending'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      className={`${assessment.payment_status === 'paid' ? 'bg-green-600' : 'bg-yellow-600'} text-xs`}
+                    >
+                      {assessment.payment_status === 'paid' ? 'Paid' : 'Pending'}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingPaymentStatus(true)}
+                      className="h-6 w-6 text-slate-400 hover:text-white"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 )
               )}
             </div>
           </div>
 
           {/* Total Amount */}
-          {assessment.quote_amount > 0 && (
-            <div className="pt-3 border-t border-slate-800">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">Total Amount</span>
-                <span className="text-2xl font-bold text-green-400">
-                  {formatCurrency(assessment.quote_amount, assessment.currency || 'GBP')}
-                </span>
-              </div>
+          <div className="pt-3 border-t border-slate-800">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-slate-400 text-sm">Total Quote Amount</span>
+              <span className="text-2xl font-bold text-green-400">
+                {formatCurrency(assessment.quote_amount || 0, assessment.currency || 'GBP')}
+              </span>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
+      {/* Action Buttons - Always Visible */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {assessment.status !== 'draft' && (
+          <Link 
+            to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
+            className="block"
+          >
+            <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+              <FileText className="w-4 h-4 mr-2" />
+              PDF Quote
+            </Button>
+          </Link>
+        )}
+        <Button
+          onClick={handleShare}
+          className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+        >
+          <Share2 className="w-4 h-4 mr-2" />
+          {copied ? 'Copied!' : 'Share'}
+        </Button>
+      </div>
+
+      {/* Quick Action Buttons */}
+      {assessment.status === 'draft' && currentLineItems.length === 0 && (
+        <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
+          <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold mb-4">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Quote Details
+          </Button>
+        </Link>
+      )}
+
+      {assessment.status === 'quoted' && (
+        <Button
+          onClick={() => handleStatusChange('approved')}
+          disabled={isUpdating}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold mb-4"
+        >
+          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+          Mark as Approved
+        </Button>
+      )}
+
+      {(assessment.status === 'approved' || assessment.status === 'quoted') && (
+        <Button
+          onClick={() => handleStatusChange('completed')}
+          disabled={isUpdating}
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold mb-4"
+        >
+          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+          Mark as Completed
+        </Button>
+      )}
+
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-slate-900 mb-4">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
-            Overview
-          </TabsTrigger>
+      <Tabs defaultValue="quote" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-4">
           <TabsTrigger value="quote" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
             Quote
           </TabsTrigger>
-          <TabsTrigger value="actions" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
-            Actions
+          <TabsTrigger value="details" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+            Details
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
+        {/* Quote Tab */}
+        <TabsContent value="quote" className="space-y-4">
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-white text-base">
+                  <FileText className="w-4 h-4 text-yellow-400" />
+                  Line Items
+                </CardTitle>
+                {currentLineItems.length > 0 && (
+                  <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
+                    <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1">
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="text-sm">
+              {currentLineItems.length > 0 ? (
+                <div className="space-y-3">
+                  {currentLineItems.map((item, index) => (
+                    <div key={index} className="p-3 bg-slate-800 rounded-lg">
+                      <p className="text-white font-medium mb-1 text-sm">{item.description}</p>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-400">
+                          {item.quantity} × {formatCurrency(item.unit_price, assessment.currency || 'GBP')}
+                        </span>
+                        <span className="text-white font-medium">
+                          {formatCurrency(item.total_price, assessment.currency || 'GBP')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-400 text-xs">No quote details available</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Notes Section in Quote Tab */}
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white text-base">Assessment Notes</CardTitle>
+                {!editingNotes && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingNotes(true)}
+                    className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1"
+                  >
+                    <Edit className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="text-sm space-y-3">
+              {editingNotes ? (
+                <div className="space-y-3">
+                  <Textarea
+                    value={editedNotes}
+                    onChange={(e) => setEditedNotes(e.target.value)}
+                    rows={4}
+                    placeholder="Add notes..."
+                    className="bg-slate-800 border-slate-700 text-white text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSaveNotes}
+                      disabled={isUpdating}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-sm"
+                    >
+                      {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                      Save
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditingNotes(false);
+                        setEditedNotes(assessment.notes || '');
+                      }}
+                      className="bg-slate-800 border-slate-700 text-white text-sm"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-slate-400 whitespace-pre-wrap text-xs">
+                    {assessment.notes || 'No notes added'}
+                  </p>
+                  <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                    <Label htmlFor="include-notes" className="text-white text-sm cursor-pointer">
+                      Include notes in PDF quote
+                    </Label>
+                    <Switch
+                      id="include-notes"
+                      checked={includeNotesInQuote}
+                      onCheckedChange={handleToggleNotesInQuote}
+                      className="data-[state=checked]:bg-green-600"
+                    />
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Details Tab */}
+        <TabsContent value="details" className="space-y-4">
           {/* Customer */}
           <Card className="bg-slate-900 border-slate-800">
             <CardHeader className="pb-3">
@@ -564,7 +764,17 @@ export default function AssessmentDetail() {
                   <UserIcon className="w-4 h-4 text-blue-400" />
                   Customer
                 </CardTitle>
-                {!customer && (
+                {customer ? (
+                  <Link to={createPageUrl("Customers")}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                ) : (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -691,10 +901,19 @@ export default function AssessmentDetail() {
           {!assessment.is_multi_vehicle && vehicle && (
             <Card className="bg-slate-900 border-slate-800">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-white text-base">
-                  <Car className="w-4 h-4 text-green-400" />
-                  Vehicle
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-white text-base">
+                    <Car className="w-4 h-4 text-green-400" />
+                    Vehicle
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1"
+                  >
+                    <Edit className="w-3 h-3" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="text-sm">
                 <div className="space-y-2">
@@ -850,272 +1069,121 @@ export default function AssessmentDetail() {
             </Card>
           )}
 
-          {/* Dentifier Analysis */}
-          {currentDamageAnalysis && (
+          {/* Dentifier Analysis & Calculation Breakdown Sub-Tabs */}
+          {(currentDamageAnalysis || (currentCalculationBreakdown && currentCalculationBreakdown.length > 0)) && (
             <Card className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-white text-base">
-                  <DentifierIcon className="w-4 h-4 text-rose-400" />
-                  Dentifier Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                {currentDamageAnalysis.damage_report && (
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-slate-400 text-xs">Panel</p>
-                      <p className="text-white text-sm">
-                        {currentDamageAnalysis.damage_report.vehicle_panel || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-xs">Location</p>
-                      <p className="text-white text-sm">
-                        {currentDamageAnalysis.damage_report.dent_location || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-xs">Count</p>
-                      <p className="text-white text-sm">
-                        {currentDamageAnalysis.damage_report.dent_count || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-xs">Summary</p>
-                      <p className="text-white text-sm">
-                        {currentDamageAnalysis.damage_report.dent_summary || 'N/A'}
-                      </p>
-                    </div>
-                    {currentDamageAnalysis.damage_report.dent_details && (
-                      <div className="space-y-2 pt-2 border-t border-slate-700">
-                        {currentDamageAnalysis.damage_report.dent_details.size_range && (
-                          <div>
-                            <p className="text-slate-400 text-xs">Size Range</p>
-                            <p className="text-white text-sm">
-                              {currentDamageAnalysis.damage_report.dent_details.size_range}
-                            </p>
+              <CardContent className="p-0">
+                <Tabs value={detailsTab} onValueChange={setDetailsTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-slate-800 rounded-b-none">
+                    <TabsTrigger 
+                      value="analysis" 
+                      className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-xs"
+                    >
+                      <DentifierIcon className="w-3 h-3 mr-1" />
+                      Analysis
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="breakdown" 
+                      className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-xs"
+                    >
+                      <Calculator className="w-3 h-3 mr-1" />
+                      Breakdown
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="analysis" className="p-4 space-y-3 text-sm">
+                    {currentDamageAnalysis ? (
+                      <>
+                        {currentDamageAnalysis.damage_report && (
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-slate-400 text-xs">Panel</p>
+                              <p className="text-white text-sm">
+                                {currentDamageAnalysis.damage_report.vehicle_panel || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-slate-400 text-xs">Location</p>
+                              <p className="text-white text-sm">
+                                {currentDamageAnalysis.damage_report.dent_location || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-slate-400 text-xs">Count</p>
+                              <p className="text-white text-sm">
+                                {currentDamageAnalysis.damage_report.dent_count || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-slate-400 text-xs">Summary</p>
+                              <p className="text-white text-sm">
+                                {currentDamageAnalysis.damage_report.dent_summary || 'N/A'}
+                              </p>
+                            </div>
+                            {currentDamageAnalysis.damage_report.dent_details && (
+                              <div className="space-y-2 pt-2 border-t border-slate-700">
+                                {currentDamageAnalysis.damage_report.dent_details.size_range && (
+                                  <div>
+                                    <p className="text-slate-400 text-xs">Size Range</p>
+                                    <p className="text-white text-sm">
+                                      {currentDamageAnalysis.damage_report.dent_details.size_range}
+                                    </p>
+                                  </div>
+                                )}
+                                {currentDamageAnalysis.damage_report.dent_details.depth && (
+                                  <div>
+                                    <p className="text-slate-400 text-xs">Depth</p>
+                                    <p className="text-white text-sm">
+                                      {currentDamageAnalysis.damage_report.dent_details.depth}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
-                        {currentDamageAnalysis.damage_report.dent_details.depth && (
-                          <div>
-                            <p className="text-slate-400 text-xs">Depth</p>
+                        {currentDamageAnalysis.confidence_assessment && (
+                          <div className="p-3 bg-slate-800 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-slate-400 text-xs">Confidence</p>
+                              <Badge className="bg-blue-600 text-xs">
+                                {currentDamageAnalysis.confidence_assessment.quote_confidence}/5
+                              </Badge>
+                            </div>
+                            <p className="text-slate-400 text-xs">Suitability</p>
                             <p className="text-white text-sm">
-                              {currentDamageAnalysis.damage_report.dent_details.depth}
+                              {currentDamageAnalysis.confidence_assessment.repair_suitability || 'N/A'}
                             </p>
+                            {currentDamageAnalysis.confidence_assessment.additional_notes && (
+                              <div className="mt-2">
+                                <p className="text-slate-400 text-xs">Notes</p>
+                                <p className="text-white text-xs">
+                                  {currentDamageAnalysis.confidence_assessment.additional_notes}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
+                      </>
+                    ) : (
+                      <p className="text-slate-400 text-xs">No analysis available</p>
                     )}
-                  </div>
-                )}
-                {currentDamageAnalysis.confidence_assessment && (
-                  <div className="p-3 bg-slate-800 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-slate-400 text-xs">Confidence</p>
-                      <Badge className="bg-blue-600 text-xs">
-                        {currentDamageAnalysis.confidence_assessment.quote_confidence}/5
-                      </Badge>
-                    </div>
-                    <p className="text-slate-400 text-xs">Suitability</p>
-                    <p className="text-white text-sm">
-                      {currentDamageAnalysis.confidence_assessment.repair_suitability || 'N/A'}
-                    </p>
-                    {currentDamageAnalysis.confidence_assessment.additional_notes && (
-                      <div className="mt-2">
-                        <p className="text-slate-400 text-xs">Notes</p>
-                        <p className="text-white text-xs">
-                          {currentDamageAnalysis.confidence_assessment.additional_notes}
-                        </p>
-                      </div>
+                  </TabsContent>
+
+                  <TabsContent value="breakdown" className="p-4">
+                    {currentCalculationBreakdown && currentCalculationBreakdown.length > 0 ? (
+                      <CalculationBreakdown
+                        breakdownData={currentCalculationBreakdown}
+                        currency={assessment.currency || 'GBP'}
+                      />
+                    ) : (
+                      <p className="text-slate-400 text-xs">No calculation breakdown available</p>
                     )}
-                  </div>
-                )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           )}
-
-          {/* Notes */}
-          <Card className="bg-slate-900 border-slate-800">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white text-base">Notes</CardTitle>
-                {!editingNotes && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingNotes(true)}
-                    className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1"
-                  >
-                    <Edit className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="text-sm">
-              {editingNotes ? (
-                <div className="space-y-3">
-                  <Textarea
-                    value={editedNotes}
-                    onChange={(e) => setEditedNotes(e.target.value)}
-                    rows={4}
-                    placeholder="Add notes..."
-                    className="bg-slate-800 border-slate-700 text-white text-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSaveNotes}
-                      disabled={isUpdating}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-sm"
-                    >
-                      {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                      Save
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEditingNotes(false);
-                        setEditedNotes(assessment.notes || '');
-                      }}
-                      className="bg-slate-800 border-slate-700 text-white text-sm"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-slate-400 whitespace-pre-wrap text-xs">
-                  {assessment.notes || 'No notes added'}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Quote Tab */}
-        <TabsContent value="quote" className="space-y-4">
-          <Card className="bg-slate-900 border-slate-800">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-white text-base">
-                  <FileText className="w-4 h-4 text-yellow-400" />
-                  Line Items
-                </CardTitle>
-                {currentLineItems.length > 0 && (
-                  <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
-                    <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1">
-                      <Edit className="w-3 h-3 mr-1" />
-                      Edit
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="text-sm">
-              {currentLineItems.length > 0 ? (
-                <div className="space-y-3">
-                  {currentLineItems.map((item, index) => (
-                    <div key={index} className="p-3 bg-slate-800 rounded-lg">
-                      <p className="text-white font-medium mb-1 text-sm">{item.description}</p>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">
-                          {item.quantity} × {formatCurrency(item.unit_price, assessment.currency || 'GBP')}
-                        </span>
-                        <span className="text-white font-medium">
-                          {formatCurrency(item.total_price, assessment.currency || 'GBP')}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-slate-400 text-xs">No quote details available</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Calculation Breakdown */}
-          {currentCalculationBreakdown && currentCalculationBreakdown.length > 0 && (
-            <Card className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-white text-base">
-                  <Calculator className="w-4 h-4 text-cyan-400" />
-                  Calculation Breakdown
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CalculationBreakdown
-                  breakdownData={currentCalculationBreakdown}
-                  currency={assessment.currency || 'GBP'}
-                />
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Actions Tab */}
-        <TabsContent value="actions" className="space-y-3">
-          {assessment.status !== 'draft' && (
-            <Link 
-              to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
-              className="block"
-            >
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-                <FileText className="w-4 h-4 mr-2" />
-                View {assessment.status === 'completed' ? 'Invoice' : 'Quote'} PDF
-              </Button>
-            </Link>
-          )}
-
-          {assessment.status === 'draft' && currentLineItems.length === 0 && (
-            <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
-              <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Quote Details
-              </Button>
-            </Link>
-          )}
-
-          {assessment.status === 'quoted' && (
-            <Button
-              onClick={() => handleStatusChange('approved')}
-              disabled={isUpdating}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
-            >
-              {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-              Mark as Approved
-            </Button>
-          )}
-
-          {(assessment.status === 'approved' || assessment.status === 'quoted') && (
-            <Button
-              onClick={() => handleStatusChange('completed')}
-              disabled={isUpdating}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
-            >
-              {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-              Mark as Completed
-            </Button>
-          )}
-
-          <Card className="bg-slate-900 border-slate-800 mt-4">
-            <CardHeader>
-              <CardTitle className="text-white text-base">Quick Links</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link to={createPageUrl("Customers")}>
-                <Button variant="outline" className="w-full justify-start bg-slate-800 border-slate-700 text-white hover:bg-slate-700">
-                  <UserIcon className="w-4 h-4 mr-2" />
-                  Manage Customers
-                </Button>
-              </Link>
-              <Link to={createPageUrl("Quotes")}>
-                <Button variant="outline" className="w-full justify-start bg-slate-800 border-slate-700 text-white hover:bg-slate-700">
-                  <FileText className="w-4 h-4 mr-2" />
-                  View All Quotes
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
 
