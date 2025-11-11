@@ -53,17 +53,37 @@ export default function Dashboard() {
       }, {});
       setVehiclesMap(vehiclesMap);
 
+      // Get current month and year date ranges
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+
       // Filter assessments that are actual quotes (not drafts)
       const actualQuotes = assessmentsData.filter(a => a.status !== 'draft');
 
-      // Filter ALL completed assessments (not just this month)
-      const completedAssessments = assessmentsData.filter((a) => {
-        return a.status === 'completed' && (a.quote_amount || 0) > 0;
+      // Filter completed assessments from this month for revenue
+      const completedThisMonth = assessmentsData.filter((a) => {
+        const assessmentDate = new Date(a.created_date);
+        return a.status === 'completed' && 
+               assessmentDate >= monthStart && 
+               assessmentDate <= monthEnd &&
+               (a.quote_amount || 0) > 0;
       });
 
-      // Calculate revenue from all completed assessments
+      // Filter completed assessments from this year for average quote
+      const completedThisYear = assessmentsData.filter((a) => {
+        const assessmentDate = new Date(a.created_date);
+        return a.status === 'completed' && 
+               assessmentDate >= yearStart && 
+               assessmentDate <= yearEnd &&
+               (a.quote_amount || 0) > 0;
+      });
+
+      // Calculate revenue from this month
       const revenueByCurrency = {};
-      completedAssessments.forEach((assessment) => {
+      completedThisMonth.forEach((assessment) => {
         const currency = assessment.currency || 'GBP';
         const amount = assessment.quote_amount || 0;
 
@@ -79,12 +99,30 @@ export default function Dashboard() {
       { currency: 'GBP', amount: 0 }
       );
 
+      // Calculate average from this year
+      const avgRevenueByCurrency = {};
+      completedThisYear.forEach((assessment) => {
+        const currency = assessment.currency || 'GBP';
+        const amount = assessment.quote_amount || 0;
+
+        if (!avgRevenueByCurrency[currency]) {
+          avgRevenueByCurrency[currency] = 0;
+        }
+        avgRevenueByCurrency[currency] += amount;
+      });
+
+      const avgRevenueInfo = Object.entries(avgRevenueByCurrency).
+      reduce((max, [currency, amount]) =>
+      amount > max.amount ? { currency, amount } : max,
+      { currency: 'GBP', amount: 0 }
+      );
+
       setStats({
         totalQuotes: actualQuotes.length,
         totalCustomers: customersData.length,
         totalRevenue: totalRevenueInfo.amount,
         currency: totalRevenueInfo.currency,
-        avgQuoteValue: completedAssessments.length > 0 ? totalRevenueInfo.amount / completedAssessments.length : 0
+        avgQuoteValue: completedThisYear.length > 0 ? avgRevenueInfo.amount / completedThisYear.length : 0
       });
 
       setRecentAppraisals(assessmentsData.slice(0, 5));
@@ -145,7 +183,7 @@ export default function Dashboard() {
     return assessment.quote_number || `#${assessment.id.slice(-6)}`;
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, linkTo }) => {
+  const StatCard = ({ title, value, icon: Icon, color, trend, linkTo }) => {
     const cardContent = (
       <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 h-full">
         <CardContent className="p-4 h-full">
@@ -153,6 +191,12 @@ export default function Dashboard() {
             <div>
               <p className="text-slate-400 text-sm font-medium">{title}</p>
               <p className="text-2xl font-bold text-white mt-1">{value}</p>
+              {trend &&
+            <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  {trend}
+                </p>
+            }
             </div>
             <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center flex-shrink-0`}>
               <Icon className="w-6 h-6 text-white" />
@@ -215,6 +259,7 @@ export default function Dashboard() {
             value={stats.totalQuotes}
             icon={FileText}
             color="bg-gradient-to-br from-purple-500 to-purple-600"
+            trend="+12% this week"
             linkTo={createPageUrl("Quotes")} />
 
           <StatCard
@@ -222,6 +267,7 @@ export default function Dashboard() {
             value={stats.totalCustomers}
             icon={Users}
             color="bg-gradient-to-br from-blue-500 to-blue-600"
+            trend="All customers"
             linkTo={createPageUrl("Customers")} />
 
           <StatCard
@@ -229,6 +275,7 @@ export default function Dashboard() {
             value={formatCurrency(stats.totalRevenue, stats.currency)}
             icon={Coins}
             color="bg-gradient-to-br from-green-500 to-green-600"
+            trend="+8% this month"
             linkTo={createPageUrl("Reports")} />
 
           <StatCard
@@ -236,6 +283,7 @@ export default function Dashboard() {
             value={formatCurrency(stats.avgQuoteValue, stats.currency)}
             icon={Clock}
             color="bg-gradient-to-br from-orange-500 to-orange-600"
+            trend="This year"
             linkTo={createPageUrl("Reports")} />
         </div>
       </div>
