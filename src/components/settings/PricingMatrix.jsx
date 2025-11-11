@@ -149,82 +149,83 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
           )}
 
           {/* Matrix Entries */}
-          <div className="space-y-3">
+          <div className="space-y-0 divide-y divide-slate-700">
             {pricingMatrix.map((entry, index) => (
-              <div key={index} className="grid grid-cols-12 gap-2 items-end bg-slate-800 p-3 rounded-lg">
-                <div className="col-span-4 space-y-1">
-                  <Label className="text-slate-400 text-xs">Damage Type</Label>
-                  <Select
-                    value={entry.damage_type}
-                    onValueChange={(value) => {
-                      if (value === "__add_custom__") {
-                        setIsAddingCustomType(true);
-                      } else {
-                        handleUpdateEntry(index, 'damage_type', value);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="bg-slate-900 border-slate-700 text-white h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      {allDamageTypes.map(type => (
-                        <SelectItem key={type} value={type} className="text-white hover:bg-slate-700">
-                          {type}
+              <div key={index} className="py-4 first:pt-0">
+                <div className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-5 space-y-1">
+                    <Label className="text-slate-400 text-xs">Damage Type</Label>
+                    <Select
+                      value={entry.damage_type}
+                      onValueChange={(value) => {
+                        if (value === "__add_custom__") {
+                          setIsAddingCustomType(true);
+                        } else {
+                          handleUpdateEntry(index, 'damage_type', value);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        {allDamageTypes.map(type => (
+                          <SelectItem key={type} value={type} className="text-white hover:bg-slate-700">
+                            {type}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="__add_custom__" className="text-green-400 hover:bg-slate-700 border-t border-slate-600">
+                          + Add Custom Type
                         </SelectItem>
-                      ))}
-                      <SelectItem value="__add_custom__" className="text-green-400 hover:bg-slate-700 border-t border-slate-600">
-                        + Add Custom Type
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-4 space-y-1">
-                  <Label className="text-slate-400 text-xs">Size Range</Label>
-                  <Select
-                    value={entry.size_range}
-                    onValueChange={(value) => handleUpdateEntry(index, 'size_range', value)}
-                  >
-                    <SelectTrigger className="bg-slate-900 border-slate-700 text-white h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      {SIZE_RANGE_OPTIONS.map(range => (
-                        <SelectItem key={range} value={range} className="text-white hover:bg-slate-700">
-                          {range}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-3 space-y-1">
-                  <Label className="text-slate-400 text-xs">Price (Steel)</Label>
-                  <div className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                      {getCurrencySymbol(currency)}
-                    </span>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="5"
-                      value={entry.base_price}
-                      onChange={(e) => handleUpdateEntry(index, 'base_price', parseFloat(e.target.value) || 0)}
-                      className="bg-slate-900 border-slate-700 text-white pl-6 h-9"
-                    />
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
 
-                <div className="col-span-1 flex items-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveEntry(index)}
-                    className="h-9 w-9 p-0 hover:bg-red-900 text-slate-400 hover:text-red-300"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="col-span-4 space-y-1">
+                    <Label className="text-slate-400 text-xs">Size Range</Label>
+                    <Select
+                      value={entry.size_range}
+                      onValueChange={(value) => handleUpdateEntry(index, 'size_range', value)}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        {SIZE_RANGE_OPTIONS.map(range => (
+                          <SelectItem key={range} value={range} className="text-white hover:bg-slate-700">
+                            {range}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-slate-400 text-xs">Price</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveEntry(index)}
+                        className="h-5 w-5 p-0 hover:bg-red-900/20 text-slate-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+                        {getCurrencySymbol(currency)}
+                      </span>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="5"
+                        value={entry.base_price}
+                        onChange={(e) => handleUpdateEntry(index, 'base_price', parseFloat(e.target.value) || 0)}
+                        className="bg-slate-800 border-slate-700 text-white pl-6 h-9"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
