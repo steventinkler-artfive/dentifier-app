@@ -6,6 +6,7 @@ import QuotePDF from './pages/QuotePDF';
 import Settings from './pages/Settings';
 import EditQuote from './pages/EditQuote';
 import Reports from './pages/Reports';
+import AssessmentDetail from './pages/AssessmentDetail';
 import Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "Settings": Settings,
     "EditQuote": EditQuote,
     "Reports": Reports,
+    "AssessmentDetail": AssessmentDetail,
 }
 
 export const pagesConfig = {
