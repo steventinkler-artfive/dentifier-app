@@ -406,6 +406,19 @@ export default function AssessmentDetail() {
     }
   };
 
+  // Get the display reference number based on status
+  const getDisplayReference = () => {
+    if (!assessment) return '';
+    
+    // If status is completed, show invoice number (if exists), otherwise show quote number
+    if (assessment.status === 'completed') {
+      return assessment.invoice_number || assessment.quote_number || `Ref #${assessment.id.slice(-6)}`;
+    }
+    
+    // For all other statuses, show quote number (even if invoice_number exists)
+    return assessment.quote_number || `Ref #${assessment.id.slice(-6)}`;
+  };
+
   if (loading) {
     return (
       <div className="p-4 max-w-md mx-auto">
@@ -484,7 +497,7 @@ export default function AssessmentDetail() {
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
               <h1 className="text-xl font-bold text-white mb-1">
-                {assessment.invoice_number || assessment.quote_number || `Ref #${assessment.id.slice(-6)}`}
+                {getDisplayReference()}
               </h1>
               {assessment.is_multi_vehicle && assessment.assessment_name && (
                 <p className="text-slate-400 text-sm">{assessment.assessment_name}</p>
@@ -576,38 +589,6 @@ export default function AssessmentDetail() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Quick Action Buttons - Above Tabs */}
-      {assessment.status === 'draft' && currentLineItems.length === 0 && (
-        <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
-          <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold mb-4">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Quote Details
-          </Button>
-        </Link>
-      )}
-
-      {assessment.status === 'quoted' && (
-        <Button
-          onClick={() => handleStatusChange('approved')}
-          disabled={isUpdating}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold mb-4"
-        >
-          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-          Mark as Approved
-        </Button>
-      )}
-
-      {(assessment.status === 'approved' || assessment.status === 'quoted') && (
-        <Button
-          onClick={() => handleStatusChange('completed')}
-          disabled={isUpdating}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold mb-4"
-        >
-          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-          Mark as Completed
-        </Button>
-      )}
 
       {/* Tabs */}
       <Tabs defaultValue="quote" className="w-full">
@@ -732,25 +713,59 @@ export default function AssessmentDetail() {
           </Card>
 
           {/* Action Buttons - At Bottom of Quote Tab */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            {assessment.status !== 'draft' && (
-              <Link 
-                to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
-                className="block"
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              {assessment.status !== 'draft' && (
+                <Link 
+                  to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
+                  className="block"
+                >
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                    <FileText className="w-4 h-4 mr-2" />
+                    PDF Quote
+                  </Button>
+                </Link>
+              )}
+              <Button
+                onClick={handleShare}
+                className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
               >
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                  <FileText className="w-4 h-4 mr-2" />
-                  PDF Quote
+                <Share2 className="w-4 h-4 mr-2" />
+                {copied ? 'Copied!' : 'Share'}
+              </Button>
+            </div>
+
+            {/* Status Change Buttons */}
+            {assessment.status === 'draft' && currentLineItems.length === 0 && (
+              <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
+                <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Quote Details
                 </Button>
               </Link>
             )}
-            <Button
-              onClick={handleShare}
-              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              {copied ? 'Copied!' : 'Share'}
-            </Button>
+
+            {assessment.status === 'quoted' && (
+              <Button
+                onClick={() => handleStatusChange('approved')}
+                disabled={isUpdating}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+              >
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                Mark as Approved
+              </Button>
+            )}
+
+            {(assessment.status === 'approved' || assessment.status === 'quoted') && (
+              <Button
+                onClick={() => handleStatusChange('completed')}
+                disabled={isUpdating}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+              >
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                Mark as Completed
+              </Button>
+            )}
           </div>
         </TabsContent>
 
@@ -1186,25 +1201,59 @@ export default function AssessmentDetail() {
           )}
 
           {/* Action Buttons - At Bottom of Details Tab */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            {assessment.status !== 'draft' && (
-              <Link 
-                to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
-                className="block"
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              {assessment.status !== 'draft' && (
+                <Link 
+                  to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
+                  className="block"
+                >
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                    <FileText className="w-4 h-4 mr-2" />
+                    PDF Quote
+                  </Button>
+                </Link>
+              )}
+              <Button
+                onClick={handleShare}
+                className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
               >
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                  <FileText className="w-4 h-4 mr-2" />
-                  PDF Quote
+                <Share2 className="w-4 h-4 mr-2" />
+                {copied ? 'Copied!' : 'Share'}
+              </Button>
+            </div>
+
+            {/* Status Change Buttons */}
+            {assessment.status === 'draft' && currentLineItems.length === 0 && (
+              <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
+                <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Quote Details
                 </Button>
               </Link>
             )}
-            <Button
-              onClick={handleShare}
-              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              {copied ? 'Copied!' : 'Share'}
-            </Button>
+
+            {assessment.status === 'quoted' && (
+              <Button
+                onClick={() => handleStatusChange('approved')}
+                disabled={isUpdating}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+              >
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                Mark as Approved
+              </Button>
+            )}
+
+            {(assessment.status === 'approved' || assessment.status === 'quoted') && (
+              <Button
+                onClick={() => handleStatusChange('completed')}
+                disabled={isUpdating}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+              >
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                Mark as Completed
+              </Button>
+            )}
           </div>
         </TabsContent>
       </Tabs>
