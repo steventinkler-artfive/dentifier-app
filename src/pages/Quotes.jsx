@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Assessment, Customer, Vehicle } from "@/entities/all";
-import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,8 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   Calendar,
-  User, // Keep User for potential future use or if needed elsewhere
-  Car, // Keep Car for potential future use or if needed elsewhere
+  User,
+  Car,
   ArrowRight
 } from "lucide-react";
 
@@ -21,7 +20,7 @@ export default function Quotes() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  const navigate = useNavigate(); // Initialize useNavigate hook
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadQuotes();
@@ -101,6 +100,27 @@ export default function Quotes() {
     return 'N/A';
   };
 
+  // Get the display reference based on status - same logic as AssessmentDetail
+  const getDisplayReference = (assessment) => {
+    // If status is completed, show invoice number (if exists), otherwise show quote number
+    if (assessment.status === 'completed') {
+      if (assessment.invoice_number) {
+        return `Invoice: ${assessment.invoice_number}`;
+      } else if (assessment.quote_number) {
+        return `Quote: ${assessment.quote_number}`;
+      } else {
+        return `Ref: #${assessment.id.slice(-6)}`;
+      }
+    }
+    
+    // For all other statuses, show quote number (even if invoice_number exists)
+    if (assessment.quote_number) {
+      return `Quote: ${assessment.quote_number}`;
+    }
+    
+    return `Ref: #${assessment.id.slice(-6)}`;
+  };
+
   return (
     <div className="p-4 max-w-md mx-auto space-y-4">
       {/* Header */}
@@ -169,15 +189,8 @@ export default function Quotes() {
           filteredAssessments.map((assessment) => {
             const customer = customers[assessment.customer_id];
 
-            // Determine the display identifier (Invoice, Quote, or Ref)
-            let displayIdentifier = '';
-            if (assessment.invoice_number) {
-                displayIdentifier = `Invoice: ${assessment.invoice_number}`;
-            } else if (assessment.quote_number) {
-                displayIdentifier = `Quote: ${assessment.quote_number}`;
-            } else {
-                displayIdentifier = `Ref: #${assessment.id.slice(-6)}`;
-            }
+            // Use the new display reference logic
+            const displayIdentifier = getDisplayReference(assessment);
 
             // Determine customer display name
             const customerName = customer ? (customer.business_name || customer.name) : 'No Customer';
