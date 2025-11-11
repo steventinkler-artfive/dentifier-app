@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -151,7 +152,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
           {/* Matrix Entries */}
           <div className="space-y-0 divide-y divide-slate-700">
             {pricingMatrix.map((entry, index) => (
-              <div key={index} className="py-4 first:pt-0">
+              <div key={index} className="py-5 first:pt-0 last:pb-0">
                 <div className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-5 space-y-1">
                     <Label className="text-slate-400 text-xs">Damage Type</Label>
