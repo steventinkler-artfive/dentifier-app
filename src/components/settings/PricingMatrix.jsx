@@ -1,11 +1,20 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Trash2, AlertCircle, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 
 const CORE_DAMAGE_TYPES = ["Standard Dent", "Crease"];
 
@@ -22,10 +31,36 @@ const SIZE_RANGE_OPTIONS = [
   "751mm - 1000mm (or larger)"
 ];
 
+const DEFAULT_PRICING_MATRIX = [
+  // Standard Dent - All 10 size ranges
+  { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
+  { damage_type: "Standard Dent", size_range: "11mm - 25mm", base_price: 90 },
+  { damage_type: "Standard Dent", size_range: "26mm - 50mm", base_price: 120 },
+  { damage_type: "Standard Dent", size_range: "51mm - 80mm", base_price: 180 },
+  { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 },
+  { damage_type: "Standard Dent", size_range: "121mm - 200mm", base_price: 300 },
+  { damage_type: "Standard Dent", size_range: "201mm - 300mm", base_price: 360 },
+  { damage_type: "Standard Dent", size_range: "301mm - 500mm", base_price: 450 },
+  { damage_type: "Standard Dent", size_range: "501mm - 750mm", base_price: 550 },
+  { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
+  
+  // Crease - First 7 size ranges
+  { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 150 },
+  { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 220 },
+  { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 280 },
+  { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 350 },
+  { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 420 },
+  { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
+  { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 600 }
+];
+
 export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChange, onCustomTypesChange, currency, worksOnAluminum }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isAddingCustomType, setIsAddingCustomType] = useState(false);
   const [newCustomTypeName, setNewCustomTypeName] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState(null);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   const getCurrencySymbol = (curr) => {
     const symbols = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$' };
@@ -44,6 +79,8 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
   const handleRemoveEntry = (index) => {
     const updated = pricingMatrix.filter((_, i) => i !== index);
     onChange(updated);
+    setDeleteDialogOpen(false);
+    setEntryToDelete(null);
   };
 
   const handleUpdateEntry = (index, field, value) => {
@@ -85,6 +122,12 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
     onCustomTypesChange(updatedCustomTypes);
   };
 
+  const handleResetToDefaults = () => {
+    onChange(DEFAULT_PRICING_MATRIX);
+    onCustomTypesChange([]);
+    setResetDialogOpen(false);
+  };
+
   const allDamageTypes = [...CORE_DAMAGE_TYPES, ...customDamageTypes];
 
   return (
@@ -97,21 +140,34 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
           <CardTitle className="flex items-center gap-2 text-white">
             Pricing Matrix
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-slate-400 hover:text-white hover:bg-slate-700"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
-          >
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5" />
-            ) : (
-              <ChevronDown className="w-5 h-5" />
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-white hover:bg-slate-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                setResetDialogOpen(true);
+              }}
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-white hover:bg-slate-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+            >
+              {isExpanded ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </Button>
+          </div>
         </div>
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 mt-2">
           <div className="flex items-start gap-2">
@@ -207,7 +263,10 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemoveEntry(index)}
+                        onClick={() => {
+                          setEntryToDelete(index);
+                          setDeleteDialogOpen(true);
+                        }}
                         className="h-5 w-5 p-0 hover:bg-red-900/20 text-slate-400 hover:text-red-300"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -286,6 +345,52 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
           </div>
         </CardContent>
       )}
+
+      {/* Delete Entry Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-slate-900 border-slate-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Are you sure you want to delete this pricing entry? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleRemoveEntry(entryToDelete)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset to Defaults Confirmation Dialog */}
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent className="bg-slate-900 border-slate-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Reset Pricing Matrix?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Are you sure you want to reset the pricing matrix to its default settings? This will delete all custom damage types you've created and remove all current pricing entries, reverting to the original 'Standard Dent' and 'Crease' types with their default size ranges and prices. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetToDefaults}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Reset
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
