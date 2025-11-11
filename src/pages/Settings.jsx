@@ -700,69 +700,7 @@ export default function Settings() {
 
                 {/* Tab 2: Pricing & Quoting */}
                 <TabsContent value="pricing" className="space-y-6">
-                    {/* Pricing & Tax */}
-                    <Card className="bg-slate-900 border-slate-800">
-                        <CardHeader>
-                            <CardTitle className="text-white">Pricing & Tax</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-white">Hourly Rate</Label>
-                                    <Input type="number" value={formData.hourly_rate} onChange={e => handleInputChange('hourly_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-white">Base Cost / Call-out</Label>
-                                    <Input type="number" value={formData.base_cost} onChange={e => handleInputChange('base_cost', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-white">Default Panel Price</Label>
-                                <Input type="number" value={formData.default_panel_price} onChange={e => handleInputChange('default_panel_price', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
-                                <p className="text-slate-400 text-xs">Used when "Charge Per Panel" option is selected during assessments</p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-white">Currency</Label>
-                                    <Select value={formData.currency} onValueChange={value => handleInputChange('currency', value)}>
-                                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
-                                        <SelectContent className="bg-slate-800 border-slate-700">
-                                            <SelectItem value="GBP" className="text-white">GBP (£)</SelectItem>
-                                            <SelectItem value="USD" className="text-white">USD ($)</SelectItem>
-                                            <SelectItem value="EUR" className="text-white">EUR (€)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                             <div className="flex items-center space-x-2">
-                                <Switch 
-                                    id="vat-registered" 
-                                    checked={formData.is_vat_registered} 
-                                    onCheckedChange={checked => handleInputChange('is_vat_registered', checked)}
-                                    className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-600"
-                                />
-                                <Label htmlFor="vat-registered" className="text-white">I am VAT/Tax registered</Label>
-                            </div>
-                            {formData.is_vat_registered && (
-                                 <div className="space-y-2">
-                                    <Label className="text-white">Tax Rate (%)</Label>
-                                    <Input type="number" value={formData.tax_rate} onChange={e => handleInputChange('tax_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Pricing Matrix - NEW SECTION */}
-                    <PricingMatrix
-                        pricingMatrix={formData.pricing_matrix || []}
-                        customDamageTypes={formData.custom_damage_types || []}
-                        onChange={(matrix) => handleInputChange('pricing_matrix', matrix)}
-                        onCustomTypesChange={(types) => handleInputChange('custom_damage_types', types)}
-                        currency={formData.currency}
-                        worksOnAluminum={formData.works_on_aluminum_panels}
-                    />
-
-                    {/* Quote & Invoice Numbering */}
+                    {/* Quote & Invoice Numbering - MOVED TO TOP */}
                     <Card className="bg-slate-900 border-slate-800">
                         <CardHeader>
                             <CardTitle className="text-white">Quote & Invoice Numbering</CardTitle>
@@ -832,6 +770,68 @@ export default function Settings() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Pricing & Tax */}
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardHeader>
+                            <CardTitle className="text-white">Pricing & Tax</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-white">Hourly Rate</Label>
+                                    <Input type="number" value={formData.hourly_rate} onChange={e => handleInputChange('hourly_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-white">Base Cost / Call-out</Label>
+                                    <Input type="number" value={formData.base_cost} onChange={e => handleInputChange('base_cost', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-white">Default Panel Price</Label>
+                                <Input type="number" value={formData.default_panel_price} onChange={e => handleInputChange('default_panel_price', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                <p className="text-slate-400 text-xs">Used when "Charge Per Panel" option is selected during assessments</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-white">Currency</Label>
+                                    <Select value={formData.currency} onValueChange={value => handleInputChange('currency', value)}>
+                                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
+                                        <SelectContent className="bg-slate-800 border-slate-700">
+                                            <SelectItem value="GBP" className="text-white">GBP (£)</SelectItem>
+                                            <SelectItem value="USD" className="text-white">USD ($)</SelectItem>
+                                            <SelectItem value="EUR" className="text-white">EUR (€)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                             <div className="flex items-center space-x-2">
+                                <Switch 
+                                    id="vat-registered" 
+                                    checked={formData.is_vat_registered} 
+                                    onCheckedChange={checked => handleInputChange('is_vat_registered', checked)}
+                                    className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-600"
+                                />
+                                <Label htmlFor="vat-registered" className="text-white">I am VAT/Tax registered</Label>
+                            </div>
+                            {formData.is_vat_registered && (
+                                 <div className="space-y-2">
+                                    <Label className="text-white">Tax Rate (%)</Label>
+                                    <Input type="number" value={formData.tax_rate} onChange={e => handleInputChange('tax_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Pricing Matrix */}
+                    <PricingMatrix
+                        pricingMatrix={formData.pricing_matrix || []}
+                        customDamageTypes={formData.custom_damage_types || []}
+                        onChange={(matrix) => handleInputChange('pricing_matrix', matrix)}
+                        onCustomTypesChange={(types) => handleInputChange('custom_damage_types', types)}
+                        currency={formData.currency}
+                        worksOnAluminum={formData.works_on_aluminum_panels}
+                    />
                 </TabsContent>
 
                 {/* Tab 3: Technician Details */}
