@@ -577,29 +577,7 @@ export default function AssessmentDetail() {
         </CardContent>
       </Card>
 
-      {/* Action Buttons - Always Visible */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        {assessment.status !== 'draft' && (
-          <Link 
-            to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
-            className="block"
-          >
-            <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-              <FileText className="w-4 h-4 mr-2" />
-              PDF Quote
-            </Button>
-          </Link>
-        )}
-        <Button
-          onClick={handleShare}
-          className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          {copied ? 'Copied!' : 'Share'}
-        </Button>
-      </div>
-
-      {/* Quick Action Buttons */}
+      {/* Quick Action Buttons - Above Tabs */}
       {assessment.status === 'draft' && currentLineItems.length === 0 && (
         <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
           <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold mb-4">
@@ -752,6 +730,28 @@ export default function AssessmentDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* Action Buttons - At Bottom of Quote Tab */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            {assessment.status !== 'draft' && (
+              <Link 
+                to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
+                className="block"
+              >
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDF Quote
+                </Button>
+              </Link>
+            )}
+            <Button
+              onClick={handleShare}
+              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              {copied ? 'Copied!' : 'Share'}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Details Tab */}
@@ -1184,6 +1184,28 @@ export default function AssessmentDetail() {
               </CardContent>
             </Card>
           )}
+
+          {/* Action Buttons - At Bottom of Details Tab */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            {assessment.status !== 'draft' && (
+              <Link 
+                to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
+                className="block"
+              >
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDF Quote
+                </Button>
+              </Link>
+            )}
+            <Button
+              onClick={handleShare}
+              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              {copied ? 'Copied!' : 'Share'}
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
 
