@@ -973,7 +973,7 @@ export default function QuoteGeneration({
                   <>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Another Vehicle
-                  </</>
+                  </>
                 )}
               </Button>
 
@@ -1005,11 +1005,6 @@ export default function QuoteGeneration({
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Saving...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Save Assessment
                 </</>
               )}
             </Button>
