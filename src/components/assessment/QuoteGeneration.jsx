@@ -894,49 +894,25 @@ export default function QuoteGeneration({
           {!isPerPanelPricing && calculationBreakdown.length > 0 && (
             <div className="space-y-3 border-t border-slate-600 pt-4">
               <Label className="text-white text-lg font-semibold">Technical Pricing Breakdown</Label>
-              <p className="text-slate-400 text-sm mb-2">This section details how each damage item's price was calculated programmatically. The "Final Customer Price" is the amount shown to the customer, while "Estimated Tech Hours" are for internal reference based on your hourly rate.</p>
+              <p className="text-slate-400 text-sm mb-2">Details of programmatic calculation</p>
               {calculationBreakdown.map((breakdown, idx) => (
                 <Card key={idx} className="bg-slate-700 border-slate-600 text-white">
                   <CardHeader className="py-3 px-4">
                     <CardTitle className="text-base font-medium flex justify-between items-center">
-                      <span>{breakdown.panel} - {breakdown.damageType || 'Custom/Fallback'} {breakdown.isEstimate && <span className="text-orange-300 text-xs">(Estimated)</span>}</span>
-                      <span className="text-green-300 text-lg">{breakdown.totalPrice?.toFixed(2) !== undefined ? getCurrencySymbol() + breakdown.totalPrice.toFixed(2) : ''}</span>
+                      <span>{breakdown.panel} - {breakdown.damageType || 'Fallback'}</span>
+                      <span className="text-green-300 text-lg">{getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2) || '0.00'}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-sm p-4 pt-0 space-y-2">
                     {breakdown.error || breakdown.fallbackUsed ? (
                       <p className="text-red-300">
                         <AlertTriangle className="inline-block w-4 h-4 mr-1" />
-                        Error calculating: {breakdown.error || 'Fallback pricing used.'}
-                        {breakdown.fallbackReason && ` (${breakdown.fallbackReason})`}
+                        {breakdown.error || 'Fallback pricing used.'}
                       </p>
                     ) : (
                       <>
-                        <p><span className="font-semibold">Details:</span> {breakdown.damageType}, {breakdown.sizeRange}, {breakdown.depth}, {breakdown.material}</p>
-                        <p><span className="font-semibold">Repair Method:</span> {breakdown.repairMethod}</p>
                         <p><span className="font-semibold">Matrix Base:</span> {breakdown.matrixEntry?.damage_type} - {breakdown.matrixEntry?.size_range} ({getCurrencySymbol()}{breakdown.matrixEntry?.base_price?.toFixed(2)})</p>
-                        {breakdown.fallbackReason && <p><span className="font-semibold">Estimation Method:</span> {breakdown.fallbackReason}</p>}
-                        <p><span className="font-semibold">Matrix Steel Base Price:</span> {getCurrencySymbol()}{breakdown.baseSteelPrice?.toFixed(2)}</p>
-                        {breakdown.material === "Aluminum" && breakdown.multipliers?.aluminum > 1 && (
-                            <p><span className="font-semibold">Aluminum Multiplier:</span> x{breakdown.multipliers.aluminum?.toFixed(2)}</p>
-                        )}
-                        <p><span className="font-semibold">Adjusted Base Price (pre-complexity):</span> {getCurrencySymbol()}{breakdown.basePrice?.toFixed(2)}</p>
-                        
-                        <div className="ml-2 mt-1 space-y-1">
-                          <p><span className="font-semibold">Complexity Multipliers:</span></p>
-                          <ul className="list-disc list-inside text-slate-300">
-                            <li>Repair Method: x{breakdown.multipliers?.repairMethod?.toFixed(2)}</li>
-                            <li>Depth ({breakdown.depth}): x{breakdown.multipliers?.depth?.toFixed(2)}</li>
-                            {breakdown.affectsBodyLine && <li>Body Line: x{breakdown.multipliers?.bodyLine?.toFixed(2)}</li>}
-                            {breakdown.hasStretchedMetal && <li>Stretched Metal: x{breakdown.multipliers?.stretchedMetal?.toFixed(2)}</li>}
-                            {breakdown.multipliers?.notes > 1 && <li>Notes-based: x{breakdown.multipliers?.notes?.toFixed(2)}</li>}
-                          </ul>
-                          <p><span className="font-semibold">Total Complexity Multiplier:</span> x{breakdown.multipliers?.totalComplexity?.toFixed(2)}</p>
-                        </div>
-                        <p><span className="font-semibold">Adjusted Price (before rounding):</span> {getCurrencySymbol()}{breakdown.adjustedPrice?.toFixed(2)}</p>
-                        <p><span className="font-semibold">Final Customer Price:</span> {getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2)}</p>
-                        <p><span className="font-semibold">Estimated Tech Hours:</span> {breakdown.estimatedHoursForTech?.toFixed(2)} hrs (at {getCurrencySymbol()}{breakdown.hourlyRate?.toFixed(2)}/hr)</p>
-                        <p><span className="font-semibold">Rounded Tech Hours:</span> {breakdown.roundedHoursForTech?.toFixed(1)} hrs</p>
+                        <p><span className="font-semibold">Final Price:</span> {getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2)}</p>
                       </>
                     )}
                   </CardContent>
@@ -944,7 +920,6 @@ export default function QuoteGeneration({
               ))}
             </div>
           )}
-
 
           <div className="space-y-2">
             <Label className="text-white">Notes</Label>
@@ -1005,7 +980,12 @@ export default function QuoteGeneration({
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Saving...
-                </</>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Save Assessment
+                </>
               )}
             </Button>
           )}
