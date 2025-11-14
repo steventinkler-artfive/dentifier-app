@@ -80,19 +80,19 @@ function extractNumericSize(sizeRange) {
  * Used for extrapolation in `lookupPricingMatrix`.
  */
 function calculateAverageIncrement(sortedEntries) {
-  if (sortedEntries.length < 2) return 0; // Return 0 if not enough data to calculate increment
+  if (sortedEntries.length < 2) return 0;
   
   const increments = [];
   for (let i = 1; i < sortedEntries.length; i++) {
     const sizeDiff = sortedEntries[i].sizeInMm - sortedEntries[i-1].sizeInMm;
-    const priceDiff = sortedEntries[i].base_price - sortedEntries[i-1].base_price;
+    // Changed from base_price to price as per normalization
+    const priceDiff = sortedEntries[i].price - sortedEntries[i-1].price;
     
-    if (sizeDiff > 0) { // Ensure positive size difference
+    if (sizeDiff > 0) {
       increments.push(priceDiff / sizeDiff);
     }
   }
   
-  // Return average of positive increments. If all are negative, return 0.
   const positiveIncrements = increments.filter(inc => inc >= 0);
   if (positiveIncrements.length === 0) return 0;
   
@@ -100,36 +100,66 @@ function calculateAverageIncrement(sortedEntries) {
 }
 
 /**
+ * Get the base price from a matrix entry, handling both old and new structures
+ * OLD: { steel_price, aluminum_price }
+ * NEW: { base_price }
+ */
+function getEntryBasePrice(entry, material) {
+  // New structure - single base_price field
+  if (entry.base_price !== undefined && entry.base_price !== null) {
+    return entry.base_price;
+  }
+  
+  // Old structure - separate steel_price and aluminum_price fields
+  if (material === "Aluminum" && entry.aluminum_price !== undefined && entry.aluminum_price !== null) {
+    return entry.aluminum_price;
+  }
+  
+  if (entry.steel_price !== undefined && entry.steel_price !== null) {
+    return entry.steel_price;
+  }
+  
+  return null;
+}
+
+/**
  * Lookup pricing from matrix with intelligent fallback
- * NOW USES: base_price (steel default) instead of steel_price/aluminum_price
- * Aluminum pricing is handled by applying 1.35x multiplier in main calculation
+ * HANDLES BOTH OLD AND NEW MATRIX STRUCTURES
  */
 function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hourlyRate) {
   console.log('🔍 MATRIX LOOKUP DEBUG:', {
-    lookingFor: { damageType, sizeRange },
+    lookingFor: { damageType, sizeRange, material },
     matrixLength: pricingMatrix.length,
-    matrixEntries: pricingMatrix.map(e => ({ 
-      type: e.damage_type, 
-      range: e.size_range, 
-      price: e.base_price 
+    matrixSample: pricingMatrix.slice(0, 2).map(e => ({
+      type: e.damage_type,
+      range: e.size_range,
+      base_price: e.base_price,
+      steel_price: e.steel_price,
+      aluminum_price: e.aluminum_price
     }))
   });
 
-  // Normalize strings for comparison (trim whitespace, consistent case)
   const normalizedDamageType = (damageType || '').trim();
   const normalizedSizeRange = (sizeRange || '').trim();
   
-  // Filter matrix for matching damage type, and ensure base_price is valid
+  // Filter matrix for matching damage type with valid price
   const typeEntries = pricingMatrix.filter(entry => {
     const entryType = (entry.damage_type || '').trim();
-    const match = entryType === normalizedDamageType && entry.base_price > 0;
-    console.log(`  Comparing "${entryType}" === "${normalizedDamageType}": ${match}, base_price: ${entry.base_price}`);
+    const basePrice = getEntryBasePrice(entry, material);
+    const match = entryType === normalizedDamageType && basePrice > 0;
+    console.log(`  Comparing "${entryType}" === "${normalizedDamageType}": ${match}, price: ${basePrice}`);
     return match;
   });
   
-  console.log(`  Found ${typeEntries.length} entries for damage type "${normalizedDamageType}"`);
+  // Normalize entries to use consistent 'price' field
+  const normalizedTypeEntries = typeEntries.map(entry => ({
+    ...entry,
+    price: getEntryBasePrice(entry, material)
+  }));
   
-  if (typeEntries.length === 0) {
+  console.log(`  Found ${normalizedTypeEntries.length} entries for damage type "${normalizedDamageType}"`);
+  
+  if (normalizedTypeEntries.length === 0) {
     console.log('  ❌ NO MATCH: No valid entries for this damage type');
     return {
       price: hourlyRate * 2,
@@ -143,19 +173,23 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
     };
   }
   
-  // Look for exact match with normalized strings
-  const exactMatch = typeEntries.find(entry => {
+  // Look for exact match
+  const exactMatch = normalizedTypeEntries.find(entry => {
     const entryRange = (entry.size_range || '').trim();
     const match = entryRange === normalizedSizeRange;
-    console.log(`  Size range "${entryRange}" === "${normalizedSizeRange}": ${match}, base_price: ${entry.base_price}`);
+    console.log(`  Size range "${entryRange}" === "${normalizedSizeRange}": ${match}, price: ${entry.price}`);
     return match;
   });
   
   if (exactMatch) {
-    console.log(`  ✅ EXACT MATCH FOUND: ${exactMatch.damage_type} ${exactMatch.size_range} = £${exactMatch.base_price}`);
+    console.log(`  ✅ EXACT MATCH FOUND: ${exactMatch.damage_type} ${exactMatch.size_range} = £${exactMatch.price}`);
     return {
-      price: exactMatch.base_price,
-      matrixEntry: exactMatch,
+      price: exactMatch.price,
+      matrixEntry: {
+        damage_type: exactMatch.damage_type,
+        size_range: exactMatch.size_range,
+        base_price: exactMatch.price // Ensure matrixEntry returns base_price for consistency
+      },
       isEstimate: false
     };
   }
@@ -165,8 +199,8 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   // No exact match - use interpolation/extrapolation
   const requestedNumericSize = extractNumericSize(sizeRange);
   
-  // Sort entries by size for interpolation
-  const sortedEntries = typeEntries
+  // Sort entries by size
+  const sortedEntries = normalizedTypeEntries
     .map(entry => ({
       ...entry,
       sizeInMm: extractNumericSize(entry.size_range)
@@ -188,13 +222,13 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   }
   
   if (lowerEntry && upperEntry && lowerEntry.sizeInMm !== upperEntry.sizeInMm) {
-    // Interpolate between two points
+    // Interpolate
     const sizeDiff = upperEntry.sizeInMm - lowerEntry.sizeInMm;
-    const priceDiff = upperEntry.base_price - lowerEntry.base_price;
+    const priceDiff = upperEntry.price - lowerEntry.price; // Use .price
     const sizeOffset = requestedNumericSize - lowerEntry.sizeInMm;
-    const interpolatedPrice = lowerEntry.base_price + (priceDiff * sizeOffset / sizeDiff);
+    const interpolatedPrice = lowerEntry.price + (priceDiff * sizeOffset / sizeDiff); // Use .price
     
-    console.log(`  📊 INTERPOLATED: £${interpolatedPrice.toFixed(2)} (between ${lowerEntry.size_range} and ${upperEntry.size_range})`);
+    console.log(`  📊 INTERPOLATED: £${interpolatedPrice.toFixed(2)}`);
     
     return {
       price: Math.max(50, Math.round(interpolatedPrice / 5) * 5),
@@ -209,19 +243,19 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   }
   
   if (lowerEntry && !upperEntry) {
-    // Extrapolate upward using average increment from existing data
+    // Extrapolate upward
     const avgIncrement = calculateAverageIncrement(sortedEntries);
     const sizeDiff = requestedNumericSize - lowerEntry.sizeInMm;
-    const extrapolatedPrice = lowerEntry.base_price + (avgIncrement * sizeDiff);
+    const extrapolatedPrice = lowerEntry.price + (avgIncrement * sizeDiff); // Use .price
     
-    console.log(`  📈 EXTRAPOLATED UP: £${extrapolatedPrice.toFixed(2)} (from ${lowerEntry.size_range})`);
+    console.log(`  📈 EXTRAPOLATED UP: £${extrapolatedPrice.toFixed(2)}`);
     
     return {
-      price: Math.max(lowerEntry.base_price + 50, Math.round(extrapolatedPrice / 5) * 5),
+      price: Math.max(lowerEntry.price + 50, Math.round(extrapolatedPrice / 5) * 5), // Use .price
       matrixEntry: {
         damage_type: lowerEntry.damage_type,
         size_range: lowerEntry.size_range,
-        base_price: Math.max(lowerEntry.base_price + 50, Math.round(extrapolatedPrice / 5) * 5)
+        base_price: Math.max(lowerEntry.price + 50, Math.round(extrapolatedPrice / 5) * 5) // Use .price
       },
       isEstimate: true,
       fallbackReason: `Extrapolated up from ${lowerEntry.size_range}`
@@ -232,9 +266,9 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
     // Extrapolate downward
     const avgIncrement = calculateAverageIncrement(sortedEntries);
     const sizeDiff = upperEntry.sizeInMm - requestedNumericSize;
-    const extrapolatedPrice = upperEntry.base_price - (avgIncrement * sizeDiff);
+    const extrapolatedPrice = upperEntry.price - (avgIncrement * sizeDiff); // Use .price
     
-    console.log(`  📉 EXTRAPOLATED DOWN: £${extrapolatedPrice.toFixed(2)} (from ${upperEntry.size_range})`);
+    console.log(`  📉 EXTRAPOLATED DOWN: £${extrapolatedPrice.toFixed(2)}`);
     
     return {
       price: Math.max(hourlyRate * 0.5, 50, Math.round(extrapolatedPrice / 5) * 5),
@@ -248,14 +282,14 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
     };
   }
 
-  // Fallback for cases with only one data point or no clear lower/upper for specific damage type
+  // Single entry scaling
   if (sortedEntries.length === 1) {
     const point = sortedEntries[0];
     const sizeRatio = requestedNumericSize / point.sizeInMm;
-    const cappedRatio = Math.pow(sizeRatio, 0.7); // Dampened scaling
-    const scaledPrice = point.base_price * cappedRatio;
+    const cappedRatio = Math.pow(sizeRatio, 0.7);
+    const scaledPrice = point.price * cappedRatio; // Use .price
     
-    console.log(`  🔄 SCALED: £${scaledPrice.toFixed(2)} (from single entry ${point.size_range})`);
+    console.log(`  🔄 SCALED: £${scaledPrice.toFixed(2)}`);
     
     return {
       price: Math.max(50, Math.round(scaledPrice / 5) * 5),
@@ -269,8 +303,8 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
     };
   }
 
-  // Final fallback if nothing else worked
-  console.log('  ❌ FINAL FALLBACK: Using generic hourly rate calculation');
+  // Final fallback
+  console.log('  ❌ FINAL FALLBACK');
   return {
     price: hourlyRate * 2,
     matrixEntry: { 
@@ -286,21 +320,10 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
 
 /**
  * Master function: Calculates complete price for a single damage item
- * This is 100% programmatic - NO AI involvement
- * 
- * PRICING PHILOSOPHY:
- * - Matrix prices are MARKET RATES for steel (what customers pay)
- * - Aluminum is 1.35x steel price (applied as a modifier)
- * - Multipliers adjust the market rate for complexity
- * - Hours are calculated AFTER for tech reference only
- * - Customer sees fixed price, tech sees estimated time
- * 
- * Returns full breakdown for tech verification
  */
 function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
-  // STEP 1: Matrix Lookup (with intelligent fallback)
-  // This gives us the MARKET RATE for steel
-  const { price: baseSteelPrice, matrixEntry, isEstimate, fallbackReason } = lookupPricingMatrix(
+  // STEP 1: Matrix Lookup
+  const { price: baseMatrixPrice, matrixEntry, isEstimate, fallbackReason } = lookupPricingMatrix(
     pricingMatrix,
     damageItem.damage_type,
     damageItem.size_range,
@@ -308,20 +331,20 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
     hourlyRate
   );
   
-  // Ensure baseSteelPrice is not zero or negative
-  const safeBaseSteelPrice = Math.max(baseSteelPrice, 50); // Minimum £50 for any repair
+  const safeBaseMatrixPrice = Math.max(baseMatrixPrice, 50);
   
-  // STEP 1.5: Apply Aluminum Modifier if needed (BEFORE other multipliers)
-  // Aluminum is 1.35x the steel price
-  const aluminumMultiplier = (damageItem.material === "Aluminum") ? 1.35 : 1.0;
-  const basePrice = safeBaseSteelPrice * aluminumMultiplier;
+  // STEP 1.5: Apply Aluminum Modifier if needed
+  // If the pricing matrix uses the new 'base_price' field, then the base price retrieved is for steel.
+  // In this case, we need to apply the aluminum multiplier.
+  // If the pricing matrix uses the old 'steel_price'/'aluminum_price' fields, then lookupPricingMatrix
+  // already returns the material-specific price, so no additional multiplier is needed here.
+  const usingNewStructure = pricingMatrix.length > 0 && pricingMatrix[0].base_price !== undefined;
+  const aluminumMultiplier = (damageItem.material === "Aluminum" && usingNewStructure) ? 1.35 : 1.0;
+  const basePrice = safeBaseMatrixPrice * aluminumMultiplier;
   
   // STEP 2: Calculate All Complexity Multipliers
-  
-  // 2A. Repair Method Multiplier (CONDITIONAL)
   const repairMethodMultiplier = calculateRepairMethodMultiplier(damageItem);
   
-  // 2B. Depth Multiplier (ALWAYS APPLIES)
   const depthMultiplier = {
     "Shallow": 1.0,
     "Medium": 1.25,
@@ -329,17 +352,13 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
     "Unsure": 1.2
   }[damageItem.depth] || 1.1;
   
-  // 2C. Body Line Multiplier (CONDITIONAL)
-  // If repair method already has high multiplier, reduce body line impact
   let bodyLineMultiplier = 1.0;
   if (damageItem.affects_body_line) {
     bodyLineMultiplier = (repairMethodMultiplier > 1.3) ? 1.1 : 1.2;
   }
   
-  // 2D. Stretched Metal Multiplier
   const stretchedMetalMultiplier = damageItem.has_stretched_metal ? 1.15 : 1.0;
   
-  // 2E. Notes-Based Multipliers (scan for keywords)
   let notesMultiplier = 1.0;
   const notes = (damageItem.notes || "").toLowerCase();
   
@@ -361,22 +380,17 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
     stretchedMetalMultiplier * 
     notesMultiplier;
   
-  // Cap the total complexity multiplier at 2.0x to prevent extreme pricing
   totalComplexityMultiplier = Math.min(totalComplexityMultiplier, 2.0);
   
-  // STEP 4: Apply Multipliers to PRICE (not hours)
-  // This is the market rate adjusted for complexity
+  // STEP 4: Apply Multipliers to PRICE
   const adjustedPrice = basePrice * totalComplexityMultiplier;
-  
-  // Round to nearest £5 for cleaner pricing
   const totalPrice = Math.round(adjustedPrice / 5) * 5;
   
-  // STEP 5: Calculate Estimated Hours for Tech Reference ONLY
-  // This tells the tech "based on your hourly rate, this job should take you X hours"
+  // STEP 5: Calculate Estimated Hours for Tech Reference
   const estimatedHoursForTech = totalPrice / hourlyRate;
-  const roundedHoursForTech = Math.round(estimatedHoursForTech * 2) / 2; // Round to nearest 0.5
+  const roundedHoursForTech = Math.round(estimatedHoursForTech * 2) / 2;
   
-  // STEP 6: Return Complete Result with Full Breakdown
+  // STEP 6: Return Complete Result
   return {
     damageType: damageItem.damage_type,
     panel: damageItem.panel,
@@ -389,11 +403,11 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
     notes: damageItem.notes,
     matrixEntry: matrixEntry,
     isEstimate: isEstimate,
-    fallbackReason: fallbackReason, // NEW: Include fallback reason
-    baseSteelPrice: safeBaseSteelPrice, // Steel price from matrix
-    aluminumMultiplier: aluminumMultiplier, // 1.35x if aluminum, 1.0 if steel
-    basePrice: basePrice, // After aluminum adjustment, before complexity
-    hourlyRate: hourlyRate, // Tech's reference rate
+    fallbackReason: fallbackReason,
+    baseSteelPrice: safeBaseMatrixPrice, // Now represents the price from matrix before aluminum multiplier (if new structure) or after (if old structure)
+    aluminumMultiplier: aluminumMultiplier,
+    basePrice: basePrice,
+    hourlyRate: hourlyRate,
     multipliers: {
       aluminum: aluminumMultiplier,
       repairMethod: repairMethodMultiplier,
@@ -403,10 +417,10 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
       notes: notesMultiplier,
       totalComplexity: totalComplexityMultiplier
     },
-    adjustedPrice: adjustedPrice, // Before rounding
-    totalPrice: totalPrice, // Final customer price (rounded)
-    estimatedHoursForTech: estimatedHoursForTech, // Raw calculation for reference
-    roundedHoursForTech: roundedHoursForTech // Rounded for display
+    adjustedPrice: adjustedPrice,
+    totalPrice: totalPrice,
+    estimatedHoursForTech: estimatedHoursForTech,
+    roundedHoursForTech: roundedHoursForTech
   };
 }
 
@@ -429,13 +443,13 @@ export default function QuoteGeneration({
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
   const [lineItems, setLineItems] = useState([]);
-  const [calculationBreakdown, setCalculationBreakdown] = useState([]); // NEW: Store calculation details
+  const [calculationBreakdown, setCalculationBreakdown] = useState([]);
   const [quoteAmount, setQuoteAmount] = useState(0);
   const [currency, setCurrency] = useState('GBP');
   const [notes, setNotes] = useState('');
   const [estimatedTime, setEstimatedTime] = useState(0);
   const [userSettings, setUserSettings] = useState(null);
-  const [error, setError] = useState(null); // Can be 'empty_matrix', 'partial_matrix', 'generation_failed'
+  const [error, setError] = useState(null);
   const [quoteGenerated, setQuoteGenerated] = useState(false);
 
   useEffect(() => {
@@ -462,11 +476,10 @@ export default function QuoteGeneration({
   }, []);
 
   useEffect(() => {
-    // Only generate if settings are loaded and not already generating/generated
     if (userSettings && !generating && !quoteGenerated) {
       generateQuote();
     }
-  }, [userSettings, generating, quoteGenerated]); // Add quoteGenerated to dependencies to re-run if it changes
+  }, [userSettings, generating, quoteGenerated]);
 
   useEffect(() => {
     const total = lineItems.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
@@ -481,10 +494,9 @@ export default function QuoteGeneration({
     }
 
     setGenerating(true);
-    setError(null); // Clear previous errors
+    setError(null);
 
     try {
-      // PER PANEL PRICING - Simplified Logic
       if (isPerPanelPricing) {
         const defaultPanelPrice = userSettings.default_panel_price || 120;
         const baseCost = userSettings.base_cost || 0;
@@ -506,7 +518,7 @@ export default function QuoteGeneration({
         }
 
         setLineItems(simpleLineItems);
-        setCalculationBreakdown([]); // No breakdown for per-panel pricing
+        setCalculationBreakdown([]);
         setEstimatedTime(damageItems.length * 2);
         setNotes('Per panel pricing applied.');
         setQuoteGenerated(true);
@@ -514,7 +526,6 @@ export default function QuoteGeneration({
         return;
       }
 
-      // DETAILED PRICING - 100% Programmatic Calculation
       const hourlyRate = userSettings.hourly_rate || 70;
       const baseCost = userSettings.base_cost || 0;
       const pricingMatrix = userSettings.pricing_matrix || [];
@@ -524,39 +535,32 @@ export default function QuoteGeneration({
       console.log('Damage Items:', damageItems);
       console.log('Hourly Rate:', hourlyRate);
 
-      // Calculate each damage item using PURE CODE (NO AI)
       const calculatedLineItems = [];
-      const breakdownDetails = []; // NEW: Store breakdown for each item
+      const breakdownDetails = [];
       let totalEstimatedHours = 0;
-      let hasEstimates = false; // Flag to track if any item used an estimation (kept for potential future use)
+      let hasEstimates = false;
 
       for (let i = 0; i < damageItems.length; i++) {
         const item = damageItems[i];
         
         try {
-          // PROGRAMMATIC CALCULATION (NO AI INVOLVEMENT)
           const calculation = calculateDamageItemPrice(item, hourlyRate, pricingMatrix);
           
           console.log(`Item ${i + 1} Calculation:`, calculation);
           
-          // Track if any estimates were used
           if (calculation.isEstimate) {
             hasEstimates = true;
           }
           
-          // Store the full breakdown for tech view
           breakdownDetails.push(calculation);
           
-          // Build description with size and depth
           let description = `PDR Labour - ${item.panel} ${item.damage_type} Repair (${item.size_range}`;
           
-          // Add depth if not Shallow
           if (item.depth && item.depth !== "Shallow") {
             description += `, ${item.depth}`;
           }
           description += `)`;
           
-          // Add modifiers
           if (item.affects_body_line) description += ' (Body Line Area)';
           if (item.has_stretched_metal) description += ' (Stretched Metal)';
           const itemNotesLower = (item.notes || "").toLowerCase(); 
@@ -566,17 +570,16 @@ export default function QuoteGeneration({
           
           calculatedLineItems.push({
             description: description,
-            quantity: calculation.roundedHoursForTech, // Use new field
+            quantity: calculation.roundedHoursForTech,
             unit_price: hourlyRate,
-            total_price: calculation.totalPrice // Use new field
+            total_price: calculation.totalPrice
           });
           
-          totalEstimatedHours += calculation.roundedHoursForTech; // Use new field
+          totalEstimatedHours += calculation.roundedHoursForTech;
           
         } catch (err) {
           console.error(`Error calculating item ${i + 1}:`, err);
-          // Fallback to basic pricing
-          const fallbackHours = 2; // Default fallback if individual item calculation fails
+          const fallbackHours = 2;
           calculatedLineItems.push({
             description: `PDR Labour - ${item.panel} Repair (Fallback)`,
             quantity: fallbackHours,
@@ -585,14 +588,13 @@ export default function QuoteGeneration({
           });
           totalEstimatedHours += fallbackHours;
           
-          // Add fallback breakdown entry
           breakdownDetails.push({
             panel: item.panel,
             damageType: item.damage_type,
             sizeRange: item.size_range,
             error: err.message,
             fallbackUsed: true,
-            isEstimate: true, // Treat any error fallback as an estimate
+            isEstimate: true,
             totalPrice: fallbackHours * hourlyRate,
             fallbackReason: "Individual item calculation failed."
           });
@@ -600,7 +602,6 @@ export default function QuoteGeneration({
         }
       }
 
-      // Add base cost if configured
       if (baseCost > 0) {
         calculatedLineItems.unshift({
           description: 'Base Cost / Call-out Fee',
@@ -611,12 +612,10 @@ export default function QuoteGeneration({
       }
 
       setLineItems(calculatedLineItems);
-      setCalculationBreakdown(breakdownDetails); // NEW: Store breakdown
+      setCalculationBreakdown(breakdownDetails);
       setEstimatedTime(totalEstimatedHours);
       setNotes('Quote calculated programmatically based on your pricing matrix and damage characteristics.');
       setQuoteGenerated(true);
-
-      // REMOVED: No more pricing advisories - they were causing false warnings
 
     } catch (err) {
       console.error('Error generating quote:', err);
@@ -725,7 +724,7 @@ export default function QuoteGeneration({
         currency,
         notes,
         estimatedTime: parseFloat(estimatedTime) || 0,
-        calculationBreakdown: calculationBreakdown // NEW: Include breakdown in saved data
+        calculationBreakdown: calculationBreakdown
       };
       await onFinalSave(quoteData);
     } catch (err) {
@@ -974,7 +973,7 @@ export default function QuoteGeneration({
                   <>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Another Vehicle
-                  </>
+                  </</>
                 )}
               </Button>
 
@@ -1011,7 +1010,7 @@ export default function QuoteGeneration({
                 <>
                   <CheckCircle className="w-4 h-4 mr-2" />
                   Save Assessment
-                </>
+                </</>
               )}
             </Button>
           )}
