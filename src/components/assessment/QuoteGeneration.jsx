@@ -123,7 +123,7 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   const typeEntries = pricingMatrix.filter(entry => {
     const entryType = (entry.damage_type || '').trim();
     const match = entryType === normalizedDamageType && entry.base_price > 0;
-    console.log(`  Comparing "${entryType}" === "${normalizedDamageType}": ${match}`);
+    console.log(`  Comparing "${entryType}" === "${normalizedDamageType}": ${match}, base_price: ${entry.base_price}`);
     return match;
   });
   
@@ -131,7 +131,6 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   
   if (typeEntries.length === 0) {
     console.log('  ❌ NO MATCH: No valid entries for this damage type');
-    // FIXED: Don't add "notes" field to fallback - let the component handle display
     return {
       price: hourlyRate * 2,
       matrixEntry: { 
@@ -148,7 +147,7 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   const exactMatch = typeEntries.find(entry => {
     const entryRange = (entry.size_range || '').trim();
     const match = entryRange === normalizedSizeRange;
-    console.log(`  Size range "${entryRange}" === "${normalizedSizeRange}": ${match}`);
+    console.log(`  Size range "${entryRange}" === "${normalizedSizeRange}": ${match}, base_price: ${entry.base_price}`);
     return match;
   });
   
@@ -445,6 +444,10 @@ export default function QuoteGeneration({
         const user = await base44.auth.me();
         const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
         if (settings.length > 0) {
+          console.log('📋 LOADED USER SETTINGS:', {
+            pricingMatrixLength: settings[0].pricing_matrix?.length,
+            pricingMatrixSample: settings[0].pricing_matrix?.slice(0, 3)
+          });
           setUserSettings(settings[0]);
           setCurrency(settings[0].currency || 'GBP');
         } else {
@@ -641,7 +644,6 @@ export default function QuoteGeneration({
       }
 
       setLineItems(fallbackItems);
-      // Clear breakdown for global failure
       setCalculationBreakdown([{ 
         error: err.message, 
         fallbackUsed: true, 
@@ -781,8 +783,6 @@ export default function QuoteGeneration({
           </CardContent>
         </Card>
       )}
-
-      {/* REMOVED: All pricing advisory warnings - they were unreliable */}
 
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
