@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -495,6 +494,14 @@ export default function QuoteGeneration({
 
     setGenerating(true);
     setError(null);
+
+    console.log('🔧 USER SETTINGS LOADED:', {
+      pricingMatrixLength: userSettings.pricing_matrix?.length,
+      fullPricingMatrix: userSettings.pricing_matrix,
+      hasBasePrice: userSettings.pricing_matrix?.[0]?.base_price !== undefined,
+      hasSteelPrice: userSettings.pricing_matrix?.[0]?.steel_price !== undefined,
+      sampleEntry: userSettings.pricing_matrix?.[0]
+    });
 
     try {
       if (isPerPanelPricing) {
