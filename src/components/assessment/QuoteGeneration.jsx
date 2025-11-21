@@ -126,34 +126,14 @@ function getEntryBasePrice(entry, material) {
  * HANDLES BOTH OLD AND NEW MATRIX STRUCTURES
  */
 function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hourlyRate) {
-  console.log('🔍 MATRIX LOOKUP DEBUG:', {
-    lookingFor: { damageType, sizeRange, material },
-    matrixLength: pricingMatrix.length,
-    FULL_MATRIX: pricingMatrix,
-    matrixSample: pricingMatrix.slice(0, 2).map(e => ({
-      type: e.damage_type,
-      range: e.size_range,
-      base_price: e.base_price,
-      steel_price: e.steel_price,
-      aluminum_price: e.aluminum_price
-    }))
-  });
-
   const normalizedDamageType = (damageType || '').trim();
-  const normalizedSizeRange = (sizeRange || '').trim();
-  
-  console.log('🔍 NORMALIZED SEARCH:', {
-    normalizedDamageType,
-    normalizedSizeRange
-  });
+  const normalizedSizeRange = (sizeRange || '').trim().replace(/\s+/g, ' ');
   
   // Filter matrix for matching damage type with valid price
   const typeEntries = pricingMatrix.filter(entry => {
     const entryType = (entry.damage_type || '').trim();
     const basePrice = getEntryBasePrice(entry, material);
-    const match = entryType === normalizedDamageType && basePrice > 0;
-    console.log(`  Comparing "${entryType}" === "${normalizedDamageType}": ${match}, price: ${basePrice}`);
-    return match;
+    return entryType === normalizedDamageType && basePrice > 0;
   });
   
   // Normalize entries to use consistent 'price' field
@@ -162,10 +142,7 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
     price: getEntryBasePrice(entry, material)
   }));
   
-  console.log(`  Found ${normalizedTypeEntries.length} entries for damage type "${normalizedDamageType}"`);
-  
   if (normalizedTypeEntries.length === 0) {
-    console.log('  ❌ NO MATCH: No valid entries for this damage type');
     return {
       price: hourlyRate * 2,
       matrixEntry: { 
@@ -501,14 +478,6 @@ export default function QuoteGeneration({
     setGenerating(true);
     setError(null);
 
-    console.log('🔧 USER SETTINGS LOADED:', {
-      pricingMatrixLength: userSettings.pricing_matrix?.length,
-      fullPricingMatrix: userSettings.pricing_matrix,
-      hasBasePrice: userSettings.pricing_matrix?.[0]?.base_price !== undefined,
-      hasSteelPrice: userSettings.pricing_matrix?.[0]?.steel_price !== undefined,
-      sampleEntry: userSettings.pricing_matrix?.[0]
-    });
-
     try {
       if (isPerPanelPricing) {
         const defaultPanelPrice = userSettings.default_panel_price || 120;
@@ -543,11 +512,6 @@ export default function QuoteGeneration({
       const baseCost = userSettings.base_cost || 0;
       const pricingMatrix = userSettings.pricing_matrix || [];
 
-      console.log('=== PROGRAMMATIC QUOTE GENERATION ===');
-      console.log('Pricing Matrix:', pricingMatrix);
-      console.log('Damage Items:', damageItems);
-      console.log('Hourly Rate:', hourlyRate);
-
       const calculatedLineItems = [];
       const breakdownDetails = [];
       let totalEstimatedHours = 0;
@@ -558,8 +522,6 @@ export default function QuoteGeneration({
         
         try {
           const calculation = calculateDamageItemPrice(item, hourlyRate, pricingMatrix);
-          
-          console.log(`Item ${i + 1} Calculation:`, calculation);
           
           if (calculation.isEstimate) {
             hasEstimates = true;
