@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Assessment, Vehicle, Customer, UserSetting, User } from "@/entities/all";
@@ -178,22 +177,24 @@ export default function EditQuotePage() {
   }, [items, calculateTotalPrice]);
 
   const handleItemChange = useCallback((index, field, value) => {
-    const newItems = [...items];
-    
-    if (field === 'description') {
-      newItems[index] = { ...newItems[index], [field]: value };
-    } else if (field === 'quantity' || field === 'unit_price') {
-      const parsedValue = value === '' ? 0 : parseFloat(value) || 0;
-      newItems[index] = { ...newItems[index], [field]: parsedValue };
+    setItems(prevItems => {
+      const newItems = [...prevItems];
       
-      // Recalculate item total
-      const quantity = newItems[index].quantity;
-      const unitPrice = newItems[index].unit_price;
-      newItems[index].total_price = quantity * unitPrice;
-    }
+      if (field === 'description') {
+        newItems[index] = { ...newItems[index], [field]: value };
+      } else if (field === 'quantity' || field === 'unit_price') {
+        const parsedValue = value === '' ? 0 : parseFloat(value) || 0;
+        newItems[index] = { ...newItems[index], [field]: parsedValue };
+        
+        // Recalculate item total
+        const quantity = parseFloat(newItems[index].quantity) || 0;
+        const unitPrice = parseFloat(newItems[index].unit_price) || 0;
+        newItems[index].total_price = quantity * unitPrice;
+      }
 
-    setItems(newItems);
-  }, [items]);
+      return newItems;
+    });
+  }, []);
 
   const handleAddItem = useCallback(() => {
     setItems([

@@ -129,6 +129,7 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   console.log('🔍 MATRIX LOOKUP DEBUG:', {
     lookingFor: { damageType, sizeRange, material },
     matrixLength: pricingMatrix.length,
+    FULL_MATRIX: pricingMatrix,
     matrixSample: pricingMatrix.slice(0, 2).map(e => ({
       type: e.damage_type,
       range: e.size_range,
@@ -140,6 +141,11 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
 
   const normalizedDamageType = (damageType || '').trim();
   const normalizedSizeRange = (sizeRange || '').trim();
+  
+  console.log('🔍 NORMALIZED SEARCH:', {
+    normalizedDamageType,
+    normalizedSizeRange
+  });
   
   // Filter matrix for matching damage type with valid price
   const typeEntries = pricingMatrix.filter(entry => {

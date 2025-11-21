@@ -7,7 +7,7 @@ import Settings from './pages/Settings';
 import EditQuote from './pages/EditQuote';
 import Reports from './pages/Reports';
 import AssessmentDetail from './pages/AssessmentDetail';
-import Layout from './Layout.jsx';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -25,5 +25,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };
