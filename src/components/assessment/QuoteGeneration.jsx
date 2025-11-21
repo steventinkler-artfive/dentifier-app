@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -130,7 +129,7 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   console.log('🔍 MATRIX LOOKUP DEBUG:', {
     lookingFor: { damageType, sizeRange, material },
     matrixLength: pricingMatrix.length,
-    matrixSample: pricingMatrix.slice(0, 2).map(e => ({
+    firstFewEntries: pricingMatrix.slice(0, 5).map(e => ({
       type: e.damage_type,
       range: e.size_range,
       base_price: e.base_price,
@@ -139,12 +138,12 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
     }))
   });
 
-  const normalizedDamageType = (damageType || '').trim();
-  const normalizedSizeRange = (sizeRange || '').trim();
+  const normalizedDamageType = (damageType || '').trim().toLowerCase();
+  const normalizedSizeRange = (sizeRange || '').trim().toLowerCase();
   
   // Filter matrix for matching damage type with valid price
   const typeEntries = pricingMatrix.filter(entry => {
-    const entryType = (entry.damage_type || '').trim();
+    const entryType = (entry.damage_type || '').trim().toLowerCase();
     const basePrice = getEntryBasePrice(entry, material);
     const match = entryType === normalizedDamageType && basePrice > 0;
     console.log(`  Comparing "${entryType}" === "${normalizedDamageType}": ${match}, price: ${basePrice}`);
@@ -175,7 +174,7 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   
   // Look for exact match
   const exactMatch = normalizedTypeEntries.find(entry => {
-    const entryRange = (entry.size_range || '').trim();
+    const entryRange = (entry.size_range || '').trim().toLowerCase();
     const match = entryRange === normalizedSizeRange;
     console.log(`  Size range "${entryRange}" === "${normalizedSizeRange}": ${match}, price: ${entry.price}`);
     return match;
