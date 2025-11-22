@@ -355,25 +355,58 @@ export default function AssessmentDetail() {
     }
   };
 
+  const generateShareText = () => {
+    if (!assessment) return "";
+
+    const ref = getDisplayReference();
+    const custName = customer?.business_name || customer?.name || "";
+    const totalAmount = formatCurrency(assessment.quote_amount || 0, assessment.currency || "GBP");
+
+    let text = `*Quote: ${ref}*\n`;
+    if (custName) {
+      text += `*Customer:* ${custName}\n`;
+    }
+
+    if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
+      const vehicleSummary = assessment.vehicles.map((v, idx) => {
+        const vInfo = vehicles[v.vehicle_id];
+        return vInfo ? `${vInfo.year} ${vInfo.make} ${vInfo.model} (${formatCurrency(v.quote_amount || 0, assessment.currency || "GBP")})` : `Vehicle ${idx + 1}`; 
+      }).join("\n- ");
+      text += `*Vehicles:*\n- ${vehicleSummary}\n`;
+    } else if (vehicle) {
+      text += `*Vehicle:* ${vehicle.year} ${vehicle.make} ${vehicle.model}\n`;
+    }
+
+    text += `*Total Amount:* ${totalAmount}\n`;
+
+    if (assessment.notes && includeNotesInQuote) {
+      text += `\n*Notes:* ${assessment.notes}\n`;
+    }
+
+    text += `\nView online: ${url}`;
+    return text;
+  };
+
   const handleShare = async () => {
     const url = window.location.href;
-    
+    const shareText = generateShareText();
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Quote ${assessment.quote_number || assessment.invoice_number || assessment.id.slice(-6)}`,
-          text: `View quote for ${customer?.name || 'customer'}`,
+          title: `Quote ${getDisplayReference()}`,
+          text: shareText,
           url: url
         });
       } catch (error) {
         if (error.name !== 'AbortError') {
-          navigator.clipboard.writeText(url);
+          navigator.clipboard.writeText(shareText);
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
         }
       }
     } else {
-      navigator.clipboard.writeText(url);
+      navigator.clipboard.writeText(shareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
