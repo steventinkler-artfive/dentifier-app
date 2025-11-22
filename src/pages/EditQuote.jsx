@@ -70,9 +70,9 @@ export default function EditQuotePage() {
 
   const calculateTotalPrice = useCallback((currentItems) => {
     const total = currentItems.reduce((acc, item) => {
-      const quantity = parseFloat(item.quantity || 0);
-      const unitPrice = parseFloat(item.unit_price || 0);
-      const itemTotal = quantity * unitPrice;
+      // Use the stored total_price (from pricing matrix calculation) if available
+      // Only recalculate if total_price is missing or zero
+      const itemTotal = item.total_price || (parseFloat(item.quantity || 0) * parseFloat(item.unit_price || 0));
       return acc + itemTotal;
     }, 0);
     setTotalPrice(total);
