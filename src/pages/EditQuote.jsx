@@ -197,16 +197,15 @@ export default function EditQuotePage() {
   }, []);
 
   const handleAddItem = useCallback(() => {
-    setItems([
-      ...items,
+    setItems(prevItems => [
+      ...prevItems,
       { id: Date.now().toString(), description: "", quantity: 1, unit_price: 0, total_price: 0 },
     ]);
-  }, [items]);
+  }, []);
 
   const handleRemoveItem = useCallback((index) => {
-    const newItems = items.filter((_, i) => i !== index);
-    setItems(newItems);
-  }, [items]);
+    setItems(prevItems => prevItems.filter((_, i) => i !== index));
+  }, []);
 
   const handleSave = async () => {
     if (!assessment) {
