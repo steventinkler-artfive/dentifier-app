@@ -921,13 +921,15 @@ export default function AssessmentDetail() {
                     <Car className="w-4 h-4 text-green-400" />
                     Vehicle
                   </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1"
-                  >
-                    <Edit className="w-3 h-3" />
-                  </Button>
+                  <Link to={createPageUrl(`Assessment?step=vehicle&vehicleId=${vehicle.id}`)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent className="text-sm">
