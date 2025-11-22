@@ -405,6 +405,8 @@ export default function AssessmentDetail() {
       shareText += `\n*Notes:* ${assessment.notes}\n`;
     }
 
+    shareText += `\n_Powered by Dentifier_`;
+
     if (navigator.share) {
       try {
         await navigator.share({
