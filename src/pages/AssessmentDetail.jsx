@@ -746,7 +746,7 @@ export default function AssessmentDetail() {
             <div className="grid grid-cols-2 gap-3">
               {assessment.status !== 'draft' && (
                 <Link 
-                  to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
+                  to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
                   className="block"
                 >
                   <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
@@ -1236,7 +1236,7 @@ export default function AssessmentDetail() {
             <div className="grid grid-cols-2 gap-3">
               {assessment.status !== 'draft' && (
                 <Link 
-                  to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}
+                  to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
                   className="block"
                 >
                   <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
