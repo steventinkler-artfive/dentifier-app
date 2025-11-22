@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Assessment, Customer, Vehicle, UserSetting } from "@/entities/all";
 import { User } from "@/entities/User";
@@ -10,7 +9,6 @@ import { Printer, ArrowLeft, CreditCard } from "lucide-react"; // Import CreditC
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
   const assessmentId = searchParams.get('id');
-  const includeNotes = searchParams.get('include_notes') === 'true';
   const [assessment, setAssessment] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [vehicle, setVehicle] = useState(null);
@@ -440,7 +438,7 @@ export default function QuotePDF() {
           )}
           
           {/* Notes section - only for single vehicle assessments with toggle on */}
-          {!isMultiVehicle && includeNotes && notesForCustomer && (
+          {!isMultiVehicle && assessment.include_notes_in_quote && notesForCustomer && (
             <div className="mb-12">
               <h3 className="font-semibold text-gray-500 border-b pb-2 mb-2">ASSESSMENT NOTES</h3>
               <div className="p-4 bg-gray-50 rounded-lg">
