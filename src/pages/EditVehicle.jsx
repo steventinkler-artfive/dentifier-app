@@ -116,7 +116,7 @@ export default function EditVehiclePage() {
           <VehicleForm
             vehicle={vehicle}
             customer={{ id: vehicle.customer_id }}
-            onSubmit={handleSave}
+            onVehicleSubmit={handleSave}
           />
         </CardContent>
       </Card>
