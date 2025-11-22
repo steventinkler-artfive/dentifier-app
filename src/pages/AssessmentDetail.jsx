@@ -355,16 +355,18 @@ export default function AssessmentDetail() {
     }
   };
 
-  const generateShareText = () => {
-    if (!assessment) return "";
+  const handleShare = async () => {
+    const url = window.location.href;
+    
+    if (!assessment) return;
 
     const ref = getDisplayReference();
     const custName = customer?.business_name || customer?.name || "";
     const totalAmount = formatCurrency(assessment.quote_amount || 0, assessment.currency || "GBP");
 
-    let text = `*Quote: ${ref}*\n`;
+    let shareText = `*Quote: ${ref}*\n`;
     if (custName) {
-      text += `*Customer:* ${custName}\n`;
+      shareText += `*Customer:* ${custName}\n`;
     }
 
     if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
@@ -372,24 +374,18 @@ export default function AssessmentDetail() {
         const vInfo = vehicles[v.vehicle_id];
         return vInfo ? `${vInfo.year} ${vInfo.make} ${vInfo.model} (${formatCurrency(v.quote_amount || 0, assessment.currency || "GBP")})` : `Vehicle ${idx + 1}`; 
       }).join("\n- ");
-      text += `*Vehicles:*\n- ${vehicleSummary}\n`;
+      shareText += `*Vehicles:*\n- ${vehicleSummary}\n`;
     } else if (vehicle) {
-      text += `*Vehicle:* ${vehicle.year} ${vehicle.make} ${vehicle.model}\n`;
+      shareText += `*Vehicle:* ${vehicle.year} ${vehicle.make} ${vehicle.model}\n`;
     }
 
-    text += `*Total Amount:* ${totalAmount}\n`;
+    shareText += `*Total Amount:* ${totalAmount}\n`;
 
-    if (assessment.notes && includeNotesInQuote) {
-      text += `\n*Notes:* ${assessment.notes}\n`;
+    if (editedNotes && includeNotesInQuote) {
+      shareText += `\n*Notes:* ${editedNotes}\n`;
     }
 
-    text += `\nView online: ${url}`;
-    return text;
-  };
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    const shareText = generateShareText();
+    shareText += `\nView online: ${url}`;
 
     if (navigator.share) {
       try {
