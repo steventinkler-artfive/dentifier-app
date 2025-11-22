@@ -9,6 +9,7 @@ import { Printer, ArrowLeft, CreditCard } from "lucide-react";
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
   const assessmentId = searchParams.get('id');
+  const includeNotesParam = searchParams.get('include_notes') === 'true';
   const [assessment, setAssessment] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [vehicle, setVehicle] = useState(null);
@@ -209,8 +210,9 @@ export default function QuotePDF() {
       (isDraft ? "This is a draft quote and subject to change. Quote will be finalized once customer details are confirmed. Thank you for your business!" : 
         "This quote is valid for 30 days. Thank you for your business!"));
   
-  // Use assessment notes if include_notes_in_quote is enabled
-  const notesForCustomer = assessment.include_notes_in_quote ? (assessment.notes || '') : '';
+  // Use assessment notes if include_notes_in_quote is enabled (from URL param or assessment data)
+  const shouldIncludeNotes = includeNotesParam || assessment.include_notes_in_quote;
+  const notesForCustomer = shouldIncludeNotes ? (assessment.notes || '') : '';
 
   // Calculate totals for multi-vehicle
   let subtotal = 0;
