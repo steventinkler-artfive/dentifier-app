@@ -381,8 +381,8 @@ export default function AssessmentDetail() {
 
     shareText += `*Total Amount:* ${totalAmount}\n`;
 
-    if (editedNotes && includeNotesInQuote) {
-      shareText += `\n*Notes:* ${editedNotes}\n`;
+    if (assessment.notes && includeNotesInQuote) {
+      shareText += `\n*Notes:* ${assessment.notes}\n`;
     }
 
     shareText += `\nView online: ${url}`;
