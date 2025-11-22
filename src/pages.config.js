@@ -7,6 +7,7 @@ import Settings from './pages/Settings';
 import EditQuote from './pages/EditQuote';
 import Reports from './pages/Reports';
 import AssessmentDetail from './pages/AssessmentDetail';
+import EditVehicle from './pages/EditVehicle';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "EditQuote": EditQuote,
     "Reports": Reports,
     "AssessmentDetail": AssessmentDetail,
+    "EditVehicle": EditVehicle,
 }
 
 export const pagesConfig = {

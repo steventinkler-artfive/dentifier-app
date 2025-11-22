@@ -921,7 +921,7 @@ export default function AssessmentDetail() {
                     <Car className="w-4 h-4 text-green-400" />
                     Vehicle
                   </CardTitle>
-                  <Link to={createPageUrl(`Assessment?step=vehicle&vehicleId=${vehicle.id}`)}>
+                  <Link to={createPageUrl(`EditVehicle?id=${vehicle.id}&returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`)}>
                     <Button
                       variant="ghost"
                       size="sm"
