@@ -329,7 +329,7 @@ export default function AssessmentDetail() {
       await base44.entities.Assessment.update(assessment.id, { 
         include_notes_in_quote: newValue 
       });
-      await loadAssessmentDetails();
+      setAssessment({ ...assessment, include_notes_in_quote: newValue });
     } catch (error) {
       console.error('Error updating notes setting:', error);
       alert('Failed to update notes setting');
