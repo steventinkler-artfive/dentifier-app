@@ -362,7 +362,7 @@ export default function AssessmentDetail() {
 
     const ref = getDisplayReference();
     const custName = customer?.business_name || customer?.name || "";
-    const totalAmount = formatCurrency(assessment.quote_amount || 0, assessment.currency || "GBP");
+    const currencySymbol = getCurrencySymbol(assessment.currency || "GBP");
 
     let shareText = `*Quote: ${ref}*\n`;
     if (custName) {
@@ -370,16 +370,36 @@ export default function AssessmentDetail() {
     }
 
     if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
-      const vehicleSummary = assessment.vehicles.map((v, idx) => {
+      shareText += `\n*Vehicles & Line Items:*\n\n`;
+      assessment.vehicles.forEach((v, idx) => {
         const vInfo = vehicles[v.vehicle_id];
-        return vInfo ? `${vInfo.year} ${vInfo.make} ${vInfo.model} (${formatCurrency(v.quote_amount || 0, assessment.currency || "GBP")})` : `Vehicle ${idx + 1}`; 
-      }).join("\n- ");
-      shareText += `*Vehicles:*\n- ${vehicleSummary}\n`;
-    } else if (vehicle) {
-      shareText += `*Vehicle:* ${vehicle.year} ${vehicle.make} ${vehicle.model}\n`;
+        if (vInfo) {
+          shareText += `*${vInfo.year} ${vInfo.make} ${vInfo.model}*\n`;
+          if (v.line_items && v.line_items.length > 0) {
+            v.line_items.forEach(item => {
+              shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}\n`;
+            });
+          } else {
+            shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n`;
+          }
+          shareText += `Subtotal: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n\n`;
+        }
+      });
+    } else {
+      if (vehicle) {
+        shareText += `*Vehicle:* ${vehicle.year} ${vehicle.make} ${vehicle.model}\n`;
+      }
+      shareText += `\n*Line Items:*\n`;
+      if (currentLineItems.length > 0) {
+        currentLineItems.forEach(item => {
+          shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}\n`;
+        });
+      } else {
+        shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}\n`;
+      }
     }
 
-    shareText += `*Total Amount:* ${totalAmount}\n`;
+    shareText += `\n*Total Amount:* ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}\n`;
 
     if (assessment.notes && includeNotesInQuote) {
       shareText += `\n*Notes:* ${assessment.notes}\n`;
