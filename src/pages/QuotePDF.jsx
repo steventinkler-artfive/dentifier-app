@@ -4,7 +4,7 @@ import { User } from "@/entities/User";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Printer, ArrowLeft, CreditCard } from "lucide-react"; // Import CreditCard icon
+import { Printer, ArrowLeft, CreditCard } from "lucide-react";
 
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
@@ -115,7 +115,7 @@ export default function QuotePDF() {
             // Update assessment with new numbers
             if (needsUpdate && isMounted) {
               await Assessment.update(assessmentId, updates);
-              currentAssessment = { ...foundAssessment, ...updates }; // Update local variable for rendering
+              currentAssessment = { ...foundAssessment, ...updates };
             }
             
             if (settings[0].business_logo_url) {
@@ -143,7 +143,7 @@ export default function QuotePDF() {
             if (isMounted) setLogoDisplayUrl(null);
           }
           if (isMounted) {
-            setAssessment(currentAssessment); // Set the assessment state with potentially updated numbers
+            setAssessment(currentAssessment);
           }
         }
       } catch (error) {
