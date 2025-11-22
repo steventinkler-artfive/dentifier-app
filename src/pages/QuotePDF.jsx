@@ -209,12 +209,8 @@ export default function QuotePDF() {
       (isDraft ? "This is a draft quote and subject to change. Quote will be finalized once customer details are confirmed. Thank you for your business!" : 
         "This quote is valid for 30 days. Thank you for your business!"));
   
-  // This notesForCustomer is for single-vehicle assessments only, controlled by `includeNotes` search param
-  let notesForCustomer = assessment.notes || '';
-  const technicianNoteIndex = notesForCustomer.indexOf('Technician has');
-  if (technicianNoteIndex > -1) {
-    notesForCustomer = notesForCustomer.substring(0, technicianNoteIndex).trim();
-  }
+  // Use assessment notes if include_notes_in_quote is enabled
+  const notesForCustomer = assessment.include_notes_in_quote ? (assessment.notes || '') : '';
 
   // Calculate totals for multi-vehicle
   let subtotal = 0;
@@ -338,12 +334,8 @@ export default function QuotePDF() {
                 const vehDetails = vehicles[vData.vehicle_id];
                 if (!vehDetails) return null;
                 
-                // Filter notes to remove technician-only content
-                let vehicleNotes = vData.notes || '';
-                const technicianNoteIndex = vehicleNotes.indexOf('Technician has');
-                if (technicianNoteIndex > -1) {
-                  vehicleNotes = vehicleNotes.substring(0, technicianNoteIndex).trim();
-                }
+                // Use vehicle notes if include_notes_in_quote is enabled
+                const vehicleNotes = vData.include_notes_in_quote ? (vData.notes || '') : '';
                 
                 return (
                   <div key={vIdx} className="mb-6 last:mb-0">
@@ -384,7 +376,7 @@ export default function QuotePDF() {
                     </table>
                     
                     {/* Vehicle-specific notes - only if toggle is on */}
-                    {vData.include_notes_in_quote && vehicleNotes && (
+                    {vehicleNotes && (
                       <div className="mb-3 p-3 bg-gray-50 rounded-lg">
                         <p className="text-xs font-semibold text-gray-500 mb-1">Vehicle Notes:</p>
                         <p className="text-sm text-gray-600 whitespace-pre-wrap">{vehicleNotes}</p>
@@ -438,7 +430,7 @@ export default function QuotePDF() {
           )}
           
           {/* Notes section - only for single vehicle assessments with toggle on */}
-          {!isMultiVehicle && assessment.include_notes_in_quote && notesForCustomer && (
+          {!isMultiVehicle && notesForCustomer && (
             <div className="mb-12">
               <h3 className="font-semibold text-gray-500 border-b pb-2 mb-2">ASSESSMENT NOTES</h3>
               <div className="p-4 bg-gray-50 rounded-lg">
