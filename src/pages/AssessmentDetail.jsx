@@ -405,8 +405,6 @@ export default function AssessmentDetail() {
       shareText += `\n*Notes:* ${assessment.notes}\n`;
     }
 
-    shareText += `\nView online: ${url}`;
-
     if (navigator.share) {
       try {
         await navigator.share({
