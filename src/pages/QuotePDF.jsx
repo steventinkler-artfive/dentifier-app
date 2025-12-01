@@ -229,8 +229,8 @@ export default function QuotePDF() {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="bg-gray-100 min-h-screen p-4 sm:p-8 print:bg-white print:p-0 print:min-h-0">
+      <div className="max-w-4xl mx-auto print:max-w-none">
         {/* Action Buttons (hidden on print) */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between gap-3 print:hidden">
           <Link to={createPageUrl(`AssessmentDetail?id=${assessmentId}`)}>
@@ -245,7 +245,7 @@ export default function QuotePDF() {
         </div>
 
         {/* PDF Content */}
-        <div className="bg-white p-8 sm:p-12 shadow-lg">
+        <div className="bg-white p-8 sm:p-12 shadow-lg print:shadow-none print:p-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start mb-12 gap-6 sm:gap-0">
             <div className="order-2 sm:order-1">
@@ -489,7 +489,7 @@ export default function QuotePDF() {
           )}
 
           {/* Footer */}
-          <div className="flex justify-between items-end pt-8 mt-4 border-t border-gray-200">
+          <div className="flex justify-between items-end pt-6 mt-4 border-t border-gray-200 print:pt-4 print:mt-2" style={{ pageBreakInside: 'avoid' }}>
             <div>
               <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
               <p className="text-gray-500 text-sm mt-1">{businessAddress}</p>
@@ -517,12 +517,12 @@ export default function QuotePDF() {
               <p className="text-sm text-gray-600">{invoiceFooter}</p>
             </div>
           </div>
-          <div className="text-center mt-12 pt-4 border-t border-gray-200">
+          <div className="text-center mt-8 pt-4 border-t border-gray-200 print:mt-4 print:pt-2" style={{ pageBreakInside: 'avoid' }}>
             <p className="text-xs text-gray-500">POWERED BY DENTIFIER</p>
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68a8991579d29e7c386105d5/f8b406687_dentifierfullcolourstraphi-res.png" 
               alt="Dentifier Logo" 
-              className="h-6 mx-auto mt-2" 
+              className="h-6 mx-auto mt-2 print:h-5" 
             />
           </div>
         </div>
