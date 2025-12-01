@@ -247,7 +247,7 @@ export default function QuotePDF() {
         {/* PDF Content */}
         <div className="bg-white p-8 sm:p-12 shadow-lg print:shadow-none print:p-6">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start mb-12 gap-6 sm:gap-0">
+          <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-6 sm:gap-0 print:mb-6 print:gap-2">
             <div className="order-2 sm:order-1">
               {logoDisplayUrl ? (
                 <img 
@@ -278,7 +278,7 @@ export default function QuotePDF() {
           </div>
 
           {/* Customer & Vehicle Details */}
-          <div className="grid grid-cols-1 gap-8 mb-12">
+          <div className="grid grid-cols-1 gap-6 mb-8 print:gap-4 print:mb-6">
             <div>
               <h3 className="font-semibold text-gray-500 border-b pb-2 mb-2">BILLED TO</h3>
               {customer ? (
@@ -442,7 +442,7 @@ export default function QuotePDF() {
           )}
 
           {/* Total */}
-          <div className="flex justify-end mb-12">
+          <div className="flex justify-end mb-8 print:mb-6">
             <div className="w-full sm:w-1/2">
               <div className="flex justify-between py-2">
                 <span className="font-medium text-gray-600">Subtotal</span>
