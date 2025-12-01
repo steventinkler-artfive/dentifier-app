@@ -433,10 +433,10 @@ export default function QuotePDF() {
           
           {/* Notes section - only for single vehicle assessments with toggle on */}
           {!isMultiVehicle && notesForCustomer && (
-            <div className="mb-12">
-              <h3 className="font-semibold text-gray-500 border-b pb-2 mb-2">ASSESSMENT NOTES</h3>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 whitespace-pre-wrap">{notesForCustomer}</p>
+            <div className="mb-12 print:mb-6">
+              <h3 className="font-semibold text-gray-500 border-b pb-2 mb-2 print:pb-1 print:mb-1">ASSESSMENT NOTES</h3>
+              <div className="p-4 bg-gray-50 rounded-lg print:!bg-gray-100 print:border print:border-gray-200">
+                <p className="text-sm text-gray-600 whitespace-pre-wrap print:text-xs">{notesForCustomer}</p>
               </div>
             </div>
           )}
