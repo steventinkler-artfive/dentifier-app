@@ -652,6 +652,147 @@ export default function AssessmentDetail() {
 
         {/* Quote Tab */}
         <TabsContent value="quote" className="space-y-4">
+          {/* Customer */}
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-white text-base">
+                  <UserIcon className="w-4 h-4 text-blue-400" />
+                  Customer
+                </CardTitle>
+                {customer ? (
+                  <Link to={createPageUrl("Customers")}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      const customers = await base44.entities.Customer.list();
+                      setCustomerList(customers);
+                      setIsAssigningCustomer(true);
+                    }}
+                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 text-xs h-auto py-1"
+                  >
+                    <UserPlus className="w-3 h-3 mr-1" />
+                    Assign
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="text-sm">
+              {customer ? (
+                <div className="space-y-2">
+                  {customer.business_name && (
+                    <div className="flex items-start gap-2">
+                      <Briefcase className="w-4 h-4 text-slate-400 mt-0.5" />
+                      <div>
+                        <p className="text-white font-medium">{customer.business_name}</p>
+                        <p className="text-slate-400 text-xs">Contact: {customer.name}</p>
+                      </div>
+                    </div>
+                  )}
+                  {!customer.business_name && (
+                    <div className="flex items-center gap-2">
+                      <UserIcon className="w-4 h-4 text-slate-400" />
+                      <span className="text-white">{customer.name}</span>
+                    </div>
+                  )}
+                  {customer.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-slate-400" />
+                      <a href={`mailto:${customer.email}`} className="text-blue-400 hover:text-blue-300 text-xs">
+                        {customer.email}
+                      </a>
+                    </div>
+                  )}
+                  {customer.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-slate-400" />
+                      <a href={`tel:${customer.phone}`} className="text-blue-400 hover:text-blue-300 text-xs">
+                        {customer.phone}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ) : isAssigningCustomer ? (
+                showAddCustomerForm ? (
+                  <div className="space-y-4">
+                    <CustomerForm
+                      onSave={handleCreateAndAssignCustomer}
+                      onCancel={() => {
+                        setShowAddCustomerForm(false);
+                        setIsAssigningCustomer(false);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder="Search customers..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 bg-slate-800 border-slate-700 text-white text-sm"
+                      />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {customerList
+                        .filter(c => 
+                          c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          c.business_name?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => handleAssignCustomer(c.id)}
+                            className="w-full p-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-left transition-colors"
+                          >
+                            <p className="text-white font-medium text-sm">
+                              {c.business_name || c.name}
+                            </p>
+                            {c.business_name && (
+                              <p className="text-slate-400 text-xs">Contact: {c.name}</p>
+                            )}
+                            {c.email && (
+                              <p className="text-slate-500 text-xs">{c.email}</p>
+                            )}
+                          </button>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setShowAddCustomerForm(true)}
+                        className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        New Customer
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsAssigningCustomer(false)}
+                        className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 text-sm"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <p className="text-slate-400 text-xs">No customer assigned</p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="bg-slate-900 border-slate-800">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
