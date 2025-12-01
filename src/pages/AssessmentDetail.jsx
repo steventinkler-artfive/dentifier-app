@@ -764,17 +764,15 @@ export default function AssessmentDetail() {
           {/* Action Buttons - At Bottom of Quote Tab */}
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              {assessment.status !== 'draft' && (
-                <Link 
-                  to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
-                  className="block"
-                >
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                    <FileText className="w-4 h-4 mr-2" />
-                    PDF Quote
-                  </Button>
-                </Link>
-              )}
+              <Link 
+                                      to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
+                                      className="block"
+                                    >
+                                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                                        <FileText className="w-4 h-4 mr-2" />
+                                        PDF Quote
+                                      </Button>
+                                    </Link>
               <Button
                 onClick={handleShare}
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
@@ -1254,17 +1252,15 @@ export default function AssessmentDetail() {
           {/* Action Buttons - At Bottom of Details Tab */}
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              {assessment.status !== 'draft' && (
-                <Link 
-                  to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
-                  className="block"
-                >
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                    <FileText className="w-4 h-4 mr-2" />
-                    PDF Quote
-                  </Button>
-                </Link>
-              )}
+              <Link 
+                                      to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
+                                      className="block"
+                                    >
+                                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                                        <FileText className="w-4 h-4 mr-2" />
+                                        PDF Quote
+                                      </Button>
+                                    </Link>
               <Button
                 onClick={handleShare}
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
