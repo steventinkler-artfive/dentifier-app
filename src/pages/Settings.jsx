@@ -268,29 +268,12 @@ export default function Settings() {
                     invoice_prefix: loadedSettings.invoice_prefix || "INV-", 
                     next_invoice_number: loadedSettings.next_invoice_number ?? 1,
                     invoice_footer: loadedSettings.invoice_footer || "Please pay within 30 days of receipt of invoice.",
-                    llm_analysis_instructions: loadedSettings.llm_analysis_instructions || DEFAULT_ANALYSIS_INSTRUCTIONS,
-                    llm_quote_instructions: loadedSettings.llm_quote_instructions || DEFAULT_QUOTE_INSTRUCTIONS,
                     pricing_matrix: pricingMatrix,
                     custom_damage_types: loadedSettings.custom_damage_types || [], // NEW FIELD
                 };
 
-                // Aggressive upgrade logic for LLM instructions and new fields
+                // Check if pricing matrix needs update
                 let needsUpdate = false;
-                // Check if the current instructions match the old, or if a specific new phrase is missing
-                if (!tempFormData.llm_analysis_instructions.includes('INTERNAL TECHNICIAN ADVISORY')) { 
-                    tempFormData.llm_analysis_instructions = DEFAULT_ANALYSIS_INSTRUCTIONS;
-                    needsUpdate = true;
-                }
-                
-                // Updated check for the new quote instructions changes
-                if (!tempFormData.llm_quote_instructions.includes('PRE-CALCULATED line items') || 
-                    !tempFormData.llm_quote_instructions.includes('DO NOT recalculate or modify any prices') ||
-                    !tempFormData.llm_quote_instructions.includes('Size range') || // New check
-                    !tempFormData.llm_quote_instructions.includes('OUTPUT FORMAT FOR DESCRIPTIONS')) { // New check
-                    tempFormData.llm_quote_instructions = DEFAULT_QUOTE_INSTRUCTIONS;
-                    needsUpdate = true;
-                }
-
                 // If pricing matrix was empty or uses old structure and now has defaults, mark for update
                 if (loadedSettings.pricing_matrix === null || loadedSettings.pricing_matrix.length === 0 || !loadedSettings.pricing_matrix[0]?.hasOwnProperty('base_price')) {
                     needsUpdate = true;
