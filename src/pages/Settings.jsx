@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { User } from "@/entities/User";
 import { UserSetting } from "@/entities/UserSetting";
+import { GlobalSetting } from "@/entities/GlobalSetting";
 import { UploadFile } from "@/integrations/Core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,8 +146,10 @@ const VEHICLE_TYPES = [
 export default function Settings() {
     const [user, setUser] = useState(null);
     const [settings, setSettings] = useState(null); // Stores the UserSetting object including its ID
+    const [globalSettings, setGlobalSettings] = useState(null); // Stores the GlobalSetting object
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [savingGlobal, setSavingGlobal] = useState(false);
     const [logoUploading, setLogoUploading] = useState(false);
     const [logoPreview, setLogoPreview] = useState(null);
     const [error, setError] = useState(null);
@@ -183,10 +185,14 @@ export default function Settings() {
       invoice_prefix: 'INV-',
       next_invoice_number: 1,
       invoice_footer: "Please pay within 30 days of receipt of invoice.",
-      llm_analysis_instructions: DEFAULT_ANALYSIS_INSTRUCTIONS,
-      llm_quote_instructions: DEFAULT_QUOTE_INSTRUCTIONS,
       pricing_matrix: [], // NEW FIELD
       custom_damage_types: [], // NEW: Store user-defined custom damage types
+    });
+
+    // Separate state for global AI settings (admin only)
+    const [globalFormData, setGlobalFormData] = useState({
+      llm_analysis_instructions: DEFAULT_ANALYSIS_INSTRUCTIONS,
+      llm_quote_instructions: DEFAULT_QUOTE_INSTRUCTIONS,
     });
 
     useEffect(() => {
@@ -298,11 +304,12 @@ export default function Settings() {
 
                 if (needsUpdate && loadedSettings.id) { // Only update if there's an ID and changes were made
                     try {
-                        // Persist the updated temporary formData back to the database
-                        await UserSetting.update(loadedSettings.id, tempFormData);
-                        console.log("AI instructions and pricing matrix automatically initialized/upgraded.");
+                        // Persist the updated temporary formData back to the database (excluding AI instructions now)
+                        const { llm_analysis_instructions, llm_quote_instructions, ...dataWithoutAI } = tempFormData;
+                        await UserSetting.update(loadedSettings.id, dataWithoutAI);
+                        console.log("Pricing matrix automatically initialized/upgraded.");
                     } catch (updateError) {
-                        console.error("Failed to auto-save upgraded instructions/settings:", updateError);
+                        console.error("Failed to auto-save upgraded settings:", updateError);
                     }
                 }
 
@@ -334,11 +341,34 @@ export default function Settings() {
                 setFormData(prev => ({
                     ...prev,
                     contact_email: currentUser.email, // Default contact email
-                    llm_analysis_instructions: DEFAULT_ANALYSIS_INSTRUCTIONS,
-                    llm_quote_instructions: DEFAULT_QUOTE_INSTRUCTIONS,
                     pricing_matrix: defaultPricingMatrix,
                     custom_damage_types: [], // NEW FIELD
                 }));
+            }
+
+            // Load Global Settings (for admin users to edit AI instructions)
+            if (currentUser.role === 'admin') {
+                const existingGlobalSettings = await GlobalSetting.filter({ setting_key: 'main' });
+                if (existingGlobalSettings.length > 0) {
+                    const loadedGlobalSettings = existingGlobalSettings[0];
+                    setGlobalSettings(loadedGlobalSettings);
+                    setGlobalFormData({
+                        llm_analysis_instructions: loadedGlobalSettings.llm_analysis_instructions || DEFAULT_ANALYSIS_INSTRUCTIONS,
+                        llm_quote_instructions: loadedGlobalSettings.llm_quote_instructions || DEFAULT_QUOTE_INSTRUCTIONS,
+                    });
+                } else {
+                    // Create initial GlobalSetting record with default instructions
+                    const newGlobalSettings = await GlobalSetting.create({
+                        setting_key: 'main',
+                        llm_analysis_instructions: DEFAULT_ANALYSIS_INSTRUCTIONS,
+                        llm_quote_instructions: DEFAULT_QUOTE_INSTRUCTIONS,
+                    });
+                    setGlobalSettings(newGlobalSettings);
+                    setGlobalFormData({
+                        llm_analysis_instructions: DEFAULT_ANALYSIS_INSTRUCTIONS,
+                        llm_quote_instructions: DEFAULT_QUOTE_INSTRUCTIONS,
+                    });
+                }
             }
         } catch (err) {
             setError("Failed to load user data. Please try again.");
@@ -387,6 +417,35 @@ export default function Settings() {
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleGlobalInputChange = (field, value) => {
+        setGlobalFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSaveGlobalSettings = async () => {
+        if (!user || user.role !== 'admin') return;
+        setSavingGlobal(true);
+        setError(null);
+        try {
+            const dataToSave = {
+                setting_key: 'main',
+                ...globalFormData,
+            };
+
+            if (globalSettings && globalSettings.id) {
+                await GlobalSetting.update(globalSettings.id, dataToSave);
+            } else {
+                const newGlobalSettings = await GlobalSetting.create(dataToSave);
+                setGlobalSettings(newGlobalSettings);
+            }
+            alert("Global AI settings saved successfully! All users will now use these instructions.");
+        } catch (err) {
+            setError("Failed to save global settings. Please try again.");
+            console.error(err);
+        } finally {
+            setSavingGlobal(false);
+        }
     };
 
     const handleLogoUpload = async (event) => {
@@ -948,16 +1007,17 @@ export default function Settings() {
                 {/* Tab 4: Admin (Only for admin users) */}
                 {user?.role === 'admin' && (
                     <TabsContent value="admin" className="space-y-6">
-                        <Card className="bg-slate-900 border-slate-800">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-white">
-                                    <DentifierIcon className="w-5 h-5 text-rose-400" />
-                                    Dentifier Analysis Instructions (Admin)
-                                </CardTitle>
-                                <p className="text-slate-400 text-sm">This prompt is used by Dentifier to analyse damage photos.</p>
-                            </CardHeader>
-                            <CardContent>
-                                <Textarea value={formData.llm_analysis_instructions} onChange={e => handleInputChange('llm_analysis_instructions', e.target.value)} className="bg-slate-800 border-slate-700 text-white h-64 font-mono text-xs" />
+                        <Card className="bg-blue-900/20 border-blue-800">
+                            <CardContent className="p-4">
+                                <div className="flex items-start gap-2">
+                                    <AlertTriangle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-blue-200 font-medium">Global AI Settings</p>
+                                        <p className="text-blue-300 text-sm mt-1">
+                                            These AI instructions are shared across ALL users. Changes here will affect how quotes are generated for everyone.
+                                        </p>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
 
@@ -965,14 +1025,32 @@ export default function Settings() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-white">
                                     <DentifierIcon className="w-5 h-5 text-rose-400" />
-                                    Dentifier Quoting Instructions (Admin)
+                                    Dentifier Analysis Instructions (Global)
                                 </CardTitle>
-                                 <p className="text-slate-400 text-sm">This prompt tells Dentifier how to generate a quote from its analysis.</p>
+                                <p className="text-slate-400 text-sm">This prompt is used by Dentifier to analyse damage photos for all users.</p>
                             </CardHeader>
                             <CardContent>
-                                <Textarea value={formData.llm_quote_instructions} onChange={e => handleInputChange('llm_quote_instructions', e.target.value)} className="bg-slate-800 border-slate-700 text-white h-64 font-mono text-xs" />
+                                <Textarea value={globalFormData.llm_analysis_instructions} onChange={e => handleGlobalInputChange('llm_analysis_instructions', e.target.value)} className="bg-slate-800 border-slate-700 text-white h-64 font-mono text-xs" />
                             </CardContent>
                         </Card>
+
+                        <Card className="bg-slate-900 border-slate-800">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-white">
+                                    <DentifierIcon className="w-5 h-5 text-rose-400" />
+                                    Dentifier Quoting Instructions (Global)
+                                </CardTitle>
+                                 <p className="text-slate-400 text-sm">This prompt tells Dentifier how to generate a quote from its analysis for all users.</p>
+                            </CardHeader>
+                            <CardContent>
+                                <Textarea value={globalFormData.llm_quote_instructions} onChange={e => handleGlobalInputChange('llm_quote_instructions', e.target.value)} className="bg-slate-800 border-slate-700 text-white h-64 font-mono text-xs" />
+                            </CardContent>
+                        </Card>
+
+                        <Button onClick={handleSaveGlobalSettings} disabled={savingGlobal} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                            {savingGlobal ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                            Save Global AI Settings
+                        </Button>
                     </TabsContent>
                 )}
             </Tabs>
