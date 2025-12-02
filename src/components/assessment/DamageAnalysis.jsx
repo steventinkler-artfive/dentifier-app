@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { InvokeLLM } from "@/integrations/Core";
-import { User, UserSetting } from "@/entities/all";
+import { User, UserSetting, GlobalSetting } from "@/entities/all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,31 +28,44 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
+  const [globalSettings, setGlobalSettings] = useState(null);
 
   useEffect(() => {
-    loadUserSettings();
+    loadSettings();
   }, []);
 
-  const loadUserSettings = async () => {
+  const loadSettings = async () => {
     try {
       const currentUser = await User.me();
-      const settings = await UserSetting.filter({ user_email: currentUser.email });
-      if (settings.length > 0) {
-        setUserSettings(settings[0]);
+      
+      // Load user settings (for technician profile, max dent size, etc.)
+      const userSettingsData = await UserSetting.filter({ user_email: currentUser.email });
+      if (userSettingsData.length > 0) {
+        setUserSettings(userSettingsData[0]);
       } else {
         setError('User settings not found. Please configure your settings first.');
+        return;
+      }
+      
+      // Load global settings (for AI instructions)
+      const globalSettingsData = await GlobalSetting.filter({ setting_key: 'main' });
+      if (globalSettingsData.length > 0) {
+        setGlobalSettings(globalSettingsData[0]);
+      } else {
+        setError('Global AI settings not configured. Please contact your administrator.');
+        return;
       }
     } catch (err) {
-      console.error('Error loading user settings:', err);
-      setError('Failed to load user settings. Please check your settings page.');
+      console.error('Error loading settings:', err);
+      setError('Failed to load settings. Please check your settings page.');
     }
   };
 
   useEffect(() => {
-    if (userSettings && !analysis && !analyzing && !error) {
+    if (userSettings && globalSettings && !analysis && !analyzing && !error) {
       performAnalysis();
     }
-  }, [userSettings, analysis, analyzing, error]);
+  }, [userSettings, globalSettings, analysis, analyzing, error]);
 
   const performAnalysis = async () => {
     setAnalyzing(true);
@@ -65,10 +77,11 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
         throw new Error('No damage items provided for analysis');
       }
 
-      const analysisInstructions = userSettings?.llm_analysis_instructions || '';
+      // Use global settings for AI instructions
+      const analysisInstructions = globalSettings?.llm_analysis_instructions || '';
       
       if (!analysisInstructions) {
-        throw new Error('Analysis instructions not configured. Please update your settings.');
+        throw new Error('Analysis instructions not configured. Please contact your administrator.');
       }
 
       const vehicleInfo = vehicle 
