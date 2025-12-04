@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2, AlertCircle, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import { useAlert } from "@/components/ui/CustomAlert";
 
 const CORE_DAMAGE_TYPES = ["Standard Dent", "Crease"];
 
@@ -63,6 +64,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const { showAlert, showConfirm } = useAlert();
 
   const getCurrencySymbol = (curr) => {
     const symbols = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$' };
@@ -91,12 +93,12 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
     onChange(updated);
   };
 
-  const handleAddCustomType = () => {
+  const handleAddCustomType = async () => {
     if (!newCustomTypeName.trim()) return;
     
     const allTypes = [...CORE_DAMAGE_TYPES, ...customDamageTypes];
     if (allTypes.includes(newCustomTypeName.trim())) {
-      alert("This damage type already exists!");
+      await showAlert("This damage type already exists!", "Duplicate Entry");
       return;
     }
 
@@ -106,13 +108,13 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
     setIsAddingCustomType(false);
   };
 
-  const handleDeleteCustomType = (typeToDelete) => {
+  const handleDeleteCustomType = async (typeToDelete) => {
     const entriesUsingType = pricingMatrix.filter(entry => entry.damage_type === typeToDelete);
     
     if (entriesUsingType.length > 0) {
-      const confirmed = window.confirm(
-        `This custom type is used in ${entriesUsingType.length} pricing ${entriesUsingType.length === 1 ? 'entry' : 'entries'}. ` +
-        `If you delete it, those entries will also be removed. Continue?`
+      const confirmed = await showConfirm(
+        `This custom type is used in ${entriesUsingType.length} pricing ${entriesUsingType.length === 1 ? 'entry' : 'entries'}. If you delete it, those entries will also be removed. Continue?`,
+        "Delete Custom Type"
       );
       if (!confirmed) return;
       
@@ -124,12 +126,12 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
     onCustomTypesChange(updatedCustomTypes);
   };
 
-  const handleAddCustomSizeRange = () => {
+  const handleAddCustomSizeRange = async () => {
     if (!newCustomSizeRange.trim()) return;
     
     const allSizes = [...SIZE_RANGE_OPTIONS, ...customSizeRanges];
     if (allSizes.includes(newCustomSizeRange.trim())) {
-      alert("This size range already exists!");
+      await showAlert("This size range already exists!", "Duplicate Entry");
       return;
     }
 
@@ -139,13 +141,13 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
     setIsAddingCustomSizeRange(false);
   };
 
-  const handleDeleteCustomSizeRange = (sizeToDelete) => {
+  const handleDeleteCustomSizeRange = async (sizeToDelete) => {
     const entriesUsingSize = pricingMatrix.filter(entry => entry.size_range === sizeToDelete);
     
     if (entriesUsingSize.length > 0) {
-      const confirmed = window.confirm(
-        `This custom size range is used in ${entriesUsingSize.length} pricing ${entriesUsingSize.length === 1 ? 'entry' : 'entries'}. ` +
-        `If you delete it, those entries will also be removed. Continue?`
+      const confirmed = await showConfirm(
+        `This custom size range is used in ${entriesUsingSize.length} pricing ${entriesUsingSize.length === 1 ? 'entry' : 'entries'}. If you delete it, those entries will also be removed. Continue?`,
+        "Delete Custom Size Range"
       );
       if (!confirmed) return;
       

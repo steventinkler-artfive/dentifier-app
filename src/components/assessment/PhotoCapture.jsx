@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Camera, Upload, X, Loader2, Image as ImageIcon, CheckCircle, AlertTriangle } from "lucide-react";
 import { compressMultipleImages } from "../utils/imageCompression";
+import { useAlert } from "@/components/ui/CustomAlert";
 
 // Car panels
 const CAR_PANELS = [
@@ -57,6 +58,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   const [damageTypes, setDamageTypes] = useState(BASE_DAMAGE_TYPES);
   const [sizeRanges, setSizeRanges] = useState(DEFAULT_SIZE_RANGES);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const { showAlert } = useAlert();
 
   // Load damage types and size ranges from user's pricing matrix
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
       setUploadedPhotos(prev => [...prev, ...newPhotoUrls]);
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Failed to upload photos. Please try again.");
+      showAlert("Failed to upload photos. Please try again.", "Upload Error");
     } finally {
       setUploading(false);
       // Reset file input
@@ -191,16 +193,16 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
     });
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (uploadedPhotos.length === 0) {
-      alert("Please upload at least one photo before continuing.");
+      await showAlert("Please upload at least one photo before continuing.", "Photos Required");
       return;
     }
 
     if (!chargePerPanel) {
       // Validate damage items for detailed pricing
       if (damageItems.length === 0) {
-        alert("Please add at least one damage item or enable 'Charge Per Panel' mode.");
+        await showAlert("Please add at least one damage item or enable 'Charge Per Panel' mode.", "Damage Items Required");
         return;
       }
 
@@ -208,21 +210,21 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
       for (let i = 0; i < damageItems.length; i++) {
         const item = damageItems[i];
         if (!item.panel || !item.damage_type || !item.size_range) {
-          alert(`Damage item ${i + 1} is incomplete. Please fill in Panel, Damage Type, and Size Range.`);
+          await showAlert(`Damage item ${i + 1} is incomplete. Please fill in Panel, Damage Type, and Size Range.`, "Incomplete Entry");
           return;
         }
       }
     } else {
       // For charge per panel mode, validate that damage items have at least panel and notes
       if (damageItems.length === 0) {
-        alert("Please add at least one panel/damage entry.");
+        await showAlert("Please add at least one panel/damage entry.", "Panel Required");
         return;
       }
 
       for (let i = 0; i < damageItems.length; i++) {
         const item = damageItems[i];
         if (!item.panel) {
-          alert(`Entry ${i + 1} needs a panel specified.`);
+          await showAlert(`Entry ${i + 1} needs a panel specified.`, "Panel Required");
           return;
         }
       }
