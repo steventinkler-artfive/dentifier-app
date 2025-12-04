@@ -1,8 +1,8 @@
-
 import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Users, Camera, FileText, TrendingUp, Settings } from "lucide-react";
+import { AlertProvider } from "@/components/ui/CustomAlert";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -96,7 +96,9 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Main Content */}
       <main className="pb-20 min-h-screen">
-        {children}
+        <AlertProvider>
+          {children}
+        </AlertProvider>
       </main>
 
       {/* Bottom Navigation - Hidden when printing */}
