@@ -69,9 +69,9 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
 
   const handleAddEntry = () => {
     const newEntry = {
-      damage_type: "Standard Dent",
-      size_range: "26mm - 50mm",
-      base_price: 120
+      damage_type: "",
+      size_range: "",
+      base_price: 0
     };
     onChange([...pricingMatrix, newEntry]);
   };
