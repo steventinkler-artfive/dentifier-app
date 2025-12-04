@@ -187,6 +187,7 @@ export default function Settings() {
       invoice_footer: "Please pay within 30 days of receipt of invoice.",
       pricing_matrix: [], // NEW FIELD
       custom_damage_types: [], // NEW: Store user-defined custom damage types
+      custom_size_ranges: [], // NEW: Store user-defined custom size ranges
     });
 
     // Separate state for global AI settings (admin only)
@@ -270,6 +271,7 @@ export default function Settings() {
                     invoice_footer: loadedSettings.invoice_footer || "Please pay within 30 days of receipt of invoice.",
                     pricing_matrix: pricingMatrix,
                     custom_damage_types: loadedSettings.custom_damage_types || [], // NEW FIELD
+                    custom_size_ranges: loadedSettings.custom_size_ranges || [], // NEW FIELD
                 };
 
                 // Check if pricing matrix needs update
@@ -326,6 +328,7 @@ export default function Settings() {
                     contact_email: currentUser.email, // Default contact email
                     pricing_matrix: defaultPricingMatrix,
                     custom_damage_types: [], // NEW FIELD
+                    custom_size_ranges: [], // NEW FIELD
                 }));
             }
 
@@ -375,6 +378,7 @@ export default function Settings() {
                 primary_vehicle_types: formData.primary_vehicle_types || [],
                 pricing_matrix: formData.pricing_matrix || [], // NEW FIELD: Ensure it's an array
                 custom_damage_types: formData.custom_damage_types || [], // NEW FIELD
+                custom_size_ranges: formData.custom_size_ranges || [], // NEW FIELD
                 // Ensure prefixes and numbers are not null/undefined for saving
                 quote_prefix: formData.quote_prefix || 'Q-',
                 invoice_prefix: formData.invoice_prefix || 'INV-',
@@ -869,8 +873,10 @@ export default function Settings() {
                     <PricingMatrix
                         pricingMatrix={formData.pricing_matrix || []}
                         customDamageTypes={formData.custom_damage_types || []}
+                        customSizeRanges={formData.custom_size_ranges || []}
                         onChange={(matrix) => handleInputChange('pricing_matrix', matrix)}
                         onCustomTypesChange={(types) => handleInputChange('custom_damage_types', types)}
+                        onCustomSizeRangesChange={(sizes) => handleInputChange('custom_size_ranges', sizes)}
                         currency={formData.currency}
                         worksOnAluminum={formData.works_on_aluminum_panels}
                     />
