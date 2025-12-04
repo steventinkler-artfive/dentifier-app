@@ -54,10 +54,12 @@ const DEFAULT_PRICING_MATRIX = [
   { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 600 }
 ];
 
-export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChange, onCustomTypesChange, currency, worksOnAluminum }) {
+export default function PricingMatrix({ pricingMatrix, customDamageTypes, customSizeRanges = [], onChange, onCustomTypesChange, onCustomSizeRangesChange, currency, worksOnAluminum }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isAddingCustomType, setIsAddingCustomType] = useState(false);
   const [newCustomTypeName, setNewCustomTypeName] = useState("");
+  const [isAddingCustomSizeRange, setIsAddingCustomSizeRange] = useState(false);
+  const [newCustomSizeRange, setNewCustomSizeRange] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -122,13 +124,48 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
     onCustomTypesChange(updatedCustomTypes);
   };
 
+  const handleAddCustomSizeRange = () => {
+    if (!newCustomSizeRange.trim()) return;
+    
+    const allSizes = [...SIZE_RANGE_OPTIONS, ...customSizeRanges];
+    if (allSizes.includes(newCustomSizeRange.trim())) {
+      alert("This size range already exists!");
+      return;
+    }
+
+    const updatedCustomSizes = [...customSizeRanges, newCustomSizeRange.trim()];
+    onCustomSizeRangesChange(updatedCustomSizes);
+    setNewCustomSizeRange("");
+    setIsAddingCustomSizeRange(false);
+  };
+
+  const handleDeleteCustomSizeRange = (sizeToDelete) => {
+    const entriesUsingSize = pricingMatrix.filter(entry => entry.size_range === sizeToDelete);
+    
+    if (entriesUsingSize.length > 0) {
+      const confirmed = window.confirm(
+        `This custom size range is used in ${entriesUsingSize.length} pricing ${entriesUsingSize.length === 1 ? 'entry' : 'entries'}. ` +
+        `If you delete it, those entries will also be removed. Continue?`
+      );
+      if (!confirmed) return;
+      
+      const updatedMatrix = pricingMatrix.filter(entry => entry.size_range !== sizeToDelete);
+      onChange(updatedMatrix);
+    }
+    
+    const updatedCustomSizes = customSizeRanges.filter(size => size !== sizeToDelete);
+    onCustomSizeRangesChange(updatedCustomSizes);
+  };
+
   const handleResetToDefaults = () => {
     onChange(DEFAULT_PRICING_MATRIX);
     onCustomTypesChange([]);
+    onCustomSizeRangesChange([]);
     setResetDialogOpen(false);
   };
 
   const allDamageTypes = [...CORE_DAMAGE_TYPES, ...customDamageTypes];
+  const allSizeRanges = [...SIZE_RANGE_OPTIONS, ...customSizeRanges];
 
   return (
     <Card className="bg-slate-900 border-slate-800">
@@ -205,6 +242,28 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
             </div>
           )}
 
+          {/* Custom Size Ranges Management */}
+          {customSizeRanges.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-white text-sm">Your Custom Size Ranges</Label>
+              <div className="flex flex-wrap gap-2">
+                {customSizeRanges.map((size) => (
+                  <div key={size} className="flex items-center gap-1 bg-slate-800 rounded-lg px-3 py-1.5 border border-slate-700">
+                    <span className="text-white text-sm">{size}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteCustomSizeRange(size)}
+                      className="h-5 w-5 p-0 hover:bg-red-900 text-slate-400 hover:text-red-300"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Matrix Entries */}
           <div className="space-y-0 divide-y divide-slate-700">
             {pricingMatrix.map((entry, index) => (
@@ -242,17 +301,26 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
                     <Label className="text-slate-400 text-xs">Size Range</Label>
                     <Select
                       value={entry.size_range}
-                      onValueChange={(value) => handleUpdateEntry(index, 'size_range', value)}
+                      onValueChange={(value) => {
+                        if (value === "__add_custom_size__") {
+                          setIsAddingCustomSizeRange(true);
+                        } else {
+                          handleUpdateEntry(index, 'size_range', value);
+                        }
+                      }}
                     >
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-9">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
-                        {SIZE_RANGE_OPTIONS.map(range => (
+                        {allSizeRanges.map(range => (
                           <SelectItem key={range} value={range} className="text-white hover:bg-slate-700">
                             {range}
                           </SelectItem>
                         ))}
+                        <SelectItem value="__add_custom_size__" className="text-green-400 hover:bg-slate-700 border-t border-slate-600">
+                          + Add Custom Size Range
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -327,6 +395,42 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
             </div>
           )}
 
+          {/* Add Custom Size Range Modal */}
+          {isAddingCustomSizeRange && (
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+              <Label className="text-white">Create Custom Size Range</Label>
+              <Input
+                value={newCustomSizeRange}
+                onChange={(e) => setNewCustomSizeRange(e.target.value)}
+                placeholder="e.g., 1001mm - 1500mm, Extra Large"
+                className="bg-slate-900 border-slate-700 text-white"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddCustomSizeRange();
+                  }
+                }}
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleAddCustomSizeRange}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Create Size Range
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddingCustomSizeRange(false);
+                    setNewCustomSizeRange("");
+                  }}
+                  className="flex-1 bg-slate-900 border-slate-700 text-white hover:bg-slate-800"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Add Entry Button */}
           <Button
             onClick={handleAddEntry}
@@ -341,6 +445,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
           <div className="text-xs text-slate-400 space-y-1 pt-2 border-t border-slate-800">
             <p>• {pricingMatrix.length} pricing {pricingMatrix.length === 1 ? 'entry' : 'entries'} configured</p>
             <p>• {allDamageTypes.length} damage {allDamageTypes.length === 1 ? 'type' : 'types'} available ({CORE_DAMAGE_TYPES.length} core + {customDamageTypes.length} custom)</p>
+            <p>• {allSizeRanges.length} size {allSizeRanges.length === 1 ? 'range' : 'ranges'} available ({SIZE_RANGE_OPTIONS.length} standard + {customSizeRanges.length} custom)</p>
             {worksOnAluminum && <p>• Aluminum pricing: automatic 1.35x multiplier</p>}
           </div>
         </CardContent>
@@ -375,7 +480,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, onChan
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Reset Pricing Matrix?</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-400">
-              Are you sure you want to reset the pricing matrix to its default settings? This will delete all custom damage types you've created and remove all current pricing entries, reverting to the original 'Standard Dent' and 'Crease' types with their default size ranges and prices. This action cannot be undone.
+              Are you sure you want to reset the pricing matrix to its default settings? This will delete all custom damage types and custom size ranges you've created, and remove all current pricing entries, reverting to the original 'Standard Dent' and 'Crease' types with their default size ranges and prices. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
