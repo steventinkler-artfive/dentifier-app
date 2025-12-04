@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -18,11 +17,11 @@ const CAR_PANELS = [
   "Roof", "A-Pillar", "B-Pillar", "C-Pillar", "Tailgate", "Other"
 ];
 
-// UPDATED: Simplified damage types - will be augmented with custom types from settings
-const BASE_DAMAGE_TYPES = ["Standard Dent", "Crease", "Other"];
+// Base damage types - will be augmented with custom types from user's pricing matrix
+const BASE_DAMAGE_TYPES = ["Standard Dent", "Crease"];
 
-// Size ranges
-const SIZE_RANGES = [
+// Default size ranges - will be replaced with user's pricing matrix sizes
+const DEFAULT_SIZE_RANGES = [
   "up to 10mm",
   "11mm - 25mm",
   "26mm - 50mm",
@@ -56,25 +55,49 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   const [chargePerPanel, setChargePerPanel] = useState(initialChargePerPanel);
   const [damageItems, setDamageItems] = useState(initialDamageItems.length > 0 ? initialDamageItems : []);
   const [damageTypes, setDamageTypes] = useState(BASE_DAMAGE_TYPES);
+  const [sizeRanges, setSizeRanges] = useState(DEFAULT_SIZE_RANGES);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  // Load custom damage types from user settings
+  // Load damage types and size ranges from user's pricing matrix
   useEffect(() => {
-    const loadCustomDamageTypes = async () => {
+    const loadPricingOptions = async () => {
       try {
         const currentUser = await base44.auth.me();
         const userSettingsList = await base44.entities.UserSetting.filter({ user_email: currentUser.email });
         
         if (userSettingsList.length > 0) {
-          const customTypes = userSettingsList[0].custom_damage_types || [];
-          // Combine base types with custom types
-          setDamageTypes([...BASE_DAMAGE_TYPES, ...customTypes]);
+          const settings = userSettingsList[0];
+          const pricingMatrix = settings.pricing_matrix || [];
+          const customTypes = settings.custom_damage_types || [];
+          
+          // Extract unique damage types from pricing matrix
+          const matrixDamageTypes = [...new Set(pricingMatrix.map(entry => entry.damage_type))];
+          // Combine with custom types, ensuring base types are included
+          const allDamageTypes = [...new Set([...BASE_DAMAGE_TYPES, ...matrixDamageTypes, ...customTypes])];
+          setDamageTypes(allDamageTypes);
+          
+          // Extract unique size ranges from pricing matrix and sort them logically
+          const matrixSizeRanges = [...new Set(pricingMatrix.map(entry => entry.size_range))];
+          if (matrixSizeRanges.length > 0) {
+            // Sort size ranges by extracting the first number
+            const sortedSizeRanges = matrixSizeRanges.sort((a, b) => {
+              const getFirstNumber = (str) => {
+                const match = str.match(/(\d+)/);
+                return match ? parseInt(match[1]) : 0;
+              };
+              return getFirstNumber(a) - getFirstNumber(b);
+            });
+            setSizeRanges(sortedSizeRanges);
+          }
         }
+        setSettingsLoaded(true);
       } catch (error) {
-        console.error("Error loading custom damage types:", error);
+        console.error("Error loading pricing options:", error);
+        setSettingsLoaded(true);
       }
     };
 
-    loadCustomDamageTypes();
+    loadPricingOptions();
   }, []);
 
   const handleFileSelect = async (event) => {
@@ -121,10 +144,14 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   };
 
   const handleAddDamageItem = () => {
+    // Use first available options from loaded settings
+    const defaultDamageType = damageTypes[0] || "Standard Dent";
+    const defaultSizeRange = sizeRanges[2] || sizeRanges[0] || "26mm - 50mm"; // Try to default to a mid-size
+    
     const newItem = {
       panel: "",
-      damage_type: "Standard Dent",
-      size_range: "26mm - 50mm",
+      damage_type: defaultDamageType,
+      size_range: defaultSizeRange,
       material: "Steel",
       repair_method: "Good Tool Access",
       depth: "Shallow",
@@ -426,7 +453,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                         <SelectValue placeholder="Select size" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
-                        {SIZE_RANGES.map(range => (
+                        {sizeRanges.map(range => (
                           <SelectItem key={range} value={range} className="text-white hover:bg-slate-700">
                             {range}
                           </SelectItem>
