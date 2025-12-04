@@ -69,6 +69,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
           const settings = userSettingsList[0];
           const pricingMatrix = settings.pricing_matrix || [];
           const customTypes = settings.custom_damage_types || [];
+          const customSizes = settings.custom_size_ranges || [];
           
           // Extract unique damage types from pricing matrix
           const matrixDamageTypes = [...new Set(pricingMatrix.map(entry => entry.damage_type))];
@@ -76,19 +77,20 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
           const allDamageTypes = [...new Set([...BASE_DAMAGE_TYPES, ...matrixDamageTypes, ...customTypes])];
           setDamageTypes(allDamageTypes);
           
-          // Extract unique size ranges from pricing matrix and sort them logically
+          // Extract unique size ranges from pricing matrix and combine with custom sizes
           const matrixSizeRanges = [...new Set(pricingMatrix.map(entry => entry.size_range))];
-          if (matrixSizeRanges.length > 0) {
-            // Sort size ranges by extracting the first number
-            const sortedSizeRanges = matrixSizeRanges.sort((a, b) => {
-              const getFirstNumber = (str) => {
-                const match = str.match(/(\d+)/);
-                return match ? parseInt(match[1]) : 0;
-              };
-              return getFirstNumber(a) - getFirstNumber(b);
-            });
-            setSizeRanges(sortedSizeRanges);
-          }
+          // Combine default, matrix, and custom size ranges
+          const allSizeRanges = [...new Set([...DEFAULT_SIZE_RANGES, ...matrixSizeRanges, ...customSizes])];
+          
+          // Sort size ranges by extracting the first number
+          const sortedSizeRanges = allSizeRanges.sort((a, b) => {
+            const getFirstNumber = (str) => {
+              const match = str.match(/(\d+)/);
+              return match ? parseInt(match[1]) : 0;
+            };
+            return getFirstNumber(a) - getFirstNumber(b);
+          });
+          setSizeRanges(sortedSizeRanges);
         }
         setSettingsLoaded(true);
       } catch (error) {
