@@ -98,6 +98,7 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
         if (item.material) parts.push(`Material: ${item.material}`);
         if (item.access_type) parts.push(`Access: ${item.access_type}`);
         if (item.depth) parts.push(`Depth: ${item.depth}`);
+        if (item.affects_body_line) parts.push(`Affects Body Line: Yes`);
         if (item.notes) parts.push(`Notes: ${item.notes}`);
         return parts.join(' | ');
       }).join('\n');
