@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
+import { useAlert } from "@/components/ui/CustomAlert";
 
 // Custom Dentifier D Icon Component
 const DentifierIcon = ({ className = "" }) => (
@@ -155,6 +156,7 @@ export default function Settings() {
     const [error, setError] = useState(null);
 
     const fileInputRef = useRef(null);
+    const { showAlert } = useAlert();
 
     const [formData, setFormData] = useState({
       business_name: '',
@@ -393,8 +395,8 @@ export default function Settings() {
                 setSettings(newSettings); // Store the newly created settings object
             }
             await loadData(); // Reload data to update settings and formData from server
-            alert("Settings saved successfully!");
-        } catch (err) {
+            await showAlert("Settings saved successfully!", "Success");
+            } catch (err) {
             setError("Failed to save settings. Please try again.");
             console.error(err);
         } finally {
@@ -426,8 +428,8 @@ export default function Settings() {
                 const newGlobalSettings = await GlobalSetting.create(dataToSave);
                 setGlobalSettings(newGlobalSettings);
             }
-            alert("Global AI settings saved successfully! All users will now use these instructions.");
-        } catch (err) {
+            await showAlert("Global AI settings saved successfully! All users will now use these instructions.", "Success");
+            } catch (err) {
             setError("Failed to save global settings. Please try again.");
             console.error(err);
         } finally {
