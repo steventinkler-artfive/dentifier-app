@@ -922,52 +922,38 @@ OUTPUT: Plain text only, no formatting, quotes, or JSON.`;
                     placeholder="Description"
                     className="bg-slate-600 border-slate-500 text-white"
                   />
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input
-                      type="number"
-                      step="0.5"
-                      value={item.quantity}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        updateLineItem(index, 'quantity', val === '' ? '' : parseFloat(val) || 0);
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === '') {
-                          updateLineItem(index, 'quantity', 0);
-                        }
-                      }}
-                      placeholder="Hours"
-                      className="bg-slate-600 border-slate-500 text-white"
-                    />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.unit_price}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        updateLineItem(index, 'unit_price', val === '' ? '' : parseFloat(val) || 0);
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === '') {
-                          updateLineItem(index, 'unit_price', 0);
-                        }
-                      }}
-                      placeholder="Rate"
-                      className="bg-slate-600 border-slate-500 text-white"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-white text-sm">
-                        {getCurrencySymbol()}{item.total_price?.toFixed(2) || '0.00'}
-                      </span>
-                      <Button
-                        onClick={() => removeLineItem(index)}
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <Label className="text-white text-xs mb-1">Final Price ({currency})</Label>
+                      <Input
+                        type="number"
+                        step="5"
+                        value={item.total_price === 0 ? '' : item.total_price}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newPrice = val === '' ? 0 : parseFloat(val) || 0;
+                          const updated = [...lineItems];
+                          updated[index] = {
+                            ...updated[index],
+                            total_price: newPrice,
+                            quantity: 1,
+                            unit_price: newPrice
+                          };
+                          setLineItems(updated);
+                        }}
+                        placeholder="0"
+                        className="bg-slate-600 border-slate-500 text-white font-semibold"
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Edit to override calculated price</p>
                     </div>
+                    <Button
+                      onClick={() => removeLineItem(index)}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/20 mt-4"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))
