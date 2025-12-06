@@ -439,12 +439,18 @@ export default function QuoteGeneration({
       try {
         const user = await base44.auth.me();
         const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+        
+        // Load global settings for LLM quoting instructions
+        const globalSettingsList = await base44.entities.GlobalSetting.filter({ setting_key: 'main' });
+        const globalSettings = globalSettingsList.length > 0 ? globalSettingsList[0] : null;
         if (settings.length > 0) {
           console.log('📋 LOADED USER SETTINGS:', {
             pricingMatrixLength: settings[0].pricing_matrix?.length,
             pricingMatrixSample: settings[0].pricing_matrix?.slice(0, 3)
           });
-          setUserSettings(settings[0]);
+          // Attach global settings to user settings for access in quote generation
+          const settingsWithGlobal = { ...settings[0], _globalSettings: globalSettings };
+          setUserSettings(settingsWithGlobal);
           setCurrency(settings[0].currency || 'GBP');
         } else {
           setError('User settings not found. Please configure your settings first.');
@@ -511,6 +517,7 @@ export default function QuoteGeneration({
       const hourlyRate = userSettings.hourly_rate || 70;
       const baseCost = userSettings.base_cost || 0;
       const pricingMatrix = userSettings.pricing_matrix || [];
+      const globalSettings = userSettings._globalSettings;
 
       const calculatedLineItems = [];
       const breakdownDetails = [];
@@ -528,29 +535,97 @@ export default function QuoteGeneration({
           }
           
           breakdownDetails.push(calculation);
-          
-          let description = `PDR Labour - ${item.panel} ${item.damage_type} Repair (${item.size_range}`;
-          
-          if (item.depth && item.depth !== "Shallow") {
-            description += `, ${item.depth}`;
-          }
-          description += `)`;
-          
-          if (item.affects_body_line) description += ' (Body Line Area)';
-          if (item.has_stretched_metal) description += ' (Stretched Metal)';
-          const itemNotesLower = (item.notes || "").toLowerCase(); 
-          if (itemNotesLower.includes("matte paint") || itemNotesLower.includes("matte finish")) {
-            description += ' (Matte Paint Finish)';
-          }
-          
-          calculatedLineItems.push({
-            description: description,
-            quantity: calculation.roundedHoursForTech,
-            unit_price: hourlyRate,
-            total_price: calculation.totalPrice
-          });
-          
           totalEstimatedHours += calculation.roundedHoursForTech;
+          
+          // Use LLM to generate professional customer-facing description if global settings available
+          if (globalSettings?.llm_quote_instructions) {
+            try {
+              const llmQuoteInstructions = globalSettings.llm_quote_instructions;
+              
+              const quotePrompt = `${llmQuoteInstructions}
+
+INPUT DATA FOR THIS SINGLE DAMAGE ITEM:
+
+Panel: ${item.panel}
+Damage Type: ${item.damage_type}
+Size Range: ${item.size_range}
+Depth: ${item.depth || 'Shallow'}
+Material: ${item.material === 'Aluminum' ? 'Aluminium' : item.material || 'Steel'}
+Repair Method: ${item.repair_method || 'Good Tool Access'}
+affects_body_line: ${item.affects_body_line ? 'true' : 'false'}
+has_stretched_metal: ${item.has_stretched_metal ? 'true' : 'false'}
+aluminium_panel: ${item.material === 'Aluminum' ? 'true' : 'false'}
+matte_paint: ${(item.notes || '').toLowerCase().includes('matte') ? 'true' : 'false'}
+Technician's Additional Notes: ${item.notes || 'None'}
+FINAL CALCULATED PRICE: ${getCurrencySymbol()}${calculation.totalPrice.toFixed(2)} (DO NOT MODIFY)
+
+REQUIRED OUTPUT:
+Provide ONLY the line item description as a plain string. Example: "PDR Labour - Rear Door Standard Dent Repair (51mm - 80mm, Medium, Body Line Area)"
+
+DO NOT include JSON formatting, quotes, or any other text - just the description string.`;
+
+              const llmResponse = await base44.integrations.Core.InvokeLLM({
+                prompt: quotePrompt
+              });
+              
+              // LLM returns plain string now
+              let description = typeof llmResponse === 'string' ? llmResponse.trim() : llmResponse;
+              
+              // Fallback if LLM returns something unexpected
+              if (!description || description.length === 0 || description.length > 200) {
+                throw new Error('Invalid LLM description');
+              }
+              
+              calculatedLineItems.push({
+                description: description,
+                quantity: calculation.roundedHoursForTech,
+                unit_price: hourlyRate,
+                total_price: calculation.totalPrice
+              });
+              
+            } catch (llmError) {
+              console.error('LLM description generation failed, using fallback:', llmError);
+              // Fallback to programmatic description
+              let description = `PDR Labour - ${item.panel} ${item.damage_type} Repair (${item.size_range}`;
+              if (item.depth && item.depth !== "Shallow") {
+                description += `, ${item.depth}`;
+              }
+              description += `)`;
+              if (item.affects_body_line) description += ' (Body Line Area)';
+              if (item.has_stretched_metal) description += ' (Stretched Metal)';
+              const itemNotesLower = (item.notes || "").toLowerCase(); 
+              if (itemNotesLower.includes("matte paint") || itemNotesLower.includes("matte finish")) {
+                description += ' (Matte Paint Finish)';
+              }
+              
+              calculatedLineItems.push({
+                description: description,
+                quantity: calculation.roundedHoursForTech,
+                unit_price: hourlyRate,
+                total_price: calculation.totalPrice
+              });
+            }
+          } else {
+            // No global settings - use programmatic fallback
+            let description = `PDR Labour - ${item.panel} ${item.damage_type} Repair (${item.size_range}`;
+            if (item.depth && item.depth !== "Shallow") {
+              description += `, ${item.depth}`;
+            }
+            description += `)`;
+            if (item.affects_body_line) description += ' (Body Line Area)';
+            if (item.has_stretched_metal) description += ' (Stretched Metal)';
+            const itemNotesLower = (item.notes || "").toLowerCase(); 
+            if (itemNotesLower.includes("matte paint") || itemNotesLower.includes("matte finish")) {
+              description += ' (Matte Paint Finish)';
+            }
+            
+            calculatedLineItems.push({
+              description: description,
+              quantity: calculation.roundedHoursForTech,
+              unit_price: hourlyRate,
+              total_price: calculation.totalPrice
+            });
+          }
           
         } catch (err) {
           console.error(`Error calculating item ${i + 1}:`, err);
@@ -867,33 +942,34 @@ export default function QuoteGeneration({
           </div>
 
           {!isPerPanelPricing && calculationBreakdown.length > 0 && (
-            <div className="space-y-3 border-t border-slate-600 pt-4">
-              <Label className="text-white text-lg font-semibold">Technical Pricing Breakdown</Label>
-              <p className="text-slate-400 text-sm mb-2">Details of programmatic calculation</p>
-              {calculationBreakdown.map((breakdown, idx) => (
-                <Card key={idx} className="bg-slate-700 border-slate-600 text-white">
-                  <CardHeader className="py-3 px-4">
-                    <CardTitle className="text-base font-medium flex justify-between items-center">
-                      <span>{breakdown.panel} - {breakdown.damageType || 'Fallback'}</span>
-                      <span className="text-green-300 text-lg">{getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2) || '0.00'}</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm p-4 pt-0 space-y-2">
-                    {breakdown.error || breakdown.fallbackUsed ? (
-                      <p className="text-red-300">
-                        <AlertTriangle className="inline-block w-4 h-4 mr-1" />
-                        {breakdown.error || 'Fallback pricing used.'}
-                      </p>
-                    ) : (
-                      <>
-                        <p><span className="font-semibold">Matrix Base:</span> {breakdown.matrixEntry?.damage_type} - {breakdown.matrixEntry?.size_range} ({getCurrencySymbol()}{breakdown.matrixEntry?.base_price?.toFixed(2)})</p>
-                        <p><span className="font-semibold">Final Price:</span> {getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2)}</p>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className="space-y-3 border-t border-slate-600 pt-4">
+          <Label className="text-white text-lg font-semibold">Technical Pricing Breakdown</Label>
+          <p className="text-slate-400 text-sm mb-2">Details of programmatic calculation (for internal use)</p>
+          {calculationBreakdown.map((breakdown, idx) => (
+            <Card key={idx} className="bg-slate-700 border-slate-600 text-white">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-base font-medium flex justify-between items-center">
+                  <span>{breakdown.panel} - {breakdown.damageType || 'Fallback'}</span>
+                  <span className="text-green-300 text-lg">{getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2) || '0.00'}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm p-4 pt-0 space-y-2">
+                {breakdown.error || breakdown.fallbackUsed ? (
+                  <p className="text-red-300">
+                    <AlertTriangle className="inline-block w-4 h-4 mr-1" />
+                    {breakdown.error || 'Fallback pricing used.'}
+                  </p>
+                ) : (
+                  <>
+                    <p><span className="font-semibold">Matrix Base:</span> {breakdown.matrixEntry?.damage_type} - {breakdown.matrixEntry?.size_range} ({getCurrencySymbol()}{breakdown.matrixEntry?.base_price?.toFixed(2)})</p>
+                    <p><span className="font-semibold">Estimated Repair Time (for internal use):</span> {breakdown.roundedHoursForTech} hrs</p>
+                    <p><span className="font-semibold">Final Price:</span> {getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2)}</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+          </div>
           )}
 
           <div className="space-y-2">
