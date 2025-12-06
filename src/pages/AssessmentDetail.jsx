@@ -815,12 +815,9 @@ export default function AssessmentDetail() {
                 <div className="space-y-3">
                   {currentLineItems.map((item, index) => (
                     <div key={index} className="p-3 bg-slate-800 rounded-lg">
-                      <p className="text-white font-medium mb-1 text-sm">{item.description}</p>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">
-                          {item.quantity} × {formatCurrency(item.unit_price, assessment.currency || 'GBP')}
-                        </span>
-                        <span className="text-white font-medium">
+                      <div className="flex justify-between items-start">
+                        <p className="text-white font-medium text-sm flex-1">{item.description}</p>
+                        <span className="text-white font-medium text-sm ml-2">
                           {formatCurrency(item.total_price, assessment.currency || 'GBP')}
                         </span>
                       </div>
