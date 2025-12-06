@@ -195,6 +195,8 @@ ${sizeFlags.length > 0 ? `\nWARNING - Size Flags:\n${sizeFlags.join('\n')}` : ''
 
 VEHICLE: ${vehicleInfo}
 
+${analysisInstructions}
+
 ═══════════════════════════════════════════════════════════════
 CRITICAL: STRUCTURED DAMAGE DATA PROVIDED BY TECHNICIAN
 ═══════════════════════════════════════════════════════════════
