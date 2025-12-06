@@ -295,17 +295,19 @@ REMINDER: dent_count in your response MUST be ${totalDentsFromData} (from the st
               properties: {
                 technical_risks: {
                   type: "array",
-                  items: { type: "string" }
+                  items: { type: "string" },
+                  description: "MANDATORY: List of specific technical risks and guidance for this repair. If no risks, provide: ['Standard repair within your capabilities. No unusual risks identified.']"
                 },
                 requires_special_tools: { type: "boolean" },
                 estimated_difficulty: {
                   type: "string",
                   enum: ["Easy", "Moderate", "Difficult", "Very Difficult"]
                 }
-              }
+              },
+              required: ["technical_risks"]
             }
           },
-          required: ["damage_report", "confidence_assessment"]
+          required: ["damage_report", "confidence_assessment", "risk_assessment"]
         }
       });
 
