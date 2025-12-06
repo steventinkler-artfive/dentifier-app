@@ -220,8 +220,6 @@ PHOTOS: ${photos.length} photos provided (these are supporting evidence for the 
 
 ${technicianContext}
 
-${analysisInstructions}
-
 CRITICAL ANALYSIS REQUIREMENTS:
 1. Use the EXACT dent_count from the structured damage items (${totalDentsFromData} total)
 2. For EACH damage item, cross-reference its damage_type against the technician's Specialized Damage Skills
