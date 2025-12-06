@@ -116,15 +116,20 @@ export default function EditQuote() {
 
   const updateLineItem = (index, field, value) => {
     const updated = [...lineItems];
-    const item = { ...updated[index], [field]: value };
     
-    if (field === 'quantity' || field === 'unit_price') {
-      const quantity = parseFloat(item.quantity) || 0;
-      const unitPrice = parseFloat(item.unit_price) || 0;
-      item.total_price = quantity * unitPrice;
+    if (field === 'description') {
+      updated[index] = { ...updated[index], [field]: value };
+    } else if (field === 'total_price') {
+      const parsedValue = value === '' ? 0 : parseFloat(value) || 0;
+      updated[index] = { 
+        ...updated[index], 
+        total_price: parsedValue,
+        // Keep quantity/unit_price for backward compatibility
+        quantity: 1,
+        unit_price: parsedValue
+      };
     }
     
-    updated[index] = item;
     setLineItems(updated);
   };
 
@@ -240,34 +245,21 @@ export default function EditQuote() {
                   className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label className="text-white text-sm">Qty</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label className="text-white text-sm">Unit Price</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.unit_price}
-                    onChange={(e) => updateLineItem(index, 'unit_price', e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label className="text-white text-sm">Total</Label>
-                  <div className="bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white">
-                    {formatPrice(item.total_price, currency)}
-                  </div>
-                </div>
+              <div>
+                <Label className="text-white text-sm">Price ({currency})</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="5"
+                  value={item.total_price === 0 ? '' : item.total_price}
+                  onChange={(e) => {
+                    const newPrice = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
+                    updateLineItem(index, 'total_price', newPrice);
+                  }}
+                  className="bg-slate-700 border-slate-600 text-white font-semibold"
+                  placeholder="0"
+                />
+                <p className="text-xs text-slate-400 mt-1">Edit to override calculated price</p>
               </div>
               {lineItems.length > 1 && (
                 <Button
