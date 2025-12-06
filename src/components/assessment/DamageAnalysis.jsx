@@ -232,6 +232,8 @@ CRITICAL ANALYSIS REQUIREMENTS:
 4. Consider the technician's years of experience and available tools when assessing difficulty
 5. Flag any dents exceeding the technician's stated maximum size
 
+CRITICAL: You MUST always provide technical_risks in your risk_assessment. Never omit this field. If there are no significant risks, you MUST still include the array with at least: ["Standard repair within your capabilities. No unusual risks identified."]
+
 DEPTH INTERPRETATION GUIDELINES:
 - "Shallow" dents are the EASIEST to repair - mention this is favorable for PDR
 - "Medium" dents require more skill but are still standard PDR work
