@@ -79,7 +79,7 @@ OUTPUT FORMAT:
 }
 
 INTERNAL TECHNICIAN ADVISORY (separate section, not customer-facing):
-Based on the technician's profile settings, you may provide internal guidance about repair difficulty, skill level considerations, and technique suggestions. This information is ONLY for the technician and will NEVER appear in customer quotes.`;
+Based on the technician's profile settings, you MUST provide internal guidance about repair difficulty, skill level considerations, and technique suggestions. Explicitly mention if the damage affects a body line and cross-reference with the technician's "Body line repairs" skill level. This information is ONLY for the technician and will NEVER appear in customer quotes.`;
 
 const DEFAULT_QUOTE_INSTRUCTIONS = `You are formatting a PDR quote for a customer.
 
