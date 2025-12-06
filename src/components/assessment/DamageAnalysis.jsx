@@ -185,6 +185,21 @@ ${sizeFlags.length > 0 ? `\nWARNING - Size Flags:\n${sizeFlags.join('\n')}` : ''
               }
             }
           }
+
+          // Check for body line repairs skill when affects_body_line is true
+          if (item.affects_body_line) {
+            const bodyLineSkill = userSettings.specialized_damage_skills.find(skill => 
+              skill.type === "Body line repairs"
+            );
+            
+            if (bodyLineSkill) {
+              if (bodyLineSkill.level === "Don't do this type") {
+                skillWarnings.push(`⚠️ CRITICAL: Damage item ${index + 1} (${item.panel} - Body Line) - Technician indicates they DON'T do body line repairs. Consider marking as "Not suitable for PDR" or "Refer to specialist".`);
+              } else if (bodyLineSkill.level === "Beginner") {
+                skillWarnings.push(`⚠️ WARNING: Damage item ${index + 1} (${item.panel} - Body Line) - Technician's skill level is BEGINNER for body line repairs. This significantly increases technical risk. Mention in technical_risks.`);
+              }
+            }
+          }
         });
       }
 
