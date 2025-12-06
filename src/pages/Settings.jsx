@@ -134,7 +134,7 @@ const PDR_TOOLS = [
 
 const DAMAGE_SKILL_TYPES = [
   "Door dings and small parking damage", "Hail damage", "Large conventional dents", 
-  "Creases and sharp dents", "Collision/impact damage"
+  "Creases and sharp dents", "Body line repairs", "Collision/impact damage"
 ];
 
 const SKILL_LEVELS = ["Don't do this type", "Beginner", "Intermediate", "Advanced", "Expert"];
