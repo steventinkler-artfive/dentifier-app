@@ -50,9 +50,10 @@ TASK: Examine the images and describe ONLY what you see:
 
 CRITICAL RULES:
 - Describe ONLY what's visible in the images
-- Do NOT assess repair difficulty or technician capability
-- Do NOT mention skill levels, complexity, or pricing
-- Do NOT suggest techniques or methods
+- For "dent_summary", explicitly include: damage type, size range, depth, and if it affects a body line (from structured data).
+- Do NOT assess repair difficulty or technician capability in damage_report.
+- Do NOT mention skill levels, complexity, or pricing in damage_report.
+- Do NOT suggest techniques or methods in damage_report.
 - Be literal: "Standard Dent" for round/oval damage, "Crease" only for linear folds
 - Do NOT say "Crease" when you mean "Standard Dent on a body line"
 - Do NOT mention damage that isn't visible in the images
