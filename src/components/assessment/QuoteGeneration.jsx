@@ -664,7 +664,49 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       setLineItems(calculatedLineItems);
       setCalculationBreakdown(breakdownDetails);
       setEstimatedTime(totalEstimatedHours);
-      setNotes('Quote calculated programmatically based on your pricing matrix and damage characteristics.');
+      
+      // Generate AI-powered assessment notes if global settings available
+      let assessmentNotes = 'Quote calculated programmatically based on your pricing matrix and damage characteristics.';
+      
+      if (globalSettings?.llm_quote_instructions) {
+        try {
+          const notesPrompt = `${globalSettings.llm_quote_instructions}
+
+You are generating ASSESSMENT NOTES for a PDR technician's internal reference.
+
+DAMAGE ITEMS SUMMARY:
+${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} - ${item.damage_type} (${item.size_range})${item.depth ? `, ${item.depth}` : ''}${item.affects_body_line ? ', Body Line' : ''}${item.has_stretched_metal ? ', Stretched Metal' : ''}${item.notes ? ` - Notes: ${item.notes}` : ''}`).join('\n')}
+
+CALCULATED QUOTE DETAILS:
+${calculatedLineItems.map(item => `- ${item.description}: ${getCurrencySymbol()}${item.total_price.toFixed(2)}`).join('\n')}
+
+Total: ${getCurrencySymbol()}${calculatedLineItems.reduce((sum, item) => sum + item.total_price, 0).toFixed(2)}
+
+TASK: Write a brief assessment note (2-3 sentences) for the technician about this repair job. Include:
+- Overall assessment of the repair complexity
+- Any specific challenges or considerations
+- Expected outcome quality
+
+Keep it professional, concise, and specific to this job. DO NOT include pricing or calculations - focus on the repair assessment.
+
+OUTPUT: Plain text only, no formatting, quotes, or JSON.`;
+
+          const notesResponse = await base44.integrations.Core.InvokeLLM({
+            prompt: notesPrompt
+          });
+          
+          const generatedNotes = typeof notesResponse === 'string' ? notesResponse.trim() : notesResponse;
+          
+          if (generatedNotes && generatedNotes.length > 0 && generatedNotes.length < 500) {
+            assessmentNotes = generatedNotes;
+          }
+        } catch (notesError) {
+          console.error('Failed to generate AI assessment notes:', notesError);
+          // Keep default notes on error
+        }
+      }
+      
+      setNotes(assessmentNotes);
       setQuoteGenerated(true);
 
     } catch (err) {

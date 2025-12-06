@@ -182,14 +182,15 @@ export default function EditQuotePage() {
       
       if (field === 'description') {
         newItems[index] = { ...newItems[index], [field]: value };
-      } else if (field === 'quantity' || field === 'unit_price') {
+      } else if (field === 'total_price') {
         const parsedValue = value === '' ? 0 : parseFloat(value) || 0;
-        newItems[index] = { ...newItems[index], [field]: parsedValue };
-        
-        // Recalculate item total
-        const quantity = parseFloat(newItems[index].quantity) || 0;
-        const unitPrice = parseFloat(newItems[index].unit_price) || 0;
-        newItems[index].total_price = quantity * unitPrice;
+        newItems[index] = { 
+          ...newItems[index], 
+          total_price: parsedValue,
+          // Keep quantity/unit_price for backward compatibility but they're now display-only
+          quantity: 1,
+          unit_price: parsedValue
+        };
       }
 
       return newItems;
@@ -406,8 +407,8 @@ export default function EditQuotePage() {
             <div className="space-y-3">
               {items.map((item, index) => (
                 <div key={item.id || index} className="bg-slate-800 p-3 rounded-md relative border border-slate-700">
-                  <div className="grid grid-cols-1 gap-2">
-                    <div className="col-span-full">
+                  <div className="space-y-3">
+                    <div>
                       <Label htmlFor={`description-${index}`} className="text-slate-200 text-sm">Description</Label>
                       <Input
                         id={`description-${index}`}
@@ -418,33 +419,23 @@ export default function EditQuotePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor={`quantity-${index}`} className="text-slate-200 text-sm">Qty</Label>
+                      <Label htmlFor={`totalPrice-${index}`} className="text-slate-200 text-sm">
+                        Price ({currency})
+                      </Label>
                       <Input
-                        id={`quantity-${index}`}
+                        id={`totalPrice-${index}`}
                         type="number"
                         min="0"
-                        step="0.01"
-                        value={item.quantity === 0 ? '' : item.quantity}
-                        onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                        className="w-full bg-slate-700 text-white border-slate-600 text-sm"
+                        step="5"
+                        value={item.total_price === 0 ? '' : item.total_price}
+                        onChange={(e) => {
+                          const newPrice = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
+                          handleItemChange(index, "total_price", newPrice);
+                        }}
+                        className="w-full bg-slate-700 text-white border-slate-600 text-sm font-semibold"
                         placeholder="0"
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor={`unitPrice-${index}`} className="text-slate-200 text-sm">Unit Price ({currency})</Label>
-                      <Input
-                        id={`unitPrice-${index}`}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.unit_price === 0 ? '' : item.unit_price}
-                        onChange={(e) => handleItemChange(index, "unit_price", e.target.value)}
-                        className="w-full bg-slate-700 text-white border-slate-600 text-sm"
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <p className="text-base font-semibold text-slate-100">Total: {formatPrice(item.total_price, currency)}</p>
+                      <p className="text-xs text-slate-400 mt-1">Edit to override calculated price</p>
                     </div>
                   </div>
                   {items.length > 1 && (
