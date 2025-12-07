@@ -577,7 +577,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                 className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Damage
+                Add More Damage
               </Button>
             )}
           </div>
@@ -654,7 +654,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                 className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Panel
+                Add More Panel
               </Button>
             )}
           </div>
