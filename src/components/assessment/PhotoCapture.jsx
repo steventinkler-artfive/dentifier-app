@@ -565,7 +565,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                   className="w-full border-red-700 text-red-400 hover:bg-red-900/20"
                 >
                   <X className="w-4 h-4 mr-2" />
-                  Remove This Damage Item
+                  Remove this Damage Item
                 </Button>
               </div>
             ))}
