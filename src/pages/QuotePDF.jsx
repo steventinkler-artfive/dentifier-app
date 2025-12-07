@@ -207,7 +207,7 @@ export default function QuotePDF() {
   const invoiceFooter = isCompleted && userSettings?.invoice_footer ? 
     userSettings.invoice_footer : 
     (isCompleted ? "Thank you for your business! Payment is due within 30 days." : 
-      (isDraft ? "This is a draft quote and subject to change. Quote will be finalized once customer details are confirmed. Thank you for your business!" : 
+      (isDraft ? "This is a draft quote and subject to change. Quote will be finalised once customer details are confirmed. Thank you for your business!" : 
         "This quote is valid for 30 days. Thank you for your business!"));
   
   // Use assessment notes if include_notes_in_quote is enabled (from URL param or assessment data)
