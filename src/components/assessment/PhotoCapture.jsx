@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Camera, Upload, X, Loader2, Image as ImageIcon, CheckCircle, AlertTriangle } from "lucide-react";
+import { Camera, Upload, X, Loader2, Image as ImageIcon, CheckCircle, AlertTriangle, Plus } from "lucide-react";
 import { compressMultipleImages } from "../utils/imageCompression";
 import { useAlert } from "@/components/ui/CustomAlert";
 
@@ -350,18 +350,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
         {/* Damage Items Section - Only show when photos are uploaded */}
         {!chargePerPanel && uploadedPhotos.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-white">Detailed Damage Items</Label>
-              <Button
-                onClick={handleAddDamageItem}
-                variant="outline"
-                size="sm"
-                className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
-              >
-                <Camera className="w-4 h-4 mr-2" />
-                Add Damage
-              </Button>
-            </div>
+            <Label className="text-white">Detailed Damage Items</Label>
 
             {damageItems.length === 0 && (
               <div className="text-center p-6 bg-slate-800 rounded-lg border-2 border-dashed border-slate-700">
@@ -580,24 +569,25 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                 </Button>
               </div>
             ))}
+
+            {damageItems.length > 0 && (
+              <Button
+                onClick={handleAddDamageItem}
+                variant="outline"
+                size="sm"
+                className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Damage
+              </Button>
+            )}
           </div>
         )}
 
         {/* Simplified damage items for charge per panel */}
         {chargePerPanel && uploadedPhotos.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-white">Panel List (Simplified)</Label>
-              <Button
-                onClick={handleAddDamageItem}
-                variant="outline"
-                size="sm"
-                className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
-              >
-                <Camera className="w-4 h-4 mr-2" />
-                Add Panel
-              </Button>
-            </div>
+            <Label className="text-white">Panel List (Simplified)</Label>
 
             {damageItems.length === 0 && (
               <div className="text-center p-6 bg-slate-800 rounded-lg border-2 border-dashed border-slate-700">
@@ -657,6 +647,18 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                 </Button>
               </div>
             ))}
+
+            {damageItems.length > 0 && (
+              <Button
+                onClick={handleAddDamageItem}
+                variant="outline"
+                size="sm"
+                className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Panel
+              </Button>
+            )}
           </div>
         )}
 
