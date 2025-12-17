@@ -585,7 +585,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
         )}
 
         {/* Simplified damage items for charge per panel */}
-        {chargePerPanel && uploadedPhotos.length > 0 && (
+        {chargePerPanel && (
           <div className="space-y-4">
             <Label className="text-white">Panel List (Simplified)</Label>
 
@@ -664,7 +664,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
         {/* Continue Button */}
         <Button
           onClick={handleContinue}
-          disabled={uploadedPhotos.length === 0 || uploading}
+          disabled={(uploadedPhotos.length === 0 && !chargePerPanel) || uploading}
           className="w-full pink-gradient text-white font-semibold"
         >
           Continue to {chargePerPanel ? 'Quote' : 'Analysis'}
