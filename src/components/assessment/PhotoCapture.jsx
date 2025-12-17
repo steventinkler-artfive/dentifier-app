@@ -327,10 +327,17 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                 Upload from Gallery
               </Button>
             </label>
-          </div>
-        </div>
+            </div>
 
-        {/* Charge Per Panel Toggle */}
+            {/* Optional photos note for per panel mode */}
+            {chargePerPanel && (
+            <p className="text-slate-400 text-xs text-center">
+              Photos optional on per panel quoting
+            </p>
+            )}
+            </div>
+
+            {/* Charge Per Panel Toggle */}
         <div className="bg-slate-800 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
