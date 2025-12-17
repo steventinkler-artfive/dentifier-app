@@ -194,7 +194,8 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   };
 
   const handleContinue = async () => {
-    if (uploadedPhotos.length === 0) {
+    // Only require photos for detailed pricing mode
+    if (uploadedPhotos.length === 0 && !chargePerPanel) {
       await showAlert("Please upload at least one photo before continuing.", "Photos Required");
       return;
     }
@@ -654,7 +655,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                 className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add more Panel
+                Add a Panel
               </Button>
             )}
           </div>
