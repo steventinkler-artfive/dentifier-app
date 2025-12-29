@@ -220,6 +220,15 @@ export default function Settings() {
         }
     }, [formData.payment_provider]);
 
+    useEffect(() => {
+        // Auto-update payment provider based on payment method preference
+        if (formData.payment_method_preference === 'Bank Transfer Only') {
+            if (formData.payment_provider !== 'None') {
+                handleInputChange('payment_provider', 'None');
+            }
+        }
+    }, [formData.payment_method_preference]);
+
     const loadData = async () => {
         try {
             const currentUser = await User.me();
