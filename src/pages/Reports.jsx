@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { Assessment, Customer, UserSetting } from "@/entities/all";
+import { Assessment, Customer, Vehicle, UserSetting } from "@/entities/all";
 import { User } from "@/entities/User";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,14 +16,16 @@ import {
   Coins, 
   CheckCircle,
   Clock,
-  ExternalLink
+  ExternalLink,
+  ArrowUpDown
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function Reports() {
   const [assessments, setAssessments] = useState([]);
   const [customers, setCustomers] = useState({});
+  const [vehicles, setVehicles] = useState({});
   const [filteredAssessments, setFilteredAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userSettings, setUserSettings] = useState(null);
@@ -36,6 +37,7 @@ export default function Reports() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [sortOrder, setSortOrder] = useState("desc"); // 'asc' or 'desc'
 
   // Summary stats
   const [stats, setStats] = useState({
@@ -54,13 +56,14 @@ export default function Reports() {
 
   useEffect(() => {
     applyFilters();
-  }, [assessments, selectedCustomerId, paymentStatus, selectedMonth, selectedYear, fromDate, toDate]);
+  }, [assessments, selectedCustomerId, paymentStatus, selectedMonth, selectedYear, fromDate, toDate, sortOrder]);
 
   const loadData = async () => {
     try {
-      const [assessmentData, customerData, currentUser] = await Promise.all([
+      const [assessmentData, customerData, vehicleData, currentUser] = await Promise.all([
         Assessment.list('-created_date'),
         Customer.list(),
+        Vehicle.list(),
         User.me()
       ]);
 
@@ -71,6 +74,10 @@ export default function Reports() {
       // Create customer lookup
       const customerLookup = customerData.reduce((acc, curr) => ({ ...acc, [curr.id]: curr }), {});
       setCustomers(customerLookup);
+
+      // Create vehicle lookup
+      const vehicleLookup = vehicleData.reduce((acc, curr) => ({ ...acc, [curr.id]: curr }), {});
+      setVehicles(vehicleLookup);
 
       // Load user settings for currency
       const settings = await UserSetting.filter({ user_email: currentUser.email });
@@ -123,6 +130,13 @@ export default function Reports() {
         return true;
       });
     }
+
+    // Sort by date
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.created_date);
+      const dateB = new Date(b.created_date);
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
 
     setFilteredAssessments(filtered);
     calculateStats(filtered);
@@ -199,7 +213,8 @@ export default function Reports() {
       if (assessment.is_multi_vehicle && assessment.vehicles) {
         vehicle = `${assessment.vehicles.length} Vehicles`;
       } else if (assessment.vehicle_id) {
-        vehicle = 'Vehicle details available';
+        const veh = vehicles[assessment.vehicle_id];
+        vehicle = veh ? `${veh.year} ${veh.make} ${veh.model}` : 'Vehicle details available';
       }
 
       const totalAmount = assessment.quote_amount || 0;
@@ -450,6 +465,15 @@ export default function Reports() {
           <h2 className="text-lg font-semibold text-white">
             Completed Jobs ({filteredAssessments.length})
           </h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+            className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+          >
+            <ArrowUpDown className="w-4 h-4 mr-1" />
+            {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
+          </Button>
         </div>
 
         {loading ? (
@@ -486,7 +510,8 @@ export default function Reports() {
             if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
               vehicleInfo = `${assessment.vehicles.length} Vehicles`;
             } else if (assessment.vehicle_id) {
-              vehicleInfo = 'Vehicle details available';
+              const veh = vehicles[assessment.vehicle_id];
+              vehicleInfo = veh ? `${veh.year} ${veh.make} ${veh.model}` : 'Vehicle details available';
             }
 
             return (
