@@ -684,6 +684,28 @@ export default function Settings() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
+                                <Label htmlFor="payment_method_preference" className="text-white">Payment Method</Label>
+                                <Select
+                                    value={formData.payment_method_preference || 'Bank Transfer Only'}
+                                    onValueChange={(value) => handleInputChange('payment_method_preference', value)}
+                                >
+                                    <SelectTrigger id="payment_method_preference" className="bg-slate-800 border-slate-700 text-white">
+                                        <SelectValue placeholder="Select payment method" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-800 border-slate-700">
+                                        <SelectItem value="Bank Transfer Only" className="text-white hover:bg-slate-700">Bank Transfer</SelectItem>
+                                        <SelectItem value="Payment Links Only" className="text-white hover:bg-slate-700">Payment Links</SelectItem>
+                                        <SelectItem value="Both" className="text-white hover:bg-slate-700">Both</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-slate-400">
+                                    {formData.payment_method_preference === 'Payment Links Only' && 'Payment links will be auto-generated when invoices are completed.'}
+                                    {formData.payment_method_preference === 'Both' && 'Show both bank transfer details and payment links on invoices.'}
+                                    {formData.payment_method_preference === 'Bank Transfer Only' && 'Only show bank transfer details on invoices.'}
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
                                 <Label htmlFor="payment_provider" className="text-white">Payment Provider</Label>
                                 <Select
                                     value={formData.payment_provider || 'None'}
@@ -701,30 +723,8 @@ export default function Settings() {
                                 </Select>
                                 <p className="text-xs text-slate-400">
                                     Choose your preferred payment provider for customer invoices.
-                                    </p>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                    <Label htmlFor="payment_method_preference" className="text-white">Payment Method Display</Label>
-                                    <Select
-                                    value={formData.payment_method_preference || 'Bank Transfer Only'}
-                                    onValueChange={(value) => handleInputChange('payment_method_preference', value)}
-                                    >
-                                    <SelectTrigger id="payment_method_preference" className="bg-slate-800 border-slate-700 text-white">
-                                        <SelectValue placeholder="Select payment method" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-slate-800 border-slate-700">
-                                        <SelectItem value="Bank Transfer Only" className="text-white hover:bg-slate-700">Bank Transfer Only</SelectItem>
-                                        <SelectItem value="Payment Links Only" className="text-white hover:bg-slate-700">Payment Links Only</SelectItem>
-                                        <SelectItem value="Both" className="text-white hover:bg-slate-700">Both</SelectItem>
-                                    </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-slate-400">
-                                    {formData.payment_method_preference === 'Payment Links Only' && 'Payment links will be auto-generated when invoices are completed.'}
-                                    {formData.payment_method_preference === 'Both' && 'Show both bank transfer details and payment links on invoices.'}
-                                    {formData.payment_method_preference === 'Bank Transfer Only' && 'Only show bank transfer details on invoices.'}
-                                    </p>
-                                    </div>
+                                </p>
+                            </div>
 
                                     {formData.payment_provider && formData.payment_provider !== 'None' && (
                                 <div className="space-y-3">
