@@ -4,7 +4,7 @@ import { User } from "@/entities/User";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Printer, ArrowLeft, CreditCard } from "lucide-react";
+import { Printer, ArrowLeft, CreditCard, Share2 } from "lucide-react";
 
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
@@ -17,6 +17,7 @@ export default function QuotePDF() {
   const [userSettings, setUserSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [logoDisplayUrl, setLogoDisplayUrl] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -173,6 +174,80 @@ export default function QuotePDF() {
     return symbols[currency] || '£';
   };
 
+  const handleShare = async () => {
+    if (!assessment) return;
+
+    const ref = referenceNumber;
+    const custName = customer?.business_name || customer?.name || "";
+    const currencySymbol = getCurrencySymbol(assessment.currency || "GBP");
+
+    let shareText = `${isCompleted ? 'Invoice' : 'Quote'}: ${ref}\n`;
+    if (custName) {
+      shareText += `Customer: ${custName}\n`;
+    }
+
+    if (isMultiVehicle) {
+      shareText += `\nVehicles & Line Items:\n\n`;
+      assessment.vehicles.forEach((v) => {
+        const vInfo = vehicles[v.vehicle_id];
+        if (vInfo) {
+          shareText += `${vInfo.year} ${vInfo.make} ${vInfo.model}\n`;
+          if (v.line_items && v.line_items.length > 0) {
+            v.line_items.forEach(item => {
+              shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}\n`;
+            });
+          } else {
+            shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n`;
+          }
+          shareText += `Subtotal: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n\n`;
+        }
+      });
+    } else {
+      if (vehicle) {
+        shareText += `Vehicle: ${vehicle.year} ${vehicle.make} ${vehicle.model}\n`;
+      }
+      shareText += `\nLine Items:\n`;
+      if (assessment.line_items && assessment.line_items.length > 0) {
+        assessment.line_items.forEach(item => {
+          shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}\n`;
+        });
+      } else {
+        shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}\n`;
+      }
+    }
+
+    shareText += `\nTotal Amount: ${currencySymbol}${grandTotal.toFixed(2)}\n`;
+
+    if (notesForCustomer) {
+      shareText += `\nNotes: ${notesForCustomer}\n`;
+    }
+
+    if (isCompleted && assessment.payment_link_url && userSettings && (userSettings.payment_method_preference === 'Payment Links Only' || userSettings.payment_method_preference === 'Both')) {
+      shareText += `\nPay Online: ${assessment.payment_link_url}\n`;
+    }
+
+    shareText += `\nPowered by Dentifier`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${isCompleted ? 'Invoice' : 'Quote'} ${ref}`,
+          text: shareText
+        });
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          navigator.clipboard.writeText(shareText);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   if (loading) {
     return <div className="bg-white text-black p-8">Loading...</div>;
   }
@@ -239,9 +314,18 @@ export default function QuotePDF() {
               Back to Details
             </Button>
           </Link>
-          <Button onClick={() => window.print()} className="bg-slate-800 hover:bg-white border-slate-700 text-white hover:text-black hover:border-gray-300" variant="outline">
-            <Printer className="w-4 h-4 mr-2" /> Print / Save PDF
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleShare}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              {copied ? 'Copied!' : 'Share'}
+            </Button>
+            <Button onClick={() => window.print()} className="bg-slate-800 hover:bg-white border-slate-700 text-white hover:text-black hover:border-gray-300" variant="outline">
+              <Printer className="w-4 h-4 mr-2" /> Print / Save PDF
+            </Button>
+          </div>
         </div>
 
         {/* PDF Content */}
