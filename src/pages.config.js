@@ -1,6 +1,5 @@
 import Assessment from './pages/Assessment';
 import AssessmentDetail from './pages/AssessmentDetail';
-import assessmentdetailBackup from './pages/AssessmentDetail_Backup';
 import Customers from './pages/Customers';
 import Dashboard from './pages/Dashboard';
 import EditQuote from './pages/EditQuote';
@@ -16,7 +15,6 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "Assessment": Assessment,
     "AssessmentDetail": AssessmentDetail,
-    "AssessmentDetail_Backup": assessmentdetailBackup,
     "Customers": Customers,
     "Dashboard": Dashboard,
     "EditQuote": EditQuote,
