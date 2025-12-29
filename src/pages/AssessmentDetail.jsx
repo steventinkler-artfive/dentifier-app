@@ -37,7 +37,8 @@ import {
   ArrowRight,
   Calculator,
   Save,
-  Edit2
+  Edit2,
+  CreditCard
 } from "lucide-react";
 
 const DentifierIcon = ({ className = "" }) => (
@@ -87,6 +88,7 @@ export default function AssessmentDetail() {
   const [editedAssessmentName, setEditedAssessmentName] = useState("");
   const [editedDiscount, setEditedDiscount] = useState(0);
   const [detailsTab, setDetailsTab] = useState("analysis");
+  const [isGeneratingPaymentLink, setIsGeneratingPaymentLink] = useState(false);
 
   const openImageViewer = (index) => {
     setSelectedImageIndex(index);
@@ -355,6 +357,42 @@ export default function AssessmentDetail() {
     }
   };
 
+  const handleGeneratePaymentLink = async () => {
+    if (!assessment || !userSettings) return;
+    setIsGeneratingPaymentLink(true);
+
+    try {
+      const amount = assessment.quote_amount || 0;
+      const currency = assessment.currency || 'GBP';
+      const provider = userSettings.payment_provider;
+
+      let paymentLink = '';
+      if (provider === 'Stripe' && userSettings.stripe_secret_key) {
+        alert('Stripe integration coming soon! (Amount: ' + amount + ' ' + currency + ')');
+        paymentLink = 'STRIPE_LINK_PLACEHOLDER';
+      } else if (provider === 'Square' && userSettings.square_access_token) {
+        alert('Square integration coming soon! (Amount: ' + amount + ' ' + currency + ')');
+        paymentLink = 'SQUARE_LINK_PLACEHOLDER';
+      } else if (provider === 'PayPal' && userSettings.paypal_client_id && userSettings.paypal_client_secret) {
+        alert('PayPal integration coming soon! (Amount: ' + amount + ' ' + currency + ')');
+        paymentLink = 'PAYPAL_LINK_PLACEHOLDER';
+      } else {
+        alert('Payment provider not configured or API keys missing. Please check your settings.');
+        setIsGeneratingPaymentLink(false);
+        return;
+      }
+
+      if (paymentLink) {
+        alert('Payment Link: ' + paymentLink + ' (This will be a real link once backend is implemented)');
+      }
+    } catch (error) {
+      console.error('Error generating payment link:', error);
+      alert('Failed to generate payment link. Please try again.');
+    } finally {
+      setIsGeneratingPaymentLink(false);
+    }
+  };
+
   const handleShare = async () => {
     const url = window.location.href;
     
@@ -455,16 +493,13 @@ export default function AssessmentDetail() {
     }
   };
 
-  // Get the display reference number based on status
   const getDisplayReference = () => {
     if (!assessment) return '';
     
-    // If status is completed, show invoice number (if exists), otherwise show quote number
     if (assessment.status === 'completed') {
       return assessment.invoice_number || assessment.quote_number || `Ref #${assessment.id.slice(-6)}`;
     }
     
-    // For all other statuses, show quote number (even if invoice_number exists)
     return assessment.quote_number || `Ref #${assessment.id.slice(-6)}`;
   };
 
@@ -545,6 +580,9 @@ export default function AssessmentDetail() {
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
+              <p className="text-slate-500 text-xs mb-1">
+                {assessment.status === 'completed' ? 'Invoice Ref:' : 'Quote Ref:'} 
+              </p>
               <h1 className="text-xl font-bold text-white mb-1">
                 {getDisplayReference()}
               </h1>
@@ -903,14 +941,14 @@ export default function AssessmentDetail() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <Link 
-                                      to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
-                                      className="block"
-                                    >
-                                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                                        <FileText className="w-4 h-4 mr-2" />
-                                        PDF Quote
-                                      </Button>
-                                    </Link>
+                to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
+                className="block"
+              >
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                  <FileText className="w-4 h-4 mr-2" />
+                  {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
+                </Button>
+              </Link>
               <Button
                 onClick={handleShare}
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
@@ -919,6 +957,18 @@ export default function AssessmentDetail() {
                 {copied ? 'Copied!' : 'Share'}
               </Button>
             </div>
+
+            {/* Generate Payment Link Button */}
+            {assessment.status === 'completed' && userSettings?.payment_provider && userSettings.payment_provider !== 'None' && (
+              <Button
+                onClick={handleGeneratePaymentLink}
+                disabled={isGeneratingPaymentLink}
+                className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold"
+              >
+                {isGeneratingPaymentLink ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                Generate Payment Link
+              </Button>
+            )}
 
             {/* Status Change Buttons */}
             {assessment.status === 'draft' && currentLineItems.length === 0 && (
@@ -1250,14 +1300,14 @@ export default function AssessmentDetail() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <Link 
-                                      to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
-                                      className="block"
-                                    >
-                                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                                        <FileText className="w-4 h-4 mr-2" />
-                                        PDF Quote
-                                      </Button>
-                                    </Link>
+                to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
+                className="block"
+              >
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                  <FileText className="w-4 h-4 mr-2" />
+                  {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
+                </Button>
+              </Link>
               <Button
                 onClick={handleShare}
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
