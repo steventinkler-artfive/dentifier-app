@@ -170,6 +170,7 @@ export default function Settings() {
       bank_iban: '',
       bank_swift_code: '',
       payment_provider: 'None',
+      payment_method_preference: 'Bank Transfer Only',
       stripe_secret_key: '',
       square_access_token: '',
       paypal_client_id: '',
@@ -257,6 +258,7 @@ export default function Settings() {
                     bank_iban: loadedSettings.bank_iban || '',
                     bank_swift_code: loadedSettings.bank_swift_code || '',
                     payment_provider: loadedSettings.payment_provider || "None",
+                    payment_method_preference: loadedSettings.payment_method_preference || 'Bank Transfer Only',
                     stripe_secret_key: loadedSettings.stripe_secret_key || '',
                     square_access_token: loadedSettings.square_access_token || '',
                     paypal_client_id: loadedSettings.paypal_client_id || '',
@@ -699,10 +701,32 @@ export default function Settings() {
                                 </Select>
                                 <p className="text-xs text-slate-400">
                                     Choose your preferred payment provider for customer invoices.
-                                </p>
-                            </div>
+                                    </p>
+                                    </div>
 
-                            {formData.payment_provider && formData.payment_provider !== 'None' && (
+                                    <div className="space-y-2">
+                                    <Label htmlFor="payment_method_preference" className="text-white">Payment Method Display</Label>
+                                    <Select
+                                    value={formData.payment_method_preference || 'Bank Transfer Only'}
+                                    onValueChange={(value) => handleInputChange('payment_method_preference', value)}
+                                    >
+                                    <SelectTrigger id="payment_method_preference" className="bg-slate-800 border-slate-700 text-white">
+                                        <SelectValue placeholder="Select payment method" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-800 border-slate-700">
+                                        <SelectItem value="Bank Transfer Only" className="text-white hover:bg-slate-700">Bank Transfer Only</SelectItem>
+                                        <SelectItem value="Payment Links Only" className="text-white hover:bg-slate-700">Payment Links Only</SelectItem>
+                                        <SelectItem value="Both" className="text-white hover:bg-slate-700">Both</SelectItem>
+                                    </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-slate-400">
+                                    {formData.payment_method_preference === 'Payment Links Only' && 'Payment links will be auto-generated when invoices are completed.'}
+                                    {formData.payment_method_preference === 'Both' && 'Show both bank transfer details and payment links on invoices.'}
+                                    {formData.payment_method_preference === 'Bank Transfer Only' && 'Only show bank transfer details on invoices.'}
+                                    </p>
+                                    </div>
+
+                                    {formData.payment_provider && formData.payment_provider !== 'None' && (
                                 <div className="space-y-3">
                                     <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
                                         <p className="text-blue-200 text-xs font-medium mb-2">Dynamic Payment Integration</p>

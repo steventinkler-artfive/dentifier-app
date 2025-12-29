@@ -465,8 +465,10 @@ export default function QuotePDF() {
             </div>
           </div>
 
-          {/* Payment Link Section - Only show for completed invoices with payment link */}
-          {isCompleted && assessment.payment_link_url && (
+          {/* Payment Link Section - Show based on preference */}
+          {isCompleted && assessment.payment_link_url && 
+           userSettings?.payment_method_preference && 
+           (userSettings.payment_method_preference === 'Payment Links Only' || userSettings.payment_method_preference === 'Both') && (
             <div className="mb-12 p-6 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-lg" style={{ backgroundColor: '#f0fdf4', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-green-600" />
@@ -493,37 +495,43 @@ export default function QuotePDF() {
               <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
               <p className="text-gray-500 text-sm mt-1">{businessAddress}</p>
               <p className="text-gray-500 text-sm mt-1">{contactEmail}</p>
-              
-              {isCompleted && userSettings && (userSettings.bank_account_name || userSettings.bank_account_number || userSettings.bank_iban) && (
-                <div className="mt-4 p-3 bg-gray-50 rounded">
-                  <h3 className="font-semibold text-gray-700 text-sm mb-2">Bank Transfer Details</h3>
-                  {userSettings.bank_account_name && (
-                    <p className="text-gray-600 text-xs">Account Name: {userSettings.bank_account_name}</p>
-                  )}
-                  {(userSettings.bank_account_number || userSettings.bank_sort_code) && (
-                    <p className="text-gray-600 text-xs">
-                      Account Number: {userSettings.bank_account_number} {userSettings.bank_sort_code && `| Sort Code: ${userSettings.bank_sort_code}`}
-                    </p>
-                  )}
-                  {userSettings.bank_iban && (
-                    <p className="text-gray-600 text-xs">IBAN: {userSettings.bank_iban}</p>
-                  )}
-                </div>
-              )}
             </div>
             <div className="text-right max-w-md">
               <h3 className="font-semibold text-gray-500 mb-2">Notes</h3>
               <p className="text-sm text-gray-600">{invoiceFooter}</p>
             </div>
-          </div>
-          <div className="text-center mt-8 pt-4 border-t border-gray-200 print:mt-4 print:pt-2" style={{ pageBreakInside: 'avoid' }}>
+            </div>
+
+            {/* Footer - Only show bank details based on payment preference */}
+            {isCompleted && userSettings && 
+            (userSettings.payment_method_preference === 'Bank Transfer Only' || userSettings.payment_method_preference === 'Both') &&
+            (userSettings.bank_account_name || userSettings.bank_account_number || userSettings.bank_iban) && (
+            <div className="mt-6 pt-4 border-t border-gray-200" style={{ pageBreakInside: 'avoid' }}>
+              <div className="p-3 bg-gray-50 rounded" style={{ backgroundColor: '#f9fafb', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                <h3 className="font-semibold text-gray-700 text-sm mb-2">Bank Transfer Details</h3>
+                {userSettings.bank_account_name && (
+                  <p className="text-gray-600 text-xs">Account Name: {userSettings.bank_account_name}</p>
+                )}
+                {(userSettings.bank_account_number || userSettings.bank_sort_code) && (
+                  <p className="text-gray-600 text-xs">
+                    Account Number: {userSettings.bank_account_number} {userSettings.bank_sort_code && `| Sort Code: ${userSettings.bank_sort_code}`}
+                  </p>
+                )}
+                {userSettings.bank_iban && (
+                  <p className="text-gray-600 text-xs">IBAN: {userSettings.bank_iban}</p>
+                )}
+              </div>
+            </div>
+            )}
+
+            <div className="text-center mt-8 pt-4 border-t border-gray-200 print:mt-4 print:pt-2" style={{ pageBreakInside: 'avoid' }}>
             <p className="text-xs text-gray-500">POWERED BY DENTIFIER</p>
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68a8991579d29e7c386105d5/f8b406687_dentifierfullcolourstraphi-res.png" 
               alt="Dentifier Logo" 
               className="h-6 mx-auto mt-2 print:h-5" 
             />
-          </div>
+            </div>
         </div>
       </div>
     </div>

@@ -236,6 +236,23 @@ export default function AssessmentDetail() {
       }
       
       await base44.entities.Assessment.update(assessment.id, updateData);
+      
+      // Auto-generate payment link if preference is set
+      if (newStatus === 'completed' && userSettings) {
+        const preference = userSettings.payment_method_preference || 'Bank Transfer Only';
+        const hasPaymentProvider = userSettings.payment_provider && userSettings.payment_provider !== 'None';
+        
+        if ((preference === 'Payment Links Only' || preference === 'Both') && hasPaymentProvider) {
+          try {
+            await base44.functions.invoke('generatePaymentLink', {
+              assessment_id: assessment.id
+            });
+          } catch (error) {
+            console.error('Failed to auto-generate payment link:', error);
+          }
+        }
+      }
+      
       await loadAssessmentDetails();
       setEditingStatus(false);
     } catch (error) {
@@ -955,8 +972,12 @@ export default function AssessmentDetail() {
               </Button>
             </div>
 
-            {/* Generate Payment Link Button */}
-            {assessment.status === 'completed' && userSettings?.payment_provider && userSettings.payment_provider !== 'None' && (
+            {/* Manual Generate Payment Link Button - Only show if not auto-generating */}
+            {assessment.status === 'completed' && 
+             userSettings?.payment_provider && 
+             userSettings.payment_provider !== 'None' && 
+             userSettings.payment_method_preference === 'Bank Transfer Only' && 
+             !assessment.payment_link_url && (
               <Button
                 onClick={handleGeneratePaymentLink}
                 disabled={isGeneratingPaymentLink}
