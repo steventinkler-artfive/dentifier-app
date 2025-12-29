@@ -465,26 +465,24 @@ export default function QuotePDF() {
             </div>
           </div>
 
-          {/* Payment Link Section - Only show for completed invoices with payment integration */}
-          {isCompleted && userSettings?.payment_provider && userSettings.payment_provider !== 'None' && userSettings?.payment_link_template && (
+          {/* Payment Link Section - Only show for completed invoices with payment link */}
+          {isCompleted && assessment.payment_link_url && (
             <div className="mb-12 p-6 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-lg">
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-green-600" />
                 Pay Online
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                You can pay this invoice securely online using {userSettings.payment_provider}:
+                Click the button below to pay this invoice securely online:
               </p>
-              <div className="bg-white p-3 rounded border border-green-300">
-                <a 
-                  href={userSettings.payment_link_template} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-green-600 hover:text-green-700 font-medium break-all"
-                >
-                  {userSettings.payment_link_template}
-                </a>
-              </div>
+              <a 
+                href={assessment.payment_link_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+              >
+                Pay Now
+              </a>
             </div>
           )}
 

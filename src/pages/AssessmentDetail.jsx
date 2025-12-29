@@ -369,6 +369,9 @@ export default function AssessmentDetail() {
       if (response.data.success && response.data.payment_link) {
         const paymentLink = response.data.payment_link;
         
+        // Reload assessment to get the saved payment link
+        await loadAssessmentDetails();
+        
         // Copy to clipboard
         await navigator.clipboard.writeText(paymentLink);
         

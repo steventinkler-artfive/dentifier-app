@@ -46,17 +46,28 @@ Deno.serve(async (req) => {
     const description = `Invoice ${assessment.invoice_number || assessment.quote_number || assessment.id.slice(-6)} - ${customerName}`;
 
     // Generate payment link based on provider
+    let result;
     if (provider === 'Stripe' && settings.stripe_secret_key) {
-      return await generateStripePaymentLink(settings.stripe_secret_key, amount, currency, description);
+      result = await generateStripePaymentLink(settings.stripe_secret_key, amount, currency, description);
     } else if (provider === 'Square' && settings.square_access_token) {
-      return await generateSquarePaymentLink(settings.square_access_token, amount, currency, description);
+      result = await generateSquarePaymentLink(settings.square_access_token, amount, currency, description);
     } else if (provider === 'PayPal' && settings.paypal_client_id && settings.paypal_client_secret) {
-      return await generatePayPalPaymentLink(settings.paypal_client_id, settings.paypal_client_secret, amount, currency, description);
+      result = await generatePayPalPaymentLink(settings.paypal_client_id, settings.paypal_client_secret, amount, currency, description);
     } else {
       return Response.json({ 
         error: 'Payment provider not configured or API keys missing' 
       }, { status: 400 });
     }
+
+    // Save the payment link to the assessment
+    const resultData = await result.json();
+    if (resultData.success && resultData.payment_link) {
+      await base44.asServiceRole.entities.Assessment.update(assessment_id, {
+        payment_link_url: resultData.payment_link
+      });
+    }
+
+    return Response.json(resultData);
 
   } catch (error) {
     console.error('Error generating payment link:', error);
