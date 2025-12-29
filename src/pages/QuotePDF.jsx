@@ -4,7 +4,7 @@ import { User } from "@/entities/User";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Printer, ArrowLeft, CreditCard, Share2 } from "lucide-react";
+import { Printer, ArrowLeft, CreditCard, Share2, Mail, Loader2 } from "lucide-react";
 
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
@@ -18,6 +18,7 @@ export default function QuotePDF() {
   const [loading, setLoading] = useState(true);
   const [logoDisplayUrl, setLogoDisplayUrl] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -174,6 +175,15 @@ export default function QuotePDF() {
     return symbols[currency] || '£';
   };
 
+  const sanitizeBusinessName = (name) => {
+    if (!name) return 'BUSINESS';
+    return name
+      .replace(/[^a-zA-Z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toUpperCase()
+      .substring(0, 20);
+  };
+
   const handleShare = async () => {
     if (!assessment) return;
 
@@ -222,16 +232,51 @@ export default function QuotePDF() {
       shareText += `\nNotes: ${notesForCustomer}\n`;
     }
 
-    if (isCompleted && assessment.payment_link_url && userSettings && (userSettings.payment_method_preference === 'Payment Links Only' || userSettings.payment_method_preference === 'Both')) {
-      shareText += `\nPay Online: ${assessment.payment_link_url}\n`;
+    // Add payment details for completed invoices
+    if (isCompleted && userSettings) {
+      const paymentPreference = userSettings.payment_method_preference;
+      const showBankTransfer = paymentPreference === 'Bank Transfer Only' || paymentPreference === 'Both';
+      const showPaymentLink = (paymentPreference === 'Payment Links Only' || paymentPreference === 'Both') && assessment.payment_link_url;
+
+      if (showBankTransfer || showPaymentLink) {
+        shareText += `\nPayment Details:\n`;
+
+        if (showBankTransfer && (userSettings.bank_account_name || userSettings.bank_account_number)) {
+          shareText += `\nBank Transfer:\n`;
+          if (userSettings.bank_account_name) {
+            shareText += `Account: ${userSettings.bank_account_name}\n`;
+          }
+          if (userSettings.bank_sort_code) {
+            shareText += `Sort Code: ${userSettings.bank_sort_code}\n`;
+          }
+          if (userSettings.bank_account_number) {
+            shareText += `Account: ${userSettings.bank_account_number}\n`;
+          }
+          shareText += `Reference: ${ref}\n`;
+        }
+
+        if (showPaymentLink) {
+          shareText += `\nPay online: ${assessment.payment_link_url}\n`;
+        }
+      }
+
+      if (userSettings.invoice_footer) {
+        shareText += `\n${userSettings.invoice_footer}\n`;
+      }
     }
 
     shareText += `\nPowered by Dentifier`;
 
+    // Generate dynamic filename
+    const docType = isCompleted ? 'Invoice' : 'Quote';
+    const docNumber = referenceNumber.replace(/[^a-zA-Z0-9-]/g, '');
+    const bizName = sanitizeBusinessName(userSettings?.business_name);
+    const filename = `${docType}_${docNumber}_${bizName}.pdf`;
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${isCompleted ? 'Invoice' : 'Quote'} ${ref}`,
+          title: `${docType} ${ref}`,
           text: shareText
         });
       } catch (error) {
@@ -245,6 +290,107 @@ export default function QuotePDF() {
       navigator.clipboard.writeText(shareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleEmail = () => {
+    if (!assessment || !customer) return;
+
+    const docType = isCompleted ? 'Invoice' : 'Quote';
+    const docNumber = referenceNumber.replace(/[^a-zA-Z0-9-]/g, '');
+    const custName = customer.business_name || customer.name;
+    const bizName = userSettings?.business_name || 'Dentifier PDR';
+    const currencySymbol = getCurrencySymbol(assessment.currency || "GBP");
+
+    // Subject line
+    const subject = `${docType} #${docNumber} from ${bizName}`;
+
+    // Email body
+    let body = `Dear ${custName},%0A%0A`;
+    
+    if (isCompleted) {
+      const completionDate = new Date(assessment.updated_date).toLocaleDateString();
+      body += `Please find attached your invoice for PDR services completed on ${completionDate}.%0A%0A`;
+      
+      // Brief summary
+      body += `Invoice Total: ${currencySymbol}${grandTotal.toFixed(2)}%0A%0A`;
+      
+      // Invoice footer from settings
+      if (userSettings?.invoice_footer) {
+        body += `${userSettings.invoice_footer}%0A%0A`;
+      }
+      
+      // Payment details
+      const paymentPreference = userSettings?.payment_method_preference;
+      const showBankTransfer = paymentPreference === 'Bank Transfer Only' || paymentPreference === 'Both';
+      const showPaymentLink = (paymentPreference === 'Payment Links Only' || paymentPreference === 'Both') && assessment.payment_link_url;
+
+      if (showBankTransfer || showPaymentLink) {
+        if (showBankTransfer && (userSettings.bank_account_name || userSettings.bank_account_number)) {
+          body += `Bank Transfer Details:%0A`;
+          if (userSettings.bank_account_name) {
+            body += `Account Name: ${userSettings.bank_account_name}%0A`;
+          }
+          if (userSettings.bank_sort_code) {
+            body += `Sort Code: ${userSettings.bank_sort_code}%0A`;
+          }
+          if (userSettings.bank_account_number) {
+            body += `Account Number: ${userSettings.bank_account_number}%0A`;
+          }
+          body += `Reference: ${docNumber}%0A%0A`;
+        }
+
+        if (showPaymentLink) {
+          body += `Pay online: ${assessment.payment_link_url}%0A%0A`;
+        }
+      }
+    } else {
+      body += `Please find attached your quote for PDR services.%0A%0A`;
+      body += `Quote Total: ${currencySymbol}${grandTotal.toFixed(2)}%0A%0A`;
+      body += `This quote is valid for 30 days. Please contact us if you have any questions.%0A%0A`;
+    }
+
+    body += `Thank you for your business.%0A%0A`;
+    body += `Best regards,%0A`;
+    body += `${bizName}%0A`;
+    if (userSettings?.contact_email) {
+      body += `${userSettings.contact_email}%0A`;
+    }
+    if (userSettings?.business_address) {
+      const address = userSettings.business_address.replace(/\n/g, ', ');
+      body += `${address}`;
+    }
+
+    // Create mailto link
+    const mailtoLink = `mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${body}`;
+    window.location.href = mailtoLink;
+  };
+
+  const handleCheckPaymentStatus = async () => {
+    if (!assessment || !assessment.payment_link_url) return;
+    
+    setCheckingPayment(true);
+    try {
+      const response = await base44.functions.invoke('checkPaymentStatus', {
+        assessment_id: assessment.id
+      });
+
+      if (response.data.success) {
+        if (response.data.paid) {
+          alert(`Payment confirmed! Amount: ${getCurrencySymbol(assessment.currency || 'GBP')}${response.data.amount_paid?.toFixed(2) || assessment.quote_amount?.toFixed(2)}`);
+          // Reload to update payment status
+          window.location.reload();
+        } else {
+          alert('Payment has not been completed yet.');
+        }
+      } else {
+        alert(`Error checking payment status: ${response.data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      alert(`Failed to check payment status: ${error.message || 'Please try again later'}`);
+    } finally {
+      setCheckingPayment(false);
     }
   };
 
@@ -314,7 +460,16 @@ export default function QuotePDF() {
               Back to Details
             </Button>
           </Link>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {customer?.email && (
+              <Button 
+                onClick={handleEmail}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Email {isCompleted ? 'Invoice' : 'Quote'}
+              </Button>
+            )}
             <Button 
               onClick={handleShare}
               className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
@@ -322,6 +477,34 @@ export default function QuotePDF() {
               <Share2 className="w-4 h-4 mr-2" />
               {copied ? 'Copied!' : 'Share'}
             </Button>
+            {isCompleted && assessment.payment_link_url && assessment.payment_status !== 'paid' && (
+              <Button 
+                onClick={handleCheckPaymentStatus}
+                disabled={checkingPayment}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+              >
+                {checkingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Check Payment
+                  </>
+                )}
+              </Button>
+            )}
+            {isCompleted && assessment.payment_status === 'paid' && (
+              <Button 
+                disabled
+                className="bg-green-600 text-white font-semibold opacity-70"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Paid ✓
+              </Button>
+            )}
             <Button onClick={() => window.print()} className="bg-slate-800 hover:bg-white border-slate-700 text-white hover:text-black hover:border-gray-300" variant="outline">
               <Printer className="w-4 h-4 mr-2" /> Print / Save PDF
             </Button>

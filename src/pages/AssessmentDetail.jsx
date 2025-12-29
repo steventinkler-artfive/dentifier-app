@@ -415,8 +415,9 @@ export default function AssessmentDetail() {
     const ref = getDisplayReference();
     const custName = customer?.business_name || customer?.name || "";
     const currencySymbol = getCurrencySymbol(assessment.currency || "GBP");
+    const isCompleted = assessment.status === 'completed';
 
-    let shareText = `*Quote: ${ref}*\n`;
+    let shareText = `*${isCompleted ? 'Invoice' : 'Quote'}: ${ref}*\n`;
     if (custName) {
       shareText += `*Customer:* ${custName}\n`;
     }
@@ -455,6 +456,40 @@ export default function AssessmentDetail() {
 
     if (assessment.notes && includeNotesInQuote) {
       shareText += `\n*Notes:* ${assessment.notes}\n`;
+    }
+
+    // Add payment details for completed invoices
+    if (isCompleted && userSettings) {
+      const paymentPreference = userSettings.payment_method_preference;
+      const showBankTransfer = paymentPreference === 'Bank Transfer Only' || paymentPreference === 'Both';
+      const showPaymentLink = (paymentPreference === 'Payment Links Only' || paymentPreference === 'Both') && assessment.payment_link_url;
+
+      if (showBankTransfer || showPaymentLink) {
+        shareText += `\n*Payment Details:*\n`;
+
+        if (showBankTransfer && (userSettings.bank_account_name || userSettings.bank_account_number)) {
+          shareText += `\nBank Transfer:\n`;
+          if (userSettings.bank_account_name) {
+            shareText += `Account: ${userSettings.bank_account_name}\n`;
+          }
+          if (userSettings.bank_sort_code) {
+            shareText += `Sort Code: ${userSettings.bank_sort_code}\n`;
+          }
+          if (userSettings.bank_account_number) {
+            shareText += `Account: ${userSettings.bank_account_number}\n`;
+          }
+          shareText += `Reference: ${ref}\n`;
+        }
+
+        if (showPaymentLink) {
+          shareText += `\nPay online: ${assessment.payment_link_url}\n`;
+        }
+      }
+
+      // Add invoice footer
+      if (userSettings.invoice_footer) {
+        shareText += `\n${userSettings.invoice_footer}\n`;
+      }
     }
 
     shareText += `\n_Powered by Dentifier_`;
