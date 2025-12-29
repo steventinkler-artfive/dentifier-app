@@ -281,7 +281,7 @@ export default function QuotePDF() {
   // Get invoice footer
   const invoiceFooter = isCompleted && userSettings?.invoice_footer ? 
     userSettings.invoice_footer : 
-    (isCompleted ? "Thank you for your business! Payment is due within 30 days." : 
+    (isCompleted ? "Thank you for your business! Payment is due within 7 days." : 
       (isDraft ? "This is a draft quote and subject to change. Quote will be finalised once customer details are confirmed. Thank you for your business!" : 
         "This quote is valid for 30 days. Thank you for your business!"));
   
