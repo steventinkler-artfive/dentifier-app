@@ -4,7 +4,7 @@ import { User, UserSetting, GlobalSetting } from "@/entities/all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Target, Clock, CheckCircle, RefreshCw, ArrowRight } from "lucide-react";
+import { Loader2, AlertTriangle, Target, Clock, CheckCircle, RefreshCw, ArrowRight, ArrowLeft } from "lucide-react";
 
 const DentifierIcon = ({ className = "" }) => (
   <svg 
@@ -23,7 +23,7 @@ const DentifierIcon = ({ className = "" }) => (
   </svg>
 );
 
-export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysisComplete }) {
+export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysisComplete, onGoBack }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState(null);
@@ -369,10 +369,10 @@ REMINDER: dent_count in your response MUST be ${totalDentsFromData} (from the st
     }
   };
 
-  const handleRetry = () => {
-    setAnalysis(null);
-    setError(null);
-    performAnalysis();
+  const handleGoBack = () => {
+    if (onGoBack) {
+      onGoBack();
+    }
   };
 
   const handleContinue = () => {
@@ -405,9 +405,9 @@ REMINDER: dent_count in your response MUST be ${totalDentsFromData} (from the st
             <h3 className="text-lg font-semibold text-white mb-2">Analysis Error</h3>
             <p className="text-slate-400 text-sm">{error}</p>
           </div>
-          <Button onClick={handleRetry} className="w-full bg-rose-600 hover:bg-rose-700 text-white">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry Analysis
+          <Button onClick={handleGoBack} className="w-full bg-rose-600 hover:bg-rose-700 text-white">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Go Back to Edit
           </Button>
         </CardContent>
       </Card>
@@ -558,12 +558,12 @@ REMINDER: dent_count in your response MUST be ${totalDentsFromData} (from the st
             </Button>
 
             <Button 
-              onClick={handleRetry} 
+              onClick={handleGoBack} 
               variant="outline" 
               className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
-              Re-analyze
+              Amend Analysis
             </Button>
           </div>
         </CardContent>

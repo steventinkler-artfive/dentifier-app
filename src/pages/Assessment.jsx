@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Customer, Vehicle, Assessment, User, UserSetting } from "@/entities/all"; // Added User, UserSetting
 import { Button } from "@/components/ui/button";
@@ -390,6 +389,7 @@ export default function AssessmentPage() {
               damageItems={damageItems} // Added damageItems prop
               vehicle={assessmentData.currentVehicle}
               onAnalysisComplete={handleAnalysisComplete}
+              onGoBack={() => setCurrentStep('photos')}
             />
           )
         )}

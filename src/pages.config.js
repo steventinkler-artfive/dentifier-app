@@ -1,27 +1,31 @@
-import Dashboard from './pages/Dashboard';
-import Customers from './pages/Customers';
 import Assessment from './pages/Assessment';
-import Quotes from './pages/Quotes';
-import QuotePDF from './pages/QuotePDF';
-import Settings from './pages/Settings';
-import EditQuote from './pages/EditQuote';
-import Reports from './pages/Reports';
 import AssessmentDetail from './pages/AssessmentDetail';
+import assessmentdetailBackup from './pages/AssessmentDetail_Backup';
+import Customers from './pages/Customers';
+import Dashboard from './pages/Dashboard';
+import EditQuote from './pages/EditQuote';
 import EditVehicle from './pages/EditVehicle';
+import Home from './pages/Home';
+import QuotePDF from './pages/QuotePDF';
+import Quotes from './pages/Quotes';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Customers": Customers,
     "Assessment": Assessment,
-    "Quotes": Quotes,
-    "QuotePDF": QuotePDF,
-    "Settings": Settings,
-    "EditQuote": EditQuote,
-    "Reports": Reports,
     "AssessmentDetail": AssessmentDetail,
+    "AssessmentDetail_Backup": assessmentdetailBackup,
+    "Customers": Customers,
+    "Dashboard": Dashboard,
+    "EditQuote": EditQuote,
     "EditVehicle": EditVehicle,
+    "Home": Home,
+    "QuotePDF": QuotePDF,
+    "Quotes": Quotes,
+    "Reports": Reports,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
