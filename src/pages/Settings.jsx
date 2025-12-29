@@ -207,6 +207,19 @@ export default function Settings() {
         loadData();
     }, []);
 
+    useEffect(() => {
+        // Auto-update payment method preference based on payment provider
+        if (formData.payment_provider && formData.payment_provider !== 'None') {
+            if (formData.payment_method_preference === 'Bank Transfer Only') {
+                handleInputChange('payment_method_preference', 'Payment Links Only');
+            }
+        } else if (formData.payment_provider === 'None') {
+            if (formData.payment_method_preference !== 'Bank Transfer Only') {
+                handleInputChange('payment_method_preference', 'Bank Transfer Only');
+            }
+        }
+    }, [formData.payment_provider]);
+
     const loadData = async () => {
         try {
             const currentUser = await User.me();
