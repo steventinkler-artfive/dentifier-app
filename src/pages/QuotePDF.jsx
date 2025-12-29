@@ -467,7 +467,7 @@ export default function QuotePDF() {
 
           {/* Payment Link Section - Only show for completed invoices with payment link */}
           {isCompleted && assessment.payment_link_url && (
-            <div className="mb-12 p-6 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-lg">
+            <div className="mb-12 p-6 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-lg" style={{ backgroundColor: '#f0fdf4', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-green-600" />
                 Pay Online
@@ -480,6 +480,7 @@ export default function QuotePDF() {
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+                style={{ backgroundColor: '#16a34a', color: '#ffffff', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
               >
                 Pay Now
               </a>
