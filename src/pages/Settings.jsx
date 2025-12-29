@@ -689,7 +689,6 @@ export default function Settings() {
                                         <SelectItem value="Stripe" className="text-white hover:bg-slate-700">Stripe</SelectItem>
                                         <SelectItem value="Square" className="text-white hover:bg-slate-700">Square</SelectItem>
                                         <SelectItem value="PayPal" className="text-white hover:bg-slate-700">PayPal</SelectItem>
-                                        <SelectItem value="Other" className="text-white hover:bg-slate-700">Other</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <p className="text-xs text-slate-400">
@@ -698,48 +697,79 @@ export default function Settings() {
                             </div>
 
                             {formData.payment_provider && formData.payment_provider !== 'None' && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="payment_link_template" className="text-white">Payment Link</Label>
-                                    <Input
-                                        id="payment_link_template"
-                                        value={formData.payment_link_template || ''}
-                                        onChange={(e) => handleInputChange('payment_link_template', e.target.value)}
-                                        placeholder="https://..."
-                                        className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
-                                    />
-                                    <div className="bg-slate-800 rounded-lg p-3 space-y-2">
-                                        <p className="text-xs text-slate-300 font-medium">How to get your payment link:</p>
+                                <div className="space-y-3">
+                                    <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
+                                        <p className="text-blue-200 text-xs font-medium mb-2">Dynamic Payment Integration</p>
+                                        <p className="text-blue-300 text-xs">
+                                            Dentifier will automatically generate payment links with the exact quote amount for each completed job. 
+                                            This requires a backend integration with your payment provider's API.
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-slate-800 rounded-lg p-4 space-y-3">
+                                        <p className="text-xs text-slate-300 font-medium">Setup Instructions for {formData.payment_provider}:</p>
+                                        
                                         {formData.payment_provider === 'Stripe' && (
-                                            <div className="text-xs text-slate-400 space-y-1">
-                                                <p>1. Log in to your Stripe Dashboard</p>
-                                                <p>2. Go to "Payment Links" in the left sidebar</p>
-                                                <p>3. Create a new payment link for your PDR services</p>
-                                                <p>4. Copy the shareable link and paste it here</p>
-                                                <p className="text-slate-500 italic mt-2">Example: https://buy.stripe.com/test_abc123</p>
+                                            <div className="text-xs text-slate-400 space-y-2">
+                                                <p className="text-slate-300 font-medium">Step 1: Get Your API Key</p>
+                                                <p>1. Log in to your <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">Stripe Dashboard</a></p>
+                                                <p>2. Go to "Developers" → "API keys"</p>
+                                                <p>3. Copy your "Secret key" (starts with sk_live_ or sk_test_)</p>
+                                                
+                                                <p className="text-slate-300 font-medium mt-3">Step 2: Add to Dentifier</p>
+                                                <p>4. Go to your app's Settings → Environment Variables</p>
+                                                <p>5. Add a new secret named: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded">STRIPE_SECRET_KEY</span></p>
+                                                <p>6. Paste your Stripe secret key as the value</p>
+                                                
+                                                <div className="bg-yellow-900/30 border border-yellow-700 rounded p-2 mt-2">
+                                                    <p className="text-yellow-300 text-xs">⚠️ Keep your secret key private! Never share it or commit it to code.</p>
+                                                </div>
                                             </div>
                                         )}
+                                        
                                         {formData.payment_provider === 'Square' && (
-                                            <div className="text-xs text-slate-400 space-y-1">
-                                                <p>1. Log in to your Square Dashboard</p>
-                                                <p>2. Go to "Online" → "Checkout"</p>
-                                                <p>3. Create a checkout link for your services</p>
-                                                <p>4. Copy the link and paste it here</p>
-                                                <p className="text-slate-500 italic mt-2">Example: https://square.link/u/abc123</p>
+                                            <div className="text-xs text-slate-400 space-y-2">
+                                                <p className="text-slate-300 font-medium">Step 1: Get Your Access Token</p>
+                                                <p>1. Log in to your <a href="https://developer.squareup.com/apps" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">Square Developer Dashboard</a></p>
+                                                <p>2. Create a new application or select an existing one</p>
+                                                <p>3. Go to "Credentials" tab</p>
+                                                <p>4. Copy your "Access Token" (Production or Sandbox)</p>
+                                                
+                                                <p className="text-slate-300 font-medium mt-3">Step 2: Add to Dentifier</p>
+                                                <p>5. Go to your app's Settings → Environment Variables</p>
+                                                <p>6. Add a new secret named: <span className="font-mono bg-slate-900 px-1 py-0.5 rounded">SQUARE_ACCESS_TOKEN</span></p>
+                                                <p>7. Paste your Square access token as the value</p>
+                                                
+                                                <div className="bg-yellow-900/30 border border-yellow-700 rounded p-2 mt-2">
+                                                    <p className="text-yellow-300 text-xs">⚠️ Keep your access token private! Never share it or commit it to code.</p>
+                                                </div>
                                             </div>
                                         )}
+                                        
                                         {formData.payment_provider === 'PayPal' && (
-                                            <div className="text-xs text-slate-400 space-y-1">
-                                                <p>1. Set up PayPal.Me from your PayPal account</p>
-                                                <p>2. Your PayPal.Me link is your unique URL</p>
-                                                <p>3. Copy your PayPal.Me link and paste it here</p>
-                                                <p className="text-slate-500 italic mt-2">Example: https://paypal.me/yourbusiness</p>
+                                            <div className="text-xs text-slate-400 space-y-2">
+                                                <p className="text-slate-300 font-medium">Step 1: Get Your API Credentials</p>
+                                                <p>1. Log in to <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">PayPal Developer Dashboard</a></p>
+                                                <p>2. Go to "Apps & Credentials"</p>
+                                                <p>3. Create a new app or select an existing one</p>
+                                                <p>4. Copy your "Client ID" and "Secret"</p>
+                                                
+                                                <p className="text-slate-300 font-medium mt-3">Step 2: Add to Dentifier</p>
+                                                <p>5. Go to your app's Settings → Environment Variables</p>
+                                                <p>6. Add two secrets:</p>
+                                                <p className="ml-3">• <span className="font-mono bg-slate-900 px-1 py-0.5 rounded">PAYPAL_CLIENT_ID</span></p>
+                                                <p className="ml-3">• <span className="font-mono bg-slate-900 px-1 py-0.5 rounded">PAYPAL_CLIENT_SECRET</span></p>
+                                                <p>7. Paste the respective values</p>
+                                                
+                                                <div className="bg-yellow-900/30 border border-yellow-700 rounded p-2 mt-2">
+                                                    <p className="text-yellow-300 text-xs">⚠️ Keep your credentials private! Never share them or commit them to code.</p>
+                                                </div>
                                             </div>
                                         )}
-                                        {formData.payment_provider === 'Other' && (
-                                            <div className="text-xs text-slate-400">
-                                                <p>Paste your payment link from your chosen provider.</p>
-                                            </div>
-                                        )}
+                                        
+                                        <div className="bg-green-900/20 border border-green-700 rounded p-2 mt-3">
+                                            <p className="text-green-300 text-xs">✓ Once configured, payment links will be automatically generated with the exact quote amount for each completed job.</p>
+                                        </div>
                                     </div>
                                 </div>
                             )}
