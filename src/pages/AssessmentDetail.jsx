@@ -362,32 +362,26 @@ export default function AssessmentDetail() {
     setIsGeneratingPaymentLink(true);
 
     try {
-      const amount = assessment.quote_amount || 0;
-      const currency = assessment.currency || 'GBP';
-      const provider = userSettings.payment_provider;
+      const response = await base44.functions.invoke('generatePaymentLink', {
+        assessment_id: assessment.id
+      });
 
-      let paymentLink = '';
-      if (provider === 'Stripe' && userSettings.stripe_secret_key) {
-        alert('Stripe integration coming soon! (Amount: ' + amount + ' ' + currency + ')');
-        paymentLink = 'STRIPE_LINK_PLACEHOLDER';
-      } else if (provider === 'Square' && userSettings.square_access_token) {
-        alert('Square integration coming soon! (Amount: ' + amount + ' ' + currency + ')');
-        paymentLink = 'SQUARE_LINK_PLACEHOLDER';
-      } else if (provider === 'PayPal' && userSettings.paypal_client_id && userSettings.paypal_client_secret) {
-        alert('PayPal integration coming soon! (Amount: ' + amount + ' ' + currency + ')');
-        paymentLink = 'PAYPAL_LINK_PLACEHOLDER';
+      if (response.data.success && response.data.payment_link) {
+        const paymentLink = response.data.payment_link;
+        
+        // Copy to clipboard
+        await navigator.clipboard.writeText(paymentLink);
+        
+        // Show success message with option to open link
+        if (window.confirm(`Payment link generated and copied to clipboard!\n\nProvider: ${response.data.provider}\n\nWould you like to open the link?`)) {
+          window.open(paymentLink, '_blank');
+        }
       } else {
-        alert('Payment provider not configured or API keys missing. Please check your settings.');
-        setIsGeneratingPaymentLink(false);
-        return;
-      }
-
-      if (paymentLink) {
-        alert('Payment Link: ' + paymentLink + ' (This will be a real link once backend is implemented)');
+        alert('Failed to generate payment link. Please check your payment provider settings.');
       }
     } catch (error) {
       console.error('Error generating payment link:', error);
-      alert('Failed to generate payment link. Please try again.');
+      alert(`Failed to generate payment link: ${error.message || 'Please check your payment provider settings and try again.'}`);
     } finally {
       setIsGeneratingPaymentLink(false);
     }
