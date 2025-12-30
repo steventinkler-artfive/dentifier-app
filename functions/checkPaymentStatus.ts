@@ -11,7 +11,17 @@ Deno.serve(async (req) => {
     }
 
     // Get request body
-    const { assessment_id } = await req.json();
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (e) {
+      return Response.json({ 
+        success: false, 
+        error: 'Invalid request body' 
+      }, { status: 400 });
+    }
+    
+    const { assessment_id } = requestBody;
     
     if (!assessment_id) {
       return Response.json({ 
@@ -70,38 +80,12 @@ Deno.serve(async (req) => {
         }, { status: 400 });
       }
 
-      // Extract payment intent ID from payment link URL
-      const paymentIntentMatch = assessment.payment_link_url.match(/payment_link\/([^\/]+)/);
-      
-      if (!paymentIntentMatch) {
-        return Response.json({ 
-          success: false, 
-          error: 'Could not extract payment ID from link' 
-        }, { status: 400 });
-      }
+      // Check recent payment intents to match by amount and timestamp
+      const assessmentAmount = Math.round((assessment.quote_amount || 0) * 100); // Convert to cents
+      const assessmentDate = new Date(assessment.created_date).getTime() / 1000; // Convert to Unix timestamp
 
-      const paymentLinkId = paymentIntentMatch[1];
-
-      // Get payment link from Stripe
-      const stripeResponse = await fetch(`https://api.stripe.com/v1/payment_links/${paymentLinkId}`, {
-        headers: {
-          'Authorization': `Bearer ${settings.stripe_secret_key}`
-        }
-      });
-
-      if (!stripeResponse.ok) {
-        return Response.json({ 
-          success: false, 
-          error: 'Failed to fetch payment status from Stripe' 
-        }, { status: 500 });
-      }
-
-      const paymentLink = await stripeResponse.json();
-      
-      // For Stripe payment links, we need to check for recent successful charges
-      // This is a simplified check - in production you might want to store the payment intent ID
-      const chargesResponse = await fetch(
-        `https://api.stripe.com/v1/charges?limit=10`, 
+      const paymentIntentsResponse = await fetch(
+        `https://api.stripe.com/v1/payment_intents?limit=20`, 
         {
           headers: {
             'Authorization': `Bearer ${settings.stripe_secret_key}`
@@ -109,24 +93,29 @@ Deno.serve(async (req) => {
         }
       );
 
-      if (chargesResponse.ok) {
-        const charges = await chargesResponse.json();
-        const assessmentAmount = Math.round((assessment.quote_amount || 0) * 100); // Convert to cents
-        
-        // Look for a successful charge matching the assessment amount
-        const matchingCharge = charges.data.find(charge => 
-          charge.status === 'succeeded' && 
-          charge.amount === assessmentAmount &&
-          new Date(charge.created * 1000) > new Date(assessment.updated_date)
-        );
+      if (!paymentIntentsResponse.ok) {
+        const errorText = await paymentIntentsResponse.text();
+        return Response.json({ 
+          success: false, 
+          error: `Stripe API error: ${errorText}` 
+        }, { status: 500 });
+      }
 
-        if (matchingCharge) {
-          paymentStatus = { 
-            paid: true, 
-            amount_paid: matchingCharge.amount / 100,
-            payment_date: new Date(matchingCharge.created * 1000).toISOString()
-          };
-        }
+      const paymentIntents = await paymentIntentsResponse.json();
+      
+      // Look for a successful payment intent matching the assessment amount created after the assessment
+      const matchingPayment = paymentIntents.data.find(intent => 
+        intent.status === 'succeeded' && 
+        intent.amount === assessmentAmount &&
+        intent.created >= assessmentDate
+      );
+
+      if (matchingPayment) {
+        paymentStatus = { 
+          paid: true, 
+          amount_paid: matchingPayment.amount / 100,
+          payment_date: new Date(matchingPayment.created * 1000).toISOString()
+        };
       }
 
     } else if (provider === 'Square') {
