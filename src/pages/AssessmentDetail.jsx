@@ -89,6 +89,7 @@ export default function AssessmentDetail() {
   const [editedDiscount, setEditedDiscount] = useState(0);
   const [detailsTab, setDetailsTab] = useState("analysis");
   const [isGeneratingPaymentLink, setIsGeneratingPaymentLink] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   const openImageViewer = (index) => {
     setSelectedImageIndex(index);
@@ -407,6 +408,108 @@ export default function AssessmentDetail() {
     }
   };
 
+  const handleEmail = () => {
+    if (!assessment || !customer) return;
+
+    const docType = assessment.status === 'completed' ? 'Invoice' : 'Quote';
+    const ref = getDisplayReference();
+    const docNumber = ref.replace(/[^a-zA-Z0-9-]/g, '');
+    const custName = customer.business_name || customer.name;
+    const bizName = userSettings?.business_name || 'Dentifier PDR';
+    const currencySymbol = getCurrencySymbol(assessment.currency || "GBP");
+
+    // Subject line
+    const subject = `${docType} #${docNumber} from ${bizName}`;
+
+    // Email body
+    let body = `Dear ${custName},%0A%0A`;
+    
+    if (assessment.status === 'completed') {
+      const completionDate = new Date(assessment.updated_date).toLocaleDateString();
+      body += `Please find attached your invoice for PDR services completed on ${completionDate}.%0A%0A`;
+      
+      // Brief summary
+      body += `Invoice Total: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}%0A%0A`;
+      
+      // Invoice footer from settings
+      if (userSettings?.invoice_footer) {
+        body += `${userSettings.invoice_footer}%0A%0A`;
+      }
+      
+      // Payment details
+      const paymentPreference = userSettings?.payment_method_preference;
+      const showBankTransfer = paymentPreference === 'Bank Transfer Only' || paymentPreference === 'Both';
+      const showPaymentLink = (paymentPreference === 'Payment Links Only' || paymentPreference === 'Both') && assessment.payment_link_url;
+
+      if (showBankTransfer || showPaymentLink) {
+        if (showBankTransfer && (userSettings.bank_account_name || userSettings.bank_account_number)) {
+          body += `Bank Transfer Details:%0A`;
+          if (userSettings.bank_account_name) {
+            body += `Account Name: ${userSettings.bank_account_name}%0A`;
+          }
+          if (userSettings.bank_sort_code) {
+            body += `Sort Code: ${userSettings.bank_sort_code}%0A`;
+          }
+          if (userSettings.bank_account_number) {
+            body += `Account Number: ${userSettings.bank_account_number}%0A`;
+          }
+          body += `Reference: ${docNumber}%0A%0A`;
+        }
+
+        if (showPaymentLink) {
+          body += `Pay online: ${assessment.payment_link_url}%0A%0A`;
+        }
+      }
+    } else {
+      body += `Please find attached your quote for PDR services.%0A%0A`;
+      body += `Quote Total: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}%0A%0A`;
+      body += `This quote is valid for 30 days. Please contact us if you have any questions.%0A%0A`;
+    }
+
+    body += `Thank you for your business.%0A%0A`;
+    body += `Best regards,%0A`;
+    body += `${bizName}%0A`;
+    if (userSettings?.contact_email) {
+      body += `${userSettings.contact_email}%0A`;
+    }
+    if (userSettings?.business_address) {
+      const address = userSettings.business_address.replace(/\n/g, ', ');
+      body += `${address}`;
+    }
+
+    // Create mailto link
+    const mailtoLink = `mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${body}`;
+    window.location.href = mailtoLink;
+  };
+
+  const handleCheckPaymentStatus = async () => {
+    if (!assessment || !assessment.payment_link_url) return;
+    
+    setCheckingPayment(true);
+    try {
+      const response = await base44.functions.invoke('checkPaymentStatus', {
+        assessment_id: assessment.id
+      });
+
+      if (response.data.success) {
+        if (response.data.paid) {
+          alert(`Payment confirmed! Amount: ${getCurrencySymbol(assessment.currency || 'GBP')}${response.data.amount_paid?.toFixed(2) || assessment.quote_amount?.toFixed(2)}`);
+          // Reload to update payment status
+          await loadAssessmentDetails();
+        } else {
+          alert('Payment has not been completed yet.');
+        }
+      } else {
+        alert(`Error checking payment status: ${response.data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      alert(`Failed to check payment status: ${error.message || 'Please try again later'}`);
+    } finally {
+      setCheckingPayment(false);
+    }
+  };
+
   const handleShare = async () => {
     const url = window.location.href;
     
@@ -477,6 +580,9 @@ export default function AssessmentDetail() {
           }
           if (userSettings.bank_account_number) {
             shareText += `Account: ${userSettings.bank_account_number}\n`;
+          }
+          if (userSettings.bank_iban) {
+            shareText += `IBAN: ${userSettings.bank_iban}\n`;
           }
           shareText += `Reference: ${ref}\n`;
         }
@@ -1007,6 +1113,46 @@ export default function AssessmentDetail() {
               </Button>
             </div>
 
+            {customer?.email && (
+              <Button 
+                onClick={handleEmail}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}
+              </Button>
+            )}
+
+            {assessment.status === 'completed' && assessment.payment_link_url && assessment.payment_status !== 'paid' && (
+              <Button 
+                onClick={handleCheckPaymentStatus}
+                disabled={checkingPayment}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+              >
+                {checkingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Check Payment
+                  </>
+                )}
+              </Button>
+            )}
+
+            {assessment.status === 'completed' && assessment.payment_status === 'paid' && (
+              <Button 
+                disabled
+                className="w-full bg-green-600 text-white font-semibold opacity-70"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Paid ✓
+              </Button>
+            )}
+
             {/* Manual Generate Payment Link Button - Only show if not auto-generating */}
             {assessment.status === 'completed' && 
              userSettings?.payment_provider && 
@@ -1369,6 +1515,46 @@ export default function AssessmentDetail() {
                 {copied ? 'Copied!' : 'Share'}
               </Button>
             </div>
+
+            {customer?.email && (
+              <Button 
+                onClick={handleEmail}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}
+              </Button>
+            )}
+
+            {assessment.status === 'completed' && assessment.payment_link_url && assessment.payment_status !== 'paid' && (
+              <Button 
+                onClick={handleCheckPaymentStatus}
+                disabled={checkingPayment}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+              >
+                {checkingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Check Payment
+                  </>
+                )}
+              </Button>
+            )}
+
+            {assessment.status === 'completed' && assessment.payment_status === 'paid' && (
+              <Button 
+                disabled
+                className="w-full bg-green-600 text-white font-semibold opacity-70"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Paid ✓
+              </Button>
+            )}
 
             {/* Status Change Buttons */}
             {assessment.status === 'draft' && currentLineItems.length === 0 && (
