@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import CustomerForm from "../components/customers/CustomerForm";
 import CalculationBreakdown from "../components/assessment/CalculationBreakdown";
 import ImageViewer from '../components/ui/ImageViewer';
+import { useAlert } from "@/components/ui/CustomAlert";
 import {
   ArrowLeft,
   User as UserIcon,
@@ -63,6 +64,7 @@ export default function AssessmentDetail() {
   const assessmentId = searchParams.get('id');
   const vehicleIndex = searchParams.get('vehicle');
   const navigate = useNavigate();
+  const { showAlert, showConfirm } = useAlert();
   
   const [assessment, setAssessment] = useState(null);
   const [customer, setCustomer] = useState(null);
@@ -493,18 +495,30 @@ export default function AssessmentDetail() {
 
       if (response.data.success) {
         if (response.data.paid) {
-          alert(`Payment confirmed! Amount: ${getCurrencySymbol(assessment.currency || 'GBP')}${response.data.amount_paid?.toFixed(2) || assessment.quote_amount?.toFixed(2)}`);
+          await showAlert(
+            'Payment Confirmed',
+            `Payment received: ${getCurrencySymbol(assessment.currency || 'GBP')}${response.data.amount_paid?.toFixed(2) || assessment.quote_amount?.toFixed(2)}`
+          );
           // Reload to update payment status
           await loadAssessmentDetails();
         } else {
-          alert('Payment has not been completed yet.');
+          await showAlert(
+            'Payment Pending',
+            'Payment has not been completed yet.'
+          );
         }
       } else {
-        alert(`Error checking payment status: ${response.data.error || 'Unknown error'}`);
+        await showAlert(
+          'Error',
+          `Could not check payment status: ${response.data.error || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error checking payment status:', error);
-      alert(`Failed to check payment status: ${error.message || 'Please try again later'}`);
+      await showAlert(
+        'Error',
+        `Failed to check payment status: ${error.message || 'Please try again later'}`
+      );
     } finally {
       setCheckingPayment(false);
     }
