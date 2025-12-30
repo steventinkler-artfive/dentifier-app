@@ -428,11 +428,36 @@ export default function AssessmentDetail() {
     
     if (assessment.status === 'completed') {
       const completionDate = new Date(assessment.updated_date).toLocaleDateString();
-      body += `Please find attached your invoice for PDR services completed on ${completionDate}.%0A%0A`;
-      
-      // Brief summary
-      body += `Invoice Total: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}%0A%0A`;
-      
+      body += `Please find your invoice for PDR services completed on ${completionDate}.%0A%0A`;
+    } else {
+      body += `Please find your quote for PDR services.%0A%0A`;
+    }
+
+    // Add vehicle info
+    if (!assessment.is_multi_vehicle && vehicle) {
+      body += `Vehicle: ${vehicle.year} ${vehicle.make} ${vehicle.model}%0A%0A`;
+    }
+
+    // Add line items
+    body += `${docType} Details:%0A`;
+    body += `--------------------%0A`;
+    if (currentLineItems && currentLineItems.length > 0) {
+      currentLineItems.forEach(item => {
+        const itemTotal = ((item.quantity || 0) * (item.unit_price || 0)).toFixed(2);
+        body += `${item.description}: ${currencySymbol}${itemTotal}%0A`;
+      });
+    } else {
+      body += `Paintless Dent Repair Service: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}%0A`;
+    }
+    body += `--------------------%0A`;
+    body += `Total: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}%0A%0A`;
+
+    // Add assessment notes if toggle is on
+    if (includeNotesInQuote && assessment.notes) {
+      body += `Notes:%0A${encodeURIComponent(assessment.notes)}%0A%0A`;
+    }
+    
+    if (assessment.status === 'completed') {
       // Invoice footer from settings
       if (userSettings?.invoice_footer) {
         body += `${userSettings.invoice_footer}%0A%0A`;
@@ -444,8 +469,9 @@ export default function AssessmentDetail() {
       const showPaymentLink = (paymentPreference === 'Payment Links Only' || paymentPreference === 'Both') && assessment.payment_link_url;
 
       if (showBankTransfer || showPaymentLink) {
+        body += `Payment Details:%0A`;
         if (showBankTransfer && (userSettings.bank_account_name || userSettings.bank_account_number)) {
-          body += `Bank Transfer Details:%0A`;
+          body += `Bank Transfer:%0A`;
           if (userSettings.bank_account_name) {
             body += `Account Name: ${userSettings.bank_account_name}%0A`;
           }
@@ -455,16 +481,15 @@ export default function AssessmentDetail() {
           if (userSettings.bank_account_number) {
             body += `Account Number: ${userSettings.bank_account_number}%0A`;
           }
-          body += `Reference: ${docNumber}%0A%0A`;
+          body += `Reference: ${docNumber}%0A`;
         }
 
         if (showPaymentLink) {
-          body += `Pay online: ${assessment.payment_link_url}%0A%0A`;
+          body += `%0APay online: ${assessment.payment_link_url}%0A`;
         }
+        body += `%0A`;
       }
     } else {
-      body += `Please find attached your quote for PDR services.%0A%0A`;
-      body += `Quote Total: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}%0A%0A`;
       body += `This quote is valid for 30 days. Please contact us if you have any questions.%0A%0A`;
     }
 
