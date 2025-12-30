@@ -4,7 +4,7 @@ import { User } from "@/entities/User";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Printer, ArrowLeft, Share2 } from "lucide-react";
+import { Printer, ArrowLeft, Share2, CreditCard } from "lucide-react";
 
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
