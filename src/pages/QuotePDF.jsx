@@ -29,7 +29,10 @@ export default function QuotePDF() {
   };
 
   const handlePrintPDF = () => {
-    if (!assessment || !userSettings) return;
+    if (!assessment || !userSettings) {
+      console.log('ERROR: Missing data - assessment:', assessment, 'userSettings:', userSettings);
+      return;
+    }
     
     // Store original title to restore later
     const originalTitle = document.title;
@@ -44,8 +47,25 @@ export default function QuotePDF() {
     const docNum = refNum.replace(/[^a-zA-Z0-9-]/g, '');
     const bizName = sanitizeBusinessName(userSettings.business_name);
     
+    const filename = `${docType}_${docNum}_${bizName}`;
+    
+    // DEBUG: Log what we're setting
+    console.log('=== PDF FILENAME DEBUG ===');
+    console.log('Original title:', originalTitle);
+    console.log('Assessment status:', assessment.status);
+    console.log('Invoice number:', assessment.invoice_number);
+    console.log('Quote number:', assessment.quote_number);
+    console.log('Reference number used:', refNum);
+    console.log('Document type:', docType);
+    console.log('Document number (sanitized):', docNum);
+    console.log('Business name:', userSettings.business_name);
+    console.log('Sanitized business name:', bizName);
+    console.log('Final filename to set:', `${docType}_${docNum}_${bizName}`);
+    
     // Set document title RIGHT BEFORE printing (NO .pdf extension)
     document.title = `${docType}_${docNum}_${bizName}`;
+    
+    console.log('document.title is now:', document.title);
     
     // Open print dialog
     window.print();
