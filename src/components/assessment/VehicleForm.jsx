@@ -268,7 +268,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-white">Licence Plate</Label>
+            <Label className="text-white">Registration Plate</Label>
             <div className="flex gap-2">
               <Input
                 value={formData.license_plate}
