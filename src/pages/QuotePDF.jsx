@@ -155,6 +155,19 @@ export default function QuotePDF() {
           }
           if (isMounted) {
             setAssessment(currentAssessment);
+            
+            // Set document title immediately after loading data
+            if (settings.length > 0) {
+              const isCompletedForTitle = currentAssessment.status === 'completed';
+              const refNum = isCompletedForTitle ? 
+                (currentAssessment.invoice_number || `INV-${currentAssessment.id.slice(-6)}`) : 
+                (currentAssessment.quote_number || `Q-${currentAssessment.id.slice(-6)}`);
+              
+              const docType = isCompletedForTitle ? 'Invoice' : 'Quote';
+              const docNum = refNum.replace(/[^a-zA-Z0-9-]/g, '');
+              const bizName = sanitizeBusinessName(settings[0].business_name);
+              document.title = `${docType}_${docNum}_${bizName}`;
+            }
           }
         }
       } catch (error) {
@@ -178,21 +191,7 @@ export default function QuotePDF() {
     };
   }, [assessmentId]);
 
-  useEffect(() => {
-    if (assessment && userSettings) {
-      const isCompleted = assessment.status === 'completed';
-      const referenceNumber = isCompleted ? 
-        (assessment.invoice_number || `INV-${assessment.id.slice(-6)}`) : 
-        (assessment.quote_number || `Q-${assessment.id.slice(-6)}`);
-      
-      const docType = isCompleted ? 'Invoice' : 'Quote';
-      const docNumber = referenceNumber.replace(/[^a-zA-Z0-9-]/g, '');
-      const bizName = sanitizeBusinessName(userSettings.business_name);
-      
-      // Set document title WITHOUT .pdf extension (browser adds it automatically)
-      document.title = `${docType}_${docNumber}_${bizName}`;
-    }
-  }, [assessment, userSettings]);
+
 
   const getCurrencySymbol = (currency) => {
     const symbols = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$' };
