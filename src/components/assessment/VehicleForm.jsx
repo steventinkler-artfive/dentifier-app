@@ -181,7 +181,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const canSubmit = formData.make && formData.model && formData.year;
+  const canSubmit = formData.make && formData.year;
 
   return (
     <Card className="bg-slate-800 border-slate-700">
@@ -275,13 +275,17 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-white">Model *</Label>
+            <Label className="text-white">Model (recommended)</Label>
             <Input
               value={formData.model}
               onChange={(e) => handleInputChange('model', e.target.value)}
-              placeholder="Enter vehicle model"
+              placeholder="e.g., 3 Series, Golf, Corsa..."
               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
             />
+            <p className="text-slate-400 text-xs flex items-start gap-1">
+              <span className="text-blue-400 mt-0.5">ℹ️</span>
+              <span>Model helps create more professional quotes but you can add it later if needed</span>
+            </p>
           </div>
 
           <div className="space-y-2">
