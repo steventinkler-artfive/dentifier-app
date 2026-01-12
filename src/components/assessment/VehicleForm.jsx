@@ -198,6 +198,42 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-white">Registration Plate</Label>
+            <div className="flex gap-2">
+              <Input
+                value={formData.license_plate}
+                onChange={(e) => handleInputChange('license_plate', e.target.value.toUpperCase())}
+                placeholder="AB12CDE"
+                className="bg-[#f4c500] border-[#f4c500] text-slate-900 placeholder:text-slate-600 font-semibold"
+              />
+              {dvlaConfigured && (
+                <Button
+                  type="button"
+                  onClick={handleDvlaLookup}
+                  disabled={lookingUp || !formData.license_plate || formData.license_plate.length < 2}
+                  variant="outline"
+                  className="bg-blue-900 border-blue-700 text-blue-300 hover:bg-blue-800 hover:text-white hover:border-blue-600 flex-shrink-0"
+                >
+                  {lookingUp ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Looking up...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4 mr-2" />
+                      Look Up
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+            {dvlaConfigured && (
+              <p className="text-slate-400 text-xs">Enter a UK reg and click "Look Up" to auto-fill details</p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-white">Make *</Label>
@@ -267,41 +303,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-white">Registration Plate</Label>
-            <div className="flex gap-2">
-              <Input
-                value={formData.license_plate}
-                onChange={(e) => handleInputChange('license_plate', e.target.value.toUpperCase())}
-                placeholder="AB12CDE"
-                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-              />
-              {dvlaConfigured && (
-                <Button
-                  type="button"
-                  onClick={handleDvlaLookup}
-                  disabled={lookingUp || !formData.license_plate || formData.license_plate.length < 2}
-                  variant="outline"
-                  className="bg-blue-900 border-blue-700 text-blue-300 hover:bg-blue-800 hover:text-white hover:border-blue-600 flex-shrink-0"
-                >
-                  {lookingUp ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Looking up...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-4 h-4 mr-2" />
-                      Look Up
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-            {dvlaConfigured && (
-              <p className="text-slate-400 text-xs">Enter a UK registration plate and click "Look Up" to auto-fill details</p>
-            )}
-          </div>
+
 
           <div className="space-y-2">
             <Label className="text-white">VIN (Optional)</Label>
