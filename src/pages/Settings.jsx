@@ -696,6 +696,56 @@ export default function Settings() {
                         </CardContent>
                     </Card>
 
+                    {/* DVLA API Configuration */}
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardHeader>
+                            <CardTitle className="text-white">DVLA Vehicle Lookup</CardTitle>
+                            <p className="text-slate-400 text-sm">Auto-fill vehicle details from UK registration plates</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-white">DVLA Test API Key</Label>
+                                <Input
+                                    type="password"
+                                    value={formData.dvla_test_api_key || ''}
+                                    onChange={(e) => handleInputChange('dvla_test_api_key', e.target.value)}
+                                    placeholder="Test API key"
+                                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                                />
+                                <p className="text-slate-400 text-xs">For testing with fake registrations during development</p>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <Label className="text-white">DVLA Production API Key</Label>
+                                <Input
+                                    type="password"
+                                    value={formData.dvla_prod_api_key || ''}
+                                    onChange={(e) => handleInputChange('dvla_prod_api_key', e.target.value)}
+                                    placeholder="Production API key"
+                                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                                />
+                                <p className="text-slate-400 text-xs">For live customer data lookups</p>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="dvla-test-env"
+                                        checked={formData.dvla_use_test_environment ?? false}
+                                        onCheckedChange={(checked) => handleInputChange('dvla_use_test_environment', checked)}
+                                        className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-slate-600"
+                                    />
+                                    <Label htmlFor="dvla-test-env" className="text-white cursor-pointer">
+                                        Use Test Environment
+                                    </Label>
+                                </div>
+                                <Badge className={formData.dvla_use_test_environment ? 'bg-blue-600' : 'bg-green-600'}>
+                                    {formData.dvla_use_test_environment ? 'Test' : 'Production'}
+                                </Badge>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     {/* Payment Integration Section */}
                     <Card className="bg-slate-900 border-slate-800">
                         <CardHeader>
