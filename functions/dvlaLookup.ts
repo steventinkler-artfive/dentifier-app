@@ -103,6 +103,7 @@ Deno.serve(async (req) => {
         data: {
           registrationNumber: responseData.registrationNumber,
           make: responseData.make,
+          model: responseData.model || null,
           yearOfManufacture: responseData.yearOfManufacture,
           colour: responseData.colour,
           fuelType: responseData.fuelType,

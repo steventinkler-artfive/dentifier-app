@@ -119,6 +119,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
 
         const make = toTitleCase(dvlaData.make);
         const color = toTitleCase(dvlaData.colour);
+        const model = dvlaData.model ? toTitleCase(dvlaData.model) : '';
 
         // Add to dropdowns if not present
         if (!vehicleMakes.includes(make)) {
@@ -132,6 +133,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
         setFormData(prev => ({
           ...prev,
           make: make,
+          model: model || prev.model,
           year: dvlaData.yearOfManufacture,
           color: color
         }));
