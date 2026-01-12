@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Vehicle, UserSetting, User } from "@/entities/all";
+import { Vehicle } from "@/entities/all";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Save, Search, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
-import { base44 } from "@/api/base44Client";
-import toast from "react-hot-toast";
+import { Car, Save } from "lucide-react";
 
 const VEHICLE_MAKES = [
   "Abarth", "AC", "Acura", "AK", "Alfa Romeo", "Allard", "Alpina", "Alpine", 
@@ -67,90 +65,6 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
     license_plate: vehicle?.license_plate || ""
   });
   const [saving, setSaving] = useState(false);
-  const [lookingUp, setLookingUp] = useState(false);
-  const [dvlaConfigured, setDvlaConfigured] = useState(false);
-  const [vehicleMakes, setVehicleMakes] = useState(VEHICLE_MAKES);
-  const [vehicleColors, setVehicleColors] = useState(VEHICLE_COLORS);
-
-  useEffect(() => {
-    checkDvlaConfiguration();
-  }, []);
-
-  const checkDvlaConfiguration = async () => {
-    try {
-      const user = await User.me();
-      const settings = await UserSetting.filter({ user_email: user.email });
-      
-      if (settings && settings.length > 0) {
-        const userSettings = settings[0];
-        const useTest = userSettings.dvla_use_test_environment ?? false;
-        const hasKey = useTest ? !!userSettings.dvla_test_api_key : !!userSettings.dvla_prod_api_key;
-        setDvlaConfigured(hasKey);
-      }
-    } catch (error) {
-      console.error('Error checking DVLA configuration:', error);
-    }
-  };
-
-  const handleDvlaLookup = async () => {
-    if (!formData.license_plate || formData.license_plate.length < 2) {
-      toast.error('Please enter a licence plate first');
-      return;
-    }
-
-    setLookingUp(true);
-    
-    try {
-      const response = await base44.functions.invoke('dvlaLookup', {
-        registrationNumber: formData.license_plate
-      });
-
-      if (response.data.success) {
-        const dvlaData = response.data.data;
-        
-        // Convert to title case
-        const toTitleCase = (str) => {
-          return str
-            .toLowerCase()
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-        };
-
-        const make = toTitleCase(dvlaData.make);
-        const color = toTitleCase(dvlaData.colour);
-        const model = dvlaData.model ? toTitleCase(dvlaData.model) : '';
-
-        // Add to dropdowns if not present
-        if (!vehicleMakes.includes(make)) {
-          setVehicleMakes(prev => [...prev, make].sort());
-        }
-        if (!vehicleColors.includes(color)) {
-          setVehicleColors(prev => [...prev, color].sort());
-        }
-
-        // Update form
-        setFormData(prev => ({
-          ...prev,
-          make: make,
-          model: model || prev.model,
-          year: dvlaData.yearOfManufacture,
-          color: color
-        }));
-
-        toast.success('✓ Vehicle details found');
-      } else {
-        // Handle errors
-        const errorMessage = response.data.message || 'Lookup failed';
-        toast.error(errorMessage);
-      }
-    } catch (error) {
-      console.error('DVLA lookup error:', error);
-      toast.error('⚠️ Lookup temporarily unavailable. Please enter details manually.');
-    } finally {
-      setLookingUp(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -209,7 +123,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                   <SelectValue placeholder="Select make" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                  {vehicleMakes.map(make => (
+                  {VEHICLE_MAKES.map(make => (
                     <SelectItem key={make} value={make} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
                       {make}
                     </SelectItem>
@@ -258,7 +172,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                 <SelectValue placeholder="Select colour" />
               </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                  {vehicleColors.map(color => (
+                  {VEHICLE_COLORS.map(color => (
                     <SelectItem key={color} value={color} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
                       {color}
                     </SelectItem>
@@ -269,38 +183,12 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
 
           <div className="space-y-2">
             <Label className="text-white">Licence Plate</Label>
-            <div className="flex gap-2">
-              <Input
-                value={formData.license_plate}
-                onChange={(e) => handleInputChange('license_plate', e.target.value.toUpperCase())}
-                placeholder="AB12CDE"
-                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-              />
-              {dvlaConfigured && (
-                <Button
-                  type="button"
-                  onClick={handleDvlaLookup}
-                  disabled={lookingUp || !formData.license_plate || formData.license_plate.length < 2}
-                  variant="outline"
-                  className="bg-blue-900 border-blue-700 text-blue-300 hover:bg-blue-800 hover:text-white hover:border-blue-600 flex-shrink-0"
-                >
-                  {lookingUp ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Looking up...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-4 h-4 mr-2" />
-                      Look Up
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-            {dvlaConfigured && (
-              <p className="text-slate-400 text-xs">Enter a UK registration plate and click "Look Up" to auto-fill details</p>
-            )}
+            <Input
+              value={formData.license_plate}
+              onChange={(e) => handleInputChange('license_plate', e.target.value)}
+              placeholder="ABC-1234"
+              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
+            />
           </div>
 
           <div className="space-y-2">
