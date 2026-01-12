@@ -10,7 +10,7 @@ import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 
 const VEHICLE_MAKES = [
-  "Other", "Abarth", "AC", "Acura", "AK", "Alfa Romeo", "Allard", "Alpina", "Alpine", 
+  "Abarth", "AC", "Acura", "AK", "Alfa Romeo", "Allard", "Alpina", "Alpine", 
   "Alvis", "Ariel", "Aston Martin", "Audi", "Austin", "BAC", "Banham", 
   "Beauford", "Bentley", "BMW", "Bowler", "Bramwith", "Bugatti", "Buick", 
   "BYD", "Cadillac", "Caterham", "CFMOTO", "Changan", "Chery", "Chesil", 
@@ -38,6 +38,8 @@ const VEHICLE_MAKES = [
   const bNorm = b.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   return aNorm.localeCompare(bNorm);
 });
+
+VEHICLE_MAKES.push("OTHER");
 
 const VEHICLE_COLORS = [
   "Beige", "Black", "Blue", "Brown", "Bronze", "Burgundy", "Charcoal", "Cream",
