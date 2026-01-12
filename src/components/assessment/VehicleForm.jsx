@@ -200,7 +200,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label className="text-white">Registration Plate</Label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-4">
               <Input
                 value={formData.license_plate}
                 onChange={(e) => handleInputChange('license_plate', e.target.value.toUpperCase())}
@@ -213,7 +213,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                   onClick={handleDvlaLookup}
                   disabled={lookingUp || !formData.license_plate || formData.license_plate.length < 2}
                   variant="outline"
-                  className="bg-blue-900 border-blue-700 text-blue-300 hover:bg-blue-800 hover:text-white hover:border-blue-600 flex-shrink-0"
+                  className="bg-blue-900 border-blue-700 text-blue-300 hover:bg-blue-800 hover:text-white hover:border-blue-600"
                 >
                   {lookingUp ? (
                     <>
