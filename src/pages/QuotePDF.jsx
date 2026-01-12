@@ -28,6 +28,34 @@ export default function QuotePDF() {
       .substring(0, 20);
   };
 
+  const handlePrintPDF = () => {
+    if (!assessment || !userSettings) return;
+    
+    // Store original title to restore later
+    const originalTitle = document.title;
+    
+    // Build dynamic filename
+    const isCompleted = assessment.status === 'completed';
+    const refNum = isCompleted ? 
+      (assessment.invoice_number || `INV-${assessment.id.slice(-6)}`) : 
+      (assessment.quote_number || `Q-${assessment.id.slice(-6)}`);
+    
+    const docType = isCompleted ? 'Invoice' : 'Quote';
+    const docNum = refNum.replace(/[^a-zA-Z0-9-]/g, '');
+    const bizName = sanitizeBusinessName(userSettings.business_name);
+    
+    // Set document title RIGHT BEFORE printing (NO .pdf extension)
+    document.title = `${docType}_${docNum}_${bizName}`;
+    
+    // Open print dialog
+    window.print();
+    
+    // Restore original title after print dialog opens
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 100);
+  };
+
   useEffect(() => {
     let isMounted = true;
     let currentLogoBlobUrl = null;
@@ -377,7 +405,7 @@ export default function QuotePDF() {
               <Share2 className="w-4 h-4 mr-2" />
               {copied ? 'Copied!' : 'Share'}
             </Button>
-            <Button onClick={() => window.print()} className="bg-slate-800 hover:bg-white border-slate-700 text-white hover:text-black hover:border-gray-300" variant="outline">
+            <Button onClick={handlePrintPDF} className="bg-slate-800 hover:bg-white border-slate-700 text-white hover:text-black hover:border-gray-300" variant="outline">
               <Printer className="w-4 h-4 mr-2" /> Print / Save PDF
             </Button>
           </div>
