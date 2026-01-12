@@ -189,8 +189,8 @@ export default function QuotePDF() {
       const docNumber = referenceNumber.replace(/[^a-zA-Z0-9-]/g, '');
       const bizName = sanitizeBusinessName(userSettings.business_name);
       
-      // Set document title with .pdf extension for browser PDF naming
-      document.title = `${docType}_${docNumber}_${bizName}.pdf`;
+      // Set document title WITHOUT .pdf extension (browser adds it automatically)
+      document.title = `${docType}_${docNumber}_${bizName}`;
     }
   }, [assessment, userSettings]);
 
