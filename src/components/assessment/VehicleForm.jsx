@@ -10,7 +10,7 @@ import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 
 const VEHICLE_MAKES = [
-  "Abarth", "AC", "Acura", "AK", "Alfa Romeo", "Allard", "Alpina", "Alpine", 
+  "Other", "Abarth", "AC", "Acura", "AK", "Alfa Romeo", "Allard", "Alpina", "Alpine", 
   "Alvis", "Ariel", "Aston Martin", "Audi", "Austin", "BAC", "Banham", 
   "Beauford", "Bentley", "BMW", "Bowler", "Bramwith", "Bugatti", "Buick", 
   "BYD", "Cadillac", "Caterham", "CFMOTO", "Changan", "Chery", "Chesil", 
