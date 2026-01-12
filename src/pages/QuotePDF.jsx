@@ -19,6 +19,15 @@ export default function QuotePDF() {
   const [logoDisplayUrl, setLogoDisplayUrl] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  const sanitizeBusinessName = (name) => {
+    if (!name) return 'BUSINESS';
+    return name
+      .replace(/[^a-zA-Z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toUpperCase()
+      .substring(0, 20);
+  };
+
   useEffect(() => {
     let isMounted = true;
     let currentLogoBlobUrl = null;
@@ -169,18 +178,23 @@ export default function QuotePDF() {
     };
   }, [assessmentId]);
 
+  useEffect(() => {
+    if (assessment && userSettings) {
+      const isCompleted = assessment.status === 'completed';
+      const referenceNumber = isCompleted ? 
+        (assessment.invoice_number || `INV-${assessment.id.slice(-6)}`) : 
+        (assessment.quote_number || `Q-${assessment.id.slice(-6)}`);
+      
+      const docType = isCompleted ? 'Invoice' : 'Quote';
+      const docNumber = referenceNumber.replace(/[^a-zA-Z0-9-]/g, '');
+      const bizName = sanitizeBusinessName(userSettings.business_name);
+      document.title = `${docType}_${docNumber}_${bizName}.pdf`;
+    }
+  }, [assessment, userSettings]);
+
   const getCurrencySymbol = (currency) => {
     const symbols = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$' };
     return symbols[currency] || '£';
-  };
-
-  const sanitizeBusinessName = (name) => {
-    if (!name) return 'BUSINESS';
-    return name
-      .replace(/[^a-zA-Z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .toUpperCase()
-      .substring(0, 20);
   };
 
   const handleShare = async () => {
@@ -265,12 +279,6 @@ export default function QuotePDF() {
     }
 
     shareText += `\nPowered by Dentifier`;
-
-    // Generate dynamic filename
-    const docType = isCompleted ? 'Invoice' : 'Quote';
-    const docNumber = referenceNumber.replace(/[^a-zA-Z0-9-]/g, '');
-    const bizName = sanitizeBusinessName(userSettings?.business_name);
-    const filename = `${docType}_${docNumber}_${bizName}.pdf`;
 
     if (navigator.share) {
       try {
