@@ -188,7 +188,19 @@ export default function QuotePDF() {
       const docType = isCompleted ? 'Invoice' : 'Quote';
       const docNumber = referenceNumber.replace(/[^a-zA-Z0-9-]/g, '');
       const bizName = sanitizeBusinessName(userSettings.business_name);
-      document.title = `${docType}_${docNumber}_${bizName}.pdf`;
+      const filename = `${docType}_${docNumber}_${bizName}`;
+      
+      // Set both document title and update head for PDF filename
+      document.title = filename;
+      
+      // Create or update a meta tag that some browsers use for PDF naming
+      let metaTag = document.querySelector('meta[name="pdf-filename"]');
+      if (!metaTag) {
+        metaTag = document.createElement('meta');
+        metaTag.name = 'pdf-filename';
+        document.head.appendChild(metaTag);
+      }
+      metaTag.content = filename;
     }
   }, [assessment, userSettings]);
 
