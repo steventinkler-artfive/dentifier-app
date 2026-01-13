@@ -13,6 +13,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState({});
   const { showAlert } = useAlert();
 
   useEffect(() => {
@@ -30,12 +31,24 @@ export default function AdminUsers() {
     }
   };
 
-  const handleTierChange = async (userId, newTier) => {
+  const handleTierChange = (userId, newTier) => {
+    setPendingChanges(prev => ({ ...prev, [userId]: newTier }));
+  };
+
+  const saveTierChange = async (userId) => {
+    const newTier = pendingChanges[userId];
+    if (!newTier) return;
+
     setSaving(userId);
     try {
       await base44.entities.User.update(userId, { subscription_tier: newTier });
       await loadUsers();
-      await showAlert(`Subscription tier updated to ${newTier}`, "Success");
+      setPendingChanges(prev => {
+        const updated = { ...prev };
+        delete updated[userId];
+        return updated;
+      });
+      await showAlert("Subscription tier updated", "Success");
     } catch (error) {
       console.error("Failed to update tier:", error);
       await showAlert("Failed to update subscription tier", "Error");
@@ -166,7 +179,7 @@ export default function AdminUsers() {
                   </Badge>
                   
                   <Select
-                    value={user.subscription_tier || 'starter'}
+                    value={pendingChanges[user.id] || user.subscription_tier || 'starter'}
                     onValueChange={(value) => handleTierChange(user.id, value)}
                     disabled={saving === user.id}
                   >
@@ -181,8 +194,19 @@ export default function AdminUsers() {
                     </SelectContent>
                   </Select>
 
-                  {saving === user.id && (
-                    <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                  {pendingChanges[user.id] && (
+                    <Button
+                      onClick={() => saveTierChange(user.id)}
+                      disabled={saving === user.id}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      size="sm"
+                    >
+                      {saving === user.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </Button>
                   )}
                 </div>
               </div>
