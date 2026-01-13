@@ -8,8 +8,9 @@ import Home from './pages/Home';
 import QuotePDF from './pages/QuotePDF';
 import Quotes from './pages/Quotes';
 import Reports from './pages/Reports';
-import Settings from './pages/Settings';
 import Upgrade from './pages/Upgrade';
+import Settings from './pages/Settings';
+import AdminUsers from './pages/AdminUsers';
 import __Layout from './Layout.jsx';
 
 
@@ -24,8 +25,9 @@ export const PAGES = {
     "QuotePDF": QuotePDF,
     "Quotes": Quotes,
     "Reports": Reports,
-    "Settings": Settings,
     "Upgrade": Upgrade,
+    "Settings": Settings,
+    "AdminUsers": AdminUsers,
 }
 
 export const pagesConfig = {
