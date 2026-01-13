@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Mail, Shield, Users } from "lucide-react";
+import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
@@ -160,8 +160,6 @@ export default function Settings() {
     const [logoUploading, setLogoUploading] = useState(false);
     const [logoPreview, setLogoPreview] = useState(null);
     const [error, setError] = useState(null);
-    const [allUsers, setAllUsers] = useState([]);
-    const [loadingUsers, setLoadingUsers] = useState(false);
 
     const fileInputRef = useRef(null);
     const { showAlert } = useAlert();
@@ -401,9 +399,6 @@ export default function Settings() {
                         llm_quote_instructions: DEFAULT_QUOTE_INSTRUCTIONS,
                     });
                 }
-                
-                // Load all users
-                await loadUsers();
             }
         } catch (err) {
             setError("Failed to load user data. Please try again.");
@@ -538,37 +533,6 @@ export default function Settings() {
         return skill?.level || SKILL_LEVELS[0];
     };
 
-    const loadUsers = async () => {
-        setLoadingUsers(true);
-        try {
-            const users = await User.list();
-            setAllUsers(users);
-        } catch (err) {
-            console.error('Error loading users:', err);
-        } finally {
-            setLoadingUsers(false);
-        }
-    };
-
-    const getTierBadgeClass = (tier) => {
-        switch(tier) {
-            case 'professional':
-                return 'bg-purple-600 text-white';
-            case 'founder':
-                return 'bg-yellow-600 text-white';
-            case 'early_bird':
-                return 'bg-blue-600 text-white';
-            case 'starter':
-            default:
-                return 'bg-slate-600 text-white';
-        }
-    };
-
-    const formatTierLabel = (tier) => {
-        if (!tier) return 'Starter';
-        return tier.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    };
-
     if (loading) {
         return (
             <div className="p-4 max-w-md mx-auto text-center">
@@ -613,19 +577,14 @@ export default function Settings() {
                     </TabsTrigger>
                 </TabsList>
                 
-                <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-3' : 'grid-cols-1'} bg-slate-900 mb-6`}>
+                <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-6">
                     <TabsTrigger value="technician" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
                         Technician details
                     </TabsTrigger>
                     {user?.role === 'admin' && (
-                        <>
-                            <TabsTrigger value="users" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
-                                Users
-                            </TabsTrigger>
-                            <TabsTrigger value="admin" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
-                                Admin
-                            </TabsTrigger>
-                        </>
+                        <TabsTrigger value="admin" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                            Admin
+                        </TabsTrigger>
                     )}
                 </TabsList>
 
@@ -1184,59 +1143,7 @@ export default function Settings() {
                     </Card>
                 </TabsContent>
 
-                {/* Tab 4: Users (Only for admin users) */}
-                {user?.role === 'admin' && (
-                    <TabsContent value="users" className="space-y-6">
-                        <Card className="bg-slate-900 border-slate-800">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-white">
-                                    <Users className="w-5 h-5 text-blue-400" />
-                                    All Users
-                                </CardTitle>
-                                <p className="text-slate-400 text-sm">Manage user accounts and subscription tiers</p>
-                            </CardHeader>
-                            <CardContent>
-                                {loadingUsers ? (
-                                    <div className="text-center py-8">
-                                        <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {allUsers.map((u) => (
-                                            <div key={u.id} className="p-4 bg-slate-800 rounded-lg border border-slate-700">
-                                                <div className="flex items-start justify-between mb-2">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <h3 className="text-white font-medium">{u.full_name || 'No Name'}</h3>
-                                                            {u.role === 'admin' && (
-                                                                <Badge className="bg-rose-600 text-white text-xs">
-                                                                    <Shield className="w-3 h-3 mr-1" />
-                                                                    Admin
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center gap-1 text-slate-400 text-sm mb-2">
-                                                            <Mail className="w-3 h-3" />
-                                                            {u.email}
-                                                        </div>
-                                                        <Badge className={`${getTierBadgeClass(u.subscription_tier)} text-xs`}>
-                                                            {formatTierLabel(u.subscription_tier)}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <div className="text-xs text-slate-500 mt-2">
-                                                    Joined: {new Date(u.created_date).toLocaleDateString()}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                )}
-
-                {/* Tab 5: Admin (Only for admin users) */}
+                {/* Tab 4: Admin (Only for admin users) */}
                 {user?.role === 'admin' && (
                     <TabsContent value="admin" className="space-y-6">
                         <Card className="bg-blue-900/20 border-blue-800">
