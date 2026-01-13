@@ -56,11 +56,11 @@ export default function AdminUsers() {
 
   const loadUsers = async () => {
     try {
-      // Use service role to ensure we get ALL users (admin access)
-      const allUsers = await base44.asServiceRole.entities.User.list();
+      const allUsers = await base44.entities.User.list();
       setUsers(allUsers);
     } catch (error) {
       console.error("Failed to load users:", error);
+      await showAlert("Failed to load users. Please try refreshing the page.", "Error");
     } finally {
       setLoading(false);
     }
