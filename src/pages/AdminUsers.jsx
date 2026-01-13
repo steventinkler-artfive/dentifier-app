@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2 } from "lucide-react";
+import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2, Key, Mail } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,8 @@ export default function AdminUsers() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [newUser, setNewUser] = useState({ full_name: "", email: "", password: "", role: "user", subscription_tier: "starter" });
+  const [showPassword, setShowPassword] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(null);
   const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
@@ -127,6 +129,41 @@ export default function AdminUsers() {
       console.error("Failed to delete user:", error);
       await showAlert("Failed to delete user", "Error");
     }
+  };
+
+  const handleResetPassword = async (user) => {
+    const isOAuthUser = !user.password || user.auth_provider === 'google';
+    
+    if (isOAuthUser) {
+      await showAlert("This user logs in with Google OAuth - password reset not available", "Info");
+      return;
+    }
+
+    const confirmed = await showConfirm(
+      `Send password reset email to ${user.full_name}?`,
+      `An email will be sent to ${user.email} with password reset instructions.`
+    );
+
+    if (!confirmed) return;
+
+    setResettingPassword(user.id);
+    try {
+      await base44.functions.invoke('sendPasswordReset', { 
+        email: user.email,
+        isAdminReset: true 
+      });
+      await showAlert(`Password reset email sent to ${user.email}`, "Success");
+    } catch (error) {
+      console.error("Failed to send reset email:", error);
+      await showAlert("Failed to send password reset email", "Error");
+    } finally {
+      setResettingPassword(null);
+    }
+  };
+
+  const getAuthMethod = (user) => {
+    if (user.auth_provider === 'google') return { method: 'Google OAuth', color: 'bg-blue-600' };
+    return { method: 'Email/Password', color: 'bg-slate-600' };
   };
 
   const getTierBadgeColor = (tier) => {
@@ -328,6 +365,8 @@ export default function AdminUsers() {
       <div className="space-y-4">
         {filteredUsers.map((user) => {
           const subscriptionStatus = getSubscriptionStatus(user.subscription_tier || 'starter');
+          const authInfo = getAuthMethod(user);
+          const isOAuthUser = authInfo.method === 'Google OAuth';
           
           return (
           <Card key={user.id} className="bg-slate-900 border-slate-800">
@@ -338,7 +377,12 @@ export default function AdminUsers() {
                   <div className="flex items-center gap-3 mb-2">
                     <div>
                       <p className="text-white font-semibold text-lg">{user.full_name}</p>
-                      <p className="text-slate-400 text-sm">{user.email}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-slate-400 text-sm">{user.email}</p>
+                        <Badge className={`${authInfo.color} text-white text-xs`}>
+                          {authInfo.method}
+                        </Badge>
+                      </div>
                     </div>
                     <Badge className="bg-slate-700 text-slate-200">
                       {user.role}
@@ -373,6 +417,14 @@ export default function AdminUsers() {
               <Collapsible open={expandedUsers[user.id]}>
                 <CollapsibleContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <div className="bg-slate-800 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
+                    <Key className="w-4 h-4" />
+                    <span>Authentication Method</span>
+                  </div>
+                  <p className="text-white text-sm font-medium">{authInfo.method}</p>
+                </div>
+
                 <div className="bg-slate-800 p-3 rounded-lg">
                   <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
                     <CreditCard className="w-4 h-4" />
@@ -446,6 +498,21 @@ export default function AdminUsers() {
                 
                 <div className="flex gap-2 ml-auto">
                   <Button
+                    onClick={() => handleResetPassword(user)}
+                    variant="outline"
+                    size="sm"
+                    disabled={isOAuthUser || resettingPassword === user.id}
+                    title={isOAuthUser ? "This user logs in with Google - password reset not available" : "Send password reset email"}
+                    className={`bg-slate-800 border-slate-700 text-white hover:bg-slate-700 ${isOAuthUser ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {resettingPassword === user.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                    ) : (
+                      <Mail className="w-4 h-4 mr-1" />
+                    )}
+                    Reset Password
+                  </Button>
+                  <Button
                     onClick={() => { setEditingUser(user); setShowEditDialog(true); }}
                     variant="outline"
                     size="sm"
@@ -502,13 +569,25 @@ export default function AdminUsers() {
             </div>
             <div className="space-y-2">
               <Label>Password</Label>
-              <Input
-                type="password"
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                placeholder="Set initial password"
-                className="bg-slate-800 border-slate-700 text-white"
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  placeholder="At least 8 characters"
+                  className="bg-slate-800 border-slate-700 text-white pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                >
+                  {showPassword ? <span className="text-xs">Hide</span> : <span className="text-xs">Show</span>}
+                </button>
+              </div>
+              {newUser.password && newUser.password.length < 8 && (
+                <p className="text-xs text-red-400">Password must be at least 8 characters</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
