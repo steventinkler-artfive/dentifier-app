@@ -55,7 +55,7 @@ export default function AdminUsers() {
 
   const loadUsers = async () => {
     try {
-      const allUsers = await base44.entities.User.list();
+      const allUsers = await base44.functions.invoke('getAllUsers');
       setUsers(allUsers);
     } catch (error) {
       console.error("Failed to load users:", error);
