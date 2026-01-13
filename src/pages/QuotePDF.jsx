@@ -446,15 +446,18 @@ export default function QuotePDF() {
                 const displayLogo = (isProTier && hasCustomLogo) ? logoDisplayUrl : DEFAULT_DENTIFIER_LOGO;
 
                 return (
-                  <img 
-                    src={displayLogo} 
-                    alt={isProTier && hasCustomLogo ? "Business Logo" : "Dentifier Logo"} 
-                    className="w-48 object-contain mb-4"
-                    onError={(e) => {
-                      console.error("Logo failed to load:", displayLogo);
-                      e.target.src = DEFAULT_DENTIFIER_LOGO;
-                    }}
-                  />
+                  <>
+                    <img 
+                      src={displayLogo} 
+                      alt={isProTier && hasCustomLogo ? "Business Logo" : "Dentifier Logo"} 
+                      className="w-48 object-contain mb-2"
+                      onError={(e) => {
+                        console.error("Logo failed to load:", displayLogo);
+                        e.target.src = DEFAULT_DENTIFIER_LOGO;
+                      }}
+                    />
+                    <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
+                  </>
                 );
               })()}
             </div>
