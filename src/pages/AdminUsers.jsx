@@ -46,33 +46,10 @@ export default function AdminUsers() {
         return;
       }
       
-      await loadUsers();
-      await detectAuthProvidersForAllUsers();
+      loadUsers();
     } catch (error) {
       console.error("Access check failed:", error);
       navigate(createPageUrl('Dashboard'));
-    }
-  };
-
-  const detectAuthProvidersForAllUsers = async () => {
-    // Auto-detect and set auth_provider for users that don't have it set
-    try {
-      const usersWithoutProvider = users.filter(u => !u.auth_provider);
-      
-      for (const user of usersWithoutProvider) {
-        try {
-          await base44.functions.invoke('detectAuthProvider', { userId: user.id });
-        } catch (error) {
-          console.error(`Failed to detect auth provider for ${user.email}:`, error);
-        }
-      }
-      
-      // Reload users after detection
-      if (usersWithoutProvider.length > 0) {
-        await loadUsers();
-      }
-    } catch (error) {
-      console.error("Failed to detect auth providers:", error);
     }
   };
 
@@ -174,7 +151,7 @@ export default function AdminUsers() {
   };
 
   const handleResetPassword = async (user) => {
-    const isOAuthUser = user.auth_provider === 'google';
+    const isOAuthUser = user.auth_provider === 'google' || !user.password;
     
     if (isOAuthUser) {
       await showAlert("This user logs in with Google OAuth - password reset not available", "Info");
@@ -204,8 +181,9 @@ export default function AdminUsers() {
   };
 
   const getAuthMethod = (user) => {
-    // Check auth_provider field - 'google' for OAuth, 'email' or undefined for email/password
-    if (user.auth_provider === 'google') {
+    // OAuth users typically don't have a password field
+    // Check both auth_provider field and password presence
+    if (user.auth_provider === 'google' || !user.password) {
       return { method: 'Google OAuth', color: 'bg-blue-600' };
     }
     return { method: 'Email/Password', color: 'bg-slate-600' };
