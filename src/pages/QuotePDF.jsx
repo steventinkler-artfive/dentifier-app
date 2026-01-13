@@ -258,6 +258,7 @@ export default function QuotePDF() {
     const currencySymbol = getCurrencySymbol(assessment.currency || "GBP");
 
     let shareText = `${isCompleted ? 'Invoice' : 'Quote'}: ${ref}\n`;
+    shareText += `From: ${businessName}\n`;
     if (custName) {
       shareText += `Customer: ${custName}\n`;
     }
