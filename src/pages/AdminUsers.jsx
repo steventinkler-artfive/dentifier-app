@@ -46,10 +46,33 @@ export default function AdminUsers() {
         return;
       }
       
-      loadUsers();
+      await loadUsers();
+      await detectAuthProvidersForAllUsers();
     } catch (error) {
       console.error("Access check failed:", error);
       navigate(createPageUrl('Dashboard'));
+    }
+  };
+
+  const detectAuthProvidersForAllUsers = async () => {
+    // Auto-detect and set auth_provider for users that don't have it set
+    try {
+      const usersWithoutProvider = users.filter(u => !u.auth_provider);
+      
+      for (const user of usersWithoutProvider) {
+        try {
+          await base44.functions.invoke('detectAuthProvider', { userId: user.id });
+        } catch (error) {
+          console.error(`Failed to detect auth provider for ${user.email}:`, error);
+        }
+      }
+      
+      // Reload users after detection
+      if (usersWithoutProvider.length > 0) {
+        await loadUsers();
+      }
+    } catch (error) {
+      console.error("Failed to detect auth providers:", error);
     }
   };
 
@@ -522,22 +545,24 @@ export default function AdminUsers() {
                   </Button>
                 )}
                 
-                <div className="flex gap-2 ml-auto">
-                  <Button
-                    onClick={() => handleResetPassword(user)}
-                    variant="outline"
-                    size="sm"
-                    disabled={isOAuthUser || resettingPassword === user.id}
-                    title={isOAuthUser ? "This user logs in with Google - password reset not available" : "Send password reset email"}
-                    className={`bg-slate-800 border-slate-700 text-white hover:bg-slate-700 ${isOAuthUser ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {resettingPassword === user.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                    ) : (
-                      <Mail className="w-4 h-4 mr-1" />
-                    )}
-                    Reset Password
-                  </Button>
+                <div className="flex flex-wrap gap-2 ml-auto">
+                  {!isOAuthUser && (
+                    <Button
+                      onClick={() => handleResetPassword(user)}
+                      variant="outline"
+                      size="sm"
+                      disabled={resettingPassword === user.id}
+                      title="Send password reset email"
+                      className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+                    >
+                      {resettingPassword === user.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                      ) : (
+                        <Mail className="w-4 h-4 mr-1" />
+                      )}
+                      Reset Password
+                    </Button>
+                  )}
                   <Button
                     onClick={() => { setEditingUser(user); setShowEditDialog(true); }}
                     variant="outline"
