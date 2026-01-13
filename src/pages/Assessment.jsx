@@ -294,6 +294,14 @@ export default function AssessmentPage() {
     }
   }, [currentStep, chargePerPanel, damageItems, assessmentData.currentAnalysis]); // Added damageItems to dependencies
 
+  if (checkingAccess) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 max-w-md mx-auto">
       <div className="mb-6">
