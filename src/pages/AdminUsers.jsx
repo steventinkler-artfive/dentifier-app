@@ -436,7 +436,12 @@ export default function AdminUsers() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <div>
-                      <p className="text-white font-semibold text-lg">{user.full_name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-semibold text-lg">{user.full_name}</p>
+                        <Badge className="bg-slate-700 text-slate-200">
+                          {user.role}
+                        </Badge>
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-slate-400 text-sm">{user.email}</p>
                         <Badge className={`${authInfo.color} text-white text-xs`}>
@@ -444,9 +449,6 @@ export default function AdminUsers() {
                         </Badge>
                       </div>
                     </div>
-                    <Badge className="bg-slate-700 text-slate-200">
-                      {user.role}
-                    </Badge>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-sm text-slate-400">
