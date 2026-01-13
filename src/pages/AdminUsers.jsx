@@ -99,14 +99,10 @@ export default function AdminUsers() {
 
     try {
       await base44.users.inviteUser(newUser.email, newUser.role);
-      await base44.entities.User.update(newUser.email, {
-        full_name: newUser.full_name,
-        subscription_tier: newUser.subscription_tier
-      });
       await loadUsers();
       setShowAddDialog(false);
       setNewUser({ full_name: "", email: "", password: "", role: "user", subscription_tier: "starter" });
-      await showAlert("User added successfully", "Success");
+      await showAlert("Invitation sent successfully! You can update their subscription tier once they accept.", "Success");
     } catch (error) {
       console.error("Failed to add user:", error);
       await showAlert("Failed to add user: " + error.message, "Error");
