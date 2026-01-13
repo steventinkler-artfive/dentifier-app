@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Assessment, Customer, Vehicle, UserSetting } from "@/entities/all";
 import { User } from "@/entities/User";
+
+const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -436,21 +438,23 @@ export default function QuotePDF() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-6 sm:gap-0 print:mb-6 print:gap-2">
             <div className="order-2 sm:order-1">
-              {logoDisplayUrl ? (
-                <img 
-                  src={logoDisplayUrl} 
-                  alt="Business Logo" 
-                  className="w-48 object-contain mb-4"
-                  onError={(e) => {
-                    console.error("Logo failed to load:", logoDisplayUrl);
-                    e.target.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="w-48 h-24 bg-gray-200 rounded flex items-center justify-center text-gray-500 text-sm mb-4">
-                  LOGO
-                </div>
-              )}
+              {(() => {
+                const isProTier = user?.subscription_tier === 'professional' || user?.subscription_tier === 'founder' || user?.subscription_tier === 'early_bird';
+                const hasCustomLogo = logoDisplayUrl && userSettings?.business_logo_url;
+                const displayLogo = (isProTier && hasCustomLogo) ? logoDisplayUrl : DEFAULT_DENTIFIER_LOGO;
+
+                return (
+                  <img 
+                    src={displayLogo} 
+                    alt={isProTier && hasCustomLogo ? "Business Logo" : "Dentifier Logo"} 
+                    className="w-48 object-contain mb-4"
+                    onError={(e) => {
+                      console.error("Logo failed to load:", displayLogo);
+                      e.target.src = DEFAULT_DENTIFIER_LOGO;
+                    }}
+                  />
+                );
+              })()}
             </div>
             <div className="text-right order-1 sm:order-2">
               <h2 className="text-xl font-semibold text-gray-700">

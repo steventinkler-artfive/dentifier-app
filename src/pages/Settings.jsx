@@ -599,52 +599,66 @@ export default function Settings() {
 
                             <div className="space-y-2">
                                 <Label className="text-white">Business Logo</Label>
-                                <div className="flex flex-col gap-3">
-                                    {logoPreview && (
-                                    <div className="relative w-48 h-24 bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
-                                        <img src={logoPreview} alt="Business Logo" className="max-w-full max-h-full object-contain" />
-                                    </div>
-                                    )}
-                                    <div className="flex gap-2">
-                                    <Button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        variant="outline"
-                                        className="bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300"
-                                        disabled={logoUploading}
-                                    >
-                                        {logoUploading ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Uploading...
-                                        </>
-                                        ) : (
-                                        <>
-                                            <Upload className="w-4 h-4 mr-2" />
-                                            {logoPreview ? 'Change Logo' : 'Upload Logo'}
-                                        </>
+                                {user?.subscription_tier === 'professional' || user?.subscription_tier === 'founder' || user?.subscription_tier === 'early_bird' ? (
+                                    <div className="flex flex-col gap-3">
+                                        {logoPreview && (
+                                        <div className="relative w-48 h-24 bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
+                                            <img src={logoPreview} alt="Business Logo" className="max-w-full max-h-full object-contain" />
+                                        </div>
                                         )}
-                                    </Button>
-                                    {logoPreview && (
+                                        <div className="flex gap-2">
                                         <Button
-                                        type="button"
-                                        onClick={() => { handleInputChange('business_logo_url', ''); setLogoPreview(null); }}
-                                        variant="outline"
-                                        className="bg-red-900 border-red-700 text-red-300 hover:bg-red-800 hover:text-white hover:border-red-600"
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            variant="outline"
+                                            className="bg-slate-800 border-slate-700 text-white hover:bg-white hover:text-black hover:border-gray-300"
+                                            disabled={logoUploading}
                                         >
-                                        Remove
+                                            {logoUploading ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                Uploading...
+                                            </>
+                                            ) : (
+                                            <>
+                                                <Upload className="w-4 h-4 mr-2" />
+                                                {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                                            </>
+                                            )}
                                         </Button>
-                                    )}
+                                        {logoPreview && (
+                                            <Button
+                                            type="button"
+                                            onClick={() => { handleInputChange('business_logo_url', ''); setLogoPreview(null); }}
+                                            variant="outline"
+                                            className="bg-red-900 border-red-700 text-red-300 hover:bg-red-800 hover:text-white hover:border-red-600"
+                                            >
+                                            Remove
+                                            </Button>
+                                        )}
+                                        </div>
+                                        <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/jpg"
+                                        className="hidden"
+                                        onChange={handleLogoUpload}
+                                        />
+                                        <p className="text-slate-400 text-sm">Recommended: PNG with transparent background. Also accepts JPG/JPEG. Max 2MB</p>
                                     </div>
-                                    <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/png,image/jpeg,image/jpg"
-                                    className="hidden"
-                                    onChange={handleLogoUpload}
-                                    />
-                                    <p className="text-slate-400 text-sm">Recommended: PNG with transparent background. Also accepts JPG/JPEG. Max 2MB</p>
-                                </div>
+                                ) : (
+                                    <div className="p-4 bg-gradient-to-r from-rose-900/20 to-purple-900/20 border border-rose-700 rounded-lg">
+                                        <p className="text-white font-medium mb-2">Want to add your business logo?</p>
+                                        <p className="text-slate-300 text-sm mb-3">Upgrade to Professional to customize your branding on quotes and invoices.</p>
+                                        <Button
+                                            type="button"
+                                            onClick={() => window.location.href = createPageUrl('Upgrade')}
+                                            className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+                                        >
+                                            Upgrade to Professional
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2">
