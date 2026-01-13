@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard } from "lucide-react";
+import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Users } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
@@ -1157,6 +1157,25 @@ export default function Settings() {
                                         </p>
                                     </div>
                                 </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* User Management Button */}
+                        <Card className="bg-slate-900 border-slate-800">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-white">
+                                    <Users className="w-5 h-5 text-rose-400" />
+                                    User Management
+                                </CardTitle>
+                                <p className="text-slate-400 text-sm">Manage user accounts and subscription tiers</p>
+                            </CardHeader>
+                            <CardContent>
+                                <Link to={createPageUrl('AdminUsers')}>
+                                    <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
+                                        <Users className="w-4 h-4 mr-2" />
+                                        Manage User Subscriptions
+                                    </Button>
+                                </Link>
                             </CardContent>
                         </Card>
 

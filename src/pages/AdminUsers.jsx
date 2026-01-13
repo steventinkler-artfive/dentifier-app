@@ -4,10 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Crown, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown } from "lucide-react";
+import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2 } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -18,7 +22,11 @@ export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOption, setFilterOption] = useState("all");
   const [expandedUsers, setExpandedUsers] = useState({});
-  const { showAlert } = useAlert();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [newUser, setNewUser] = useState({ full_name: "", email: "", password: "", role: "user", subscription_tier: "starter" });
+  const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
     loadUsers();
@@ -58,6 +66,66 @@ export default function AdminUsers() {
       await showAlert("Failed to update subscription tier", "Error");
     } finally {
       setSaving(null);
+    }
+  };
+
+  const handleAddUser = async () => {
+    if (!newUser.full_name || !newUser.email || !newUser.password) {
+      await showAlert("Please fill in all required fields", "Error");
+      return;
+    }
+
+    try {
+      await base44.users.inviteUser(newUser.email, newUser.role);
+      await base44.entities.User.update(newUser.email, {
+        full_name: newUser.full_name,
+        subscription_tier: newUser.subscription_tier
+      });
+      await loadUsers();
+      setShowAddDialog(false);
+      setNewUser({ full_name: "", email: "", password: "", role: "user", subscription_tier: "starter" });
+      await showAlert("User added successfully", "Success");
+    } catch (error) {
+      console.error("Failed to add user:", error);
+      await showAlert("Failed to add user: " + error.message, "Error");
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      await base44.entities.User.update(editingUser.id, {
+        full_name: editingUser.full_name,
+        email: editingUser.email,
+        role: editingUser.role,
+        subscription_tier: editingUser.subscription_tier
+      });
+      await loadUsers();
+      setShowEditDialog(false);
+      setEditingUser(null);
+      await showAlert("User updated successfully", "Success");
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      await showAlert("Failed to update user", "Error");
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    const confirmed = await showConfirm(
+      `Are you sure you want to delete ${user.full_name}?`,
+      "This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await base44.entities.User.delete(user.id);
+      await loadUsers();
+      await showAlert("User deleted successfully", "Success");
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      await showAlert("Failed to delete user", "Error");
     }
   };
 
@@ -139,6 +207,14 @@ export default function AdminUsers() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <Link to={createPageUrl("Settings")}>
+            <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-800 px-2 py-1 h-auto">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Settings
+            </Button>
+          </Link>
+        </div>
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-3xl font-bold text-white flex items-center gap-2">
             <Users className="w-8 h-8" />
@@ -152,7 +228,7 @@ export default function AdminUsers() {
             <Info className="w-5 h-5 text-blue-400" />
           </button>
         </div>
-        <p className="text-slate-400">Manage user subscription tiers</p>
+        <p className="text-slate-400">Manage user accounts and subscription tiers</p>
       </div>
 
       {/* Subscription Tier Guide */}
@@ -214,7 +290,7 @@ export default function AdminUsers() {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Search and Filter */}
+      {/* Search, Filter, and Add User Button */}
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -227,7 +303,7 @@ export default function AdminUsers() {
           />
         </div>
         <Select value={filterOption} onValueChange={setFilterOption}>
-          <SelectTrigger className="w-full sm:w-64 bg-slate-900 border-slate-700 text-white">
+          <SelectTrigger className="w-full sm:w-48 bg-slate-900 border-slate-700 text-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-slate-800 border-slate-700">
@@ -240,6 +316,13 @@ export default function AdminUsers() {
             <SelectItem value="early_bird" className="text-white">Early Bird</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          onClick={() => setShowAddDialog(true)}
+          className="bg-rose-600 hover:bg-rose-700 text-white font-semibold whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add User
+        </Button>
       </div>
 
       <div className="space-y-4">
@@ -360,12 +443,177 @@ export default function AdminUsers() {
                     )}
                   </Button>
                 )}
+                
+                <div className="flex gap-2 ml-auto">
+                  <Button
+                    onClick={() => { setEditingUser(user); setShowEditDialog(true); }}
+                    variant="outline"
+                    size="sm"
+                    className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+                  >
+                    <Edit2 className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    onClick={() => handleDeleteUser(user)}
+                    variant="outline"
+                    size="sm"
+                    className="bg-red-900/20 border-red-700 text-red-400 hover:bg-red-900/40"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         );
         })}
       </div>
+
+      {/* Add User Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="bg-slate-900 border-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Create a new user account with specified details and tier
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={newUser.full_name}
+                onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
+                placeholder="John Smith"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                placeholder="john@example.com"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                placeholder="Set initial password"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectItem value="user" className="text-white">User</SelectItem>
+                  <SelectItem value="admin" className="text-white">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Subscription Tier</Label>
+              <Select value={newUser.subscription_tier} onValueChange={(value) => setNewUser({ ...newUser, subscription_tier: value })}>
+                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectItem value="starter" className="text-white">Starter</SelectItem>
+                  <SelectItem value="professional" className="text-white">Professional</SelectItem>
+                  <SelectItem value="founder" className="text-white">Founder</SelectItem>
+                  <SelectItem value="early_bird" className="text-white">Early Bird</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)} className="bg-slate-800 border-slate-700 text-white">
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser} className="bg-rose-600 hover:bg-rose-700 text-white">
+              Add User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="bg-slate-900 border-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Update user account details
+            </DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  value={editingUser.full_name}
+                  onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={editingUser.email}
+                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select value={editingUser.role} onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}>
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="user" className="text-white">User</SelectItem>
+                    <SelectItem value="admin" className="text-white">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Subscription Tier</Label>
+                <Select value={editingUser.subscription_tier || 'starter'} onValueChange={(value) => setEditingUser({ ...editingUser, subscription_tier: value })}>
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="starter" className="text-white">Starter</SelectItem>
+                    <SelectItem value="professional" className="text-white">Professional</SelectItem>
+                    <SelectItem value="founder" className="text-white">Founder</SelectItem>
+                    <SelectItem value="early_bird" className="text-white">Early Bird</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)} className="bg-slate-800 border-slate-700 text-white">
+              Cancel
+            </Button>
+            <Button onClick={handleEditUser} className="bg-rose-600 hover:bg-rose-700 text-white">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
