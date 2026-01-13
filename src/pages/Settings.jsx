@@ -16,6 +16,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 import { useAlert } from "@/components/ui/CustomAlert";
+import { createPageUrl } from "@/utils";
+
+const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 
 // Custom Dentifier D Icon Component
 const DentifierIcon = ({ className = "" }) => (
