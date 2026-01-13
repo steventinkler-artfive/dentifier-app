@@ -16,6 +16,7 @@ export default function QuotePDF() {
   const [customer, setCustomer] = useState(null);
   const [vehicle, setVehicle] = useState(null);
   const [vehicles, setVehicles] = useState({});
+  const [user, setUser] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [logoDisplayUrl, setLogoDisplayUrl] = useState(null);
@@ -118,9 +119,10 @@ export default function QuotePDF() {
 
           promises.push(User.me());
 
-          const [foundCustomer, fetchedVehicleData, user] = await Promise.all(promises);
+          const [foundCustomer, fetchedVehicleData, loadedUser] = await Promise.all(promises);
 
           if (!isMounted) return;
+          setUser(loadedUser);
           setCustomer(foundCustomer);
 
           if (foundAssessment.is_multi_vehicle) {
@@ -132,7 +134,7 @@ export default function QuotePDF() {
           }
 
           // Load user settings
-          const settings = await UserSetting.filter({ user_email: user.email });
+          const settings = await UserSetting.filter({ user_email: loadedUser.email });
           if (!isMounted) return;
 
           let currentAssessment = foundAssessment;
