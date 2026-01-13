@@ -326,7 +326,7 @@ export default function AdminUsers() {
               </Collapsible>
 
               {/* Tier Management Section */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4 border-t border-slate-700">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4">
                 <div className="flex items-center gap-2 text-slate-400 text-sm">
                   <span>Subscription Tier:</span>
                 </div>
