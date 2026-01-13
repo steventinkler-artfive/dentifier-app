@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 import { useAlert } from "@/components/ui/CustomAlert";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
@@ -653,13 +654,14 @@ export default function Settings() {
                                     <div className="p-4 bg-gradient-to-r from-rose-900/20 to-purple-900/20 border border-rose-700 rounded-lg">
                                         <p className="text-white font-medium mb-2">Want to add your business logo?</p>
                                         <p className="text-slate-300 text-sm mb-3">Upgrade to Professional to customize your branding on quotes and invoices.</p>
-                                        <Button
-                                            type="button"
-                                            onClick={() => window.location.href = createPageUrl('Upgrade')}
-                                            className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
-                                        >
-                                            Upgrade to Professional
-                                        </Button>
+                                        <Link to={createPageUrl('Upgrade')}>
+                                            <Button
+                                                type="button"
+                                                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+                                            >
+                                                Upgrade to Professional
+                                            </Button>
+                                        </Link>
                                     </div>
                                 )}
                             </div>
