@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Crown, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2 } from "lucide-react";
+import { Loader2, Users, Crown, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ export default function AdminUsers() {
   const [pendingChanges, setPendingChanges] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOption, setFilterOption] = useState("all");
+  const [expandedUsers, setExpandedUsers] = useState({});
   const { showAlert } = useAlert();
 
   useEffect(() => {
@@ -260,9 +261,18 @@ export default function AdminUsers() {
                       {user.role}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <Calendar className="w-4 h-4" />
-                    <span>Joined: {formatDate(user.created_date)}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <Calendar className="w-4 h-4" />
+                      <span>Joined: {formatDate(user.created_date)}</span>
+                    </div>
+                    <button
+                      onClick={() => setExpandedUsers(prev => ({ ...prev, [user.id]: !prev[user.id] }))}
+                      className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform ${expandedUsers[user.id] ? 'rotate-180' : ''}`} />
+                      <span>{expandedUsers[user.id] ? 'Hide' : 'Show'} Details</span>
+                    </button>
                   </div>
                 </div>
 
@@ -277,6 +287,8 @@ export default function AdminUsers() {
               </div>
 
               {/* Subscription Details Grid */}
+              <Collapsible open={expandedUsers[user.id]}>
+                <CollapsibleContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 <div className="bg-slate-800 p-3 rounded-lg">
                   <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
@@ -310,6 +322,8 @@ export default function AdminUsers() {
                   <p className="text-white text-sm font-medium">-</p>
                 </div>
               </div>
+                </CollapsibleContent>
+              </Collapsible>
 
               {/* Tier Management Section */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4 border-t border-slate-700">
