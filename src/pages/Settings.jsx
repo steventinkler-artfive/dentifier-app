@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Users } from "lucide-react";
+import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Users, Mail } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
@@ -1255,10 +1255,39 @@ export default function Settings() {
                             </CardContent>
                         </Card>
 
-                        <Button onClick={handleSaveGlobalSettings} disabled={savingGlobal} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-                            {savingGlobal ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                            Save Global AI Settings
-                        </Button>
+                        <div className="space-y-3">
+                            <Button onClick={handleSaveGlobalSettings} disabled={savingGlobal} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                                {savingGlobal ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                                Save Global AI Settings
+                            </Button>
+
+                            {/* Email Testing Section */}
+                            <Card className="bg-slate-900 border-slate-800">
+                                <CardHeader>
+                                    <CardTitle className="text-white">Email Testing</CardTitle>
+                                    <p className="text-slate-400 text-sm">Test email notifications before going live</p>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button 
+                                        onClick={async () => {
+                                            try {
+                                                await base44.functions.invoke('sendWelcomeEmail', {
+                                                    email: 'info@nodents.co.uk',
+                                                    fullName: 'Test User'
+                                                });
+                                                await showAlert("Test welcome email sent to info@nodents.co.uk", "Success");
+                                            } catch (error) {
+                                                await showAlert("Failed to send test email: " + error.message, "Error");
+                                            }
+                                        }}
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+                                    >
+                                        <Mail className="w-4 h-4 mr-2" />
+                                        Send Test Welcome Email
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </TabsContent>
                 )}
             </Tabs>

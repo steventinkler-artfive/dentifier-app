@@ -56,7 +56,8 @@ export default function AdminUsers() {
 
   const loadUsers = async () => {
     try {
-      const allUsers = await base44.entities.User.list();
+      // Use service role to ensure we get ALL users (admin access)
+      const allUsers = await base44.asServiceRole.entities.User.list();
       setUsers(allUsers);
     } catch (error) {
       console.error("Failed to load users:", error);
@@ -98,11 +99,23 @@ export default function AdminUsers() {
     }
 
     try {
+      // Send invitation
       await base44.users.inviteUser(newUser.email, newUser.role);
+      
+      // Send welcome email immediately after invitation
+      try {
+        await base44.functions.invoke('sendWelcomeEmail', {
+          email: newUser.email,
+          fullName: newUser.full_name
+        });
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
+      }
+      
       await loadUsers();
       setShowAddDialog(false);
       setNewUser({ full_name: "", email: "", password: "", role: "user", subscription_tier: "starter" });
-      await showAlert("Invitation sent successfully! You can update their subscription tier once they accept.", "Success");
+      await showAlert("Invitation sent successfully! Welcome email also sent.", "Success");
     } catch (error) {
       console.error("Failed to add user:", error);
       await showAlert("Failed to add user: " + error.message, "Error");
