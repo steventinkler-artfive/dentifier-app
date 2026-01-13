@@ -27,8 +27,7 @@ export default function AdminUsers() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [newUser, setNewUser] = useState({ full_name: "", email: "", password: "", role: "user", subscription_tier: "starter" });
-  const [showPassword, setShowPassword] = useState(false);
+  const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "user", subscription_tier: "starter" });
   const [resettingPassword, setResettingPassword] = useState(null);
   const [togglingStatus, setTogglingStatus] = useState(null);
   const { showAlert, showConfirm } = useAlert();
@@ -93,7 +92,7 @@ export default function AdminUsers() {
   };
 
   const handleAddUser = async () => {
-    if (!newUser.full_name || !newUser.email || !newUser.password) {
+    if (!newUser.full_name || !newUser.email) {
       await showAlert("Please fill in all required fields", "Error");
       return;
     }
@@ -114,7 +113,7 @@ export default function AdminUsers() {
       
       await loadUsers();
       setShowAddDialog(false);
-      setNewUser({ full_name: "", email: "", password: "", role: "user", subscription_tier: "starter" });
+      setNewUser({ full_name: "", email: "", role: "user", subscription_tier: "starter" });
       await showAlert("Invitation sent successfully! Welcome email also sent.", "Success");
     } catch (error) {
       console.error("Failed to add user:", error);
@@ -674,28 +673,7 @@ export default function AdminUsers() {
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Password</Label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  placeholder="At least 8 characters"
-                  className="bg-slate-800 border-slate-700 text-white pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                >
-                  {showPassword ? <span className="text-xs">Hide</span> : <span className="text-xs">Show</span>}
-                </button>
-              </div>
-              {newUser.password && newUser.password.length < 8 && (
-                <p className="text-xs text-red-400">Password must be at least 8 characters</p>
-              )}
-            </div>
+
             <div className="space-y-2">
               <Label>Role</Label>
               <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
