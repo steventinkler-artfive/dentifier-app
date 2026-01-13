@@ -1,11 +1,27 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Users, Camera, FileText, TrendingUp, Settings } from "lucide-react";
 import { AlertProvider } from "@/components/ui/CustomAlert";
+import InactiveUserBanner from "@/components/InactiveUserBanner";
+import { base44 } from "@/api/base44Client";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Load current user
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error("Failed to load user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   // Scroll to top whenever location changes
   useEffect(() => {
@@ -97,6 +113,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Main Content */}
       <main className="pb-20 min-h-screen">
         <AlertProvider>
+          <InactiveUserBanner user={currentUser} />
           {children}
         </AlertProvider>
       </main>

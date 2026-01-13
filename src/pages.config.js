@@ -1,3 +1,4 @@
+import AdminUsers from './pages/AdminUsers';
 import Assessment from './pages/Assessment';
 import AssessmentDetail from './pages/AssessmentDetail';
 import Customers from './pages/Customers';
@@ -12,11 +13,11 @@ import Reports from './pages/Reports';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import Upgrade from './pages/Upgrade';
-import AdminUsers from './pages/AdminUsers';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AdminUsers": AdminUsers,
     "Assessment": Assessment,
     "AssessmentDetail": AssessmentDetail,
     "Customers": Customers,
@@ -31,7 +32,6 @@ export const PAGES = {
     "ResetPassword": ResetPassword,
     "Settings": Settings,
     "Upgrade": Upgrade,
-    "AdminUsers": AdminUsers,
 }
 
 export const pagesConfig = {

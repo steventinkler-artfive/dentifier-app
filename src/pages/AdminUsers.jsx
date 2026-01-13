@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2, Key, Mail } from "lucide-react";
+import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2, Key, Mail, Ban, CheckCircle } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ export default function AdminUsers() {
   const [newUser, setNewUser] = useState({ full_name: "", email: "", password: "", role: "user", subscription_tier: "starter" });
   const [showPassword, setShowPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(null);
+  const [togglingStatus, setTogglingStatus] = useState(null);
   const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
@@ -134,8 +135,8 @@ export default function AdminUsers() {
 
   const handleDeleteUser = async (user) => {
     const confirmed = await showConfirm(
-      `Are you sure you want to delete ${user.full_name}?`,
-      "This action cannot be undone."
+      `⚠️ PERMANENT DELETION - Are you sure?`,
+      `This will permanently delete all data for ${user.full_name}. This cannot be undone. Only use this for GDPR deletion requests. Type DELETE to confirm.`
     );
 
     if (!confirmed) return;
@@ -143,10 +144,39 @@ export default function AdminUsers() {
     try {
       await base44.entities.User.delete(user.id);
       await loadUsers();
-      await showAlert("User deleted successfully", "Success");
+      await showAlert("User permanently deleted", "Success");
     } catch (error) {
       console.error("Failed to delete user:", error);
       await showAlert("Failed to delete user", "Error");
+    }
+  };
+
+  const handleToggleSubscriptionStatus = async (user) => {
+    const isActive = user.subscription_status !== 'cancelled';
+    const newStatus = isActive ? 'cancelled' : 'active';
+    
+    const confirmed = await showConfirm(
+      isActive ? 'Deactivate User Subscription?' : 'Reactivate User Subscription?',
+      isActive 
+        ? `${user.full_name} will lose access to core features. They can view past data but cannot create new assessments.`
+        : `${user.full_name} will regain full access to Dentifier.`
+    );
+
+    if (!confirmed) return;
+
+    setTogglingStatus(user.id);
+    try {
+      await base44.entities.User.update(user.id, { subscription_status: newStatus });
+      await loadUsers();
+      await showAlert(
+        isActive ? "User subscription deactivated" : "User subscription reactivated", 
+        "Success"
+      );
+    } catch (error) {
+      console.error("Failed to toggle subscription status:", error);
+      await showAlert("Failed to update subscription status", "Error");
+    } finally {
+      setTogglingStatus(null);
     }
   };
 
@@ -202,26 +232,28 @@ export default function AdminUsers() {
     }
   };
 
-  const getSubscriptionStatus = (tier) => {
+  const getSubscriptionStatus = (user) => {
+    // Check subscription_status field first
+    if (user.subscription_status === 'cancelled') return 'Inactive';
+    if (user.subscription_status === 'past_due') return 'Past Due';
+    if (user.subscription_status === 'active') return 'Active';
+    
+    // Fallback for users without subscription_status set
+    const tier = user.subscription_tier || 'starter';
     if (tier === 'professional' || tier === 'early_bird') return 'Active';
-    if (tier === 'founder' || tier === 'starter') return 'Free';
-    return 'Free';
+    return 'Active'; // All users are active by default
   };
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
       case 'Active':
         return 'bg-green-600';
-      case 'Cancelled':
-        return 'bg-gray-600';
+      case 'Inactive':
+        return 'bg-slate-600';
       case 'Past Due':
-        return 'bg-red-600';
-      case 'Trial':
-        return 'bg-blue-600';
-      case 'Free':
-        return 'bg-gray-600';
+        return 'bg-orange-600';
       default:
-        return 'bg-gray-600';
+        return 'bg-slate-600';
     }
   };
 
@@ -242,16 +274,16 @@ export default function AdminUsers() {
       user.email?.toLowerCase().includes(searchLower);
 
     // Status filter
+    const status = getSubscriptionStatus(user);
     const tier = user.subscription_tier || 'starter';
-    const status = getSubscriptionStatus(tier);
     
     let matchesFilter = true;
     if (filterOption === 'active') matchesFilter = status === 'Active';
-    else if (filterOption === 'cancelled') matchesFilter = status === 'Cancelled';
-    else if (filterOption === 'past_due') matchesFilter = status === 'Past Due';
-    else if (filterOption === 'free') matchesFilter = tier === 'starter';
-    else if (filterOption === 'founder') matchesFilter = tier === 'founder';
-    else if (filterOption === 'early_bird') matchesFilter = tier === 'early_bird';
+    if (filterOption === 'inactive') matchesFilter = status === 'Inactive';
+    if (filterOption === 'past_due') matchesFilter = status === 'Past Due';
+    if (filterOption === 'free') matchesFilter = tier === 'starter';
+    if (filterOption === 'founder') matchesFilter = tier === 'founder';
+    if (filterOption === 'early_bird') matchesFilter = tier === 'early_bird';
 
     return matchesSearch && matchesFilter;
   });
@@ -373,7 +405,7 @@ export default function AdminUsers() {
           <SelectContent className="bg-slate-800 border-slate-700">
             <SelectItem value="all" className="text-white">All Users</SelectItem>
             <SelectItem value="active" className="text-white">Active Subscribers</SelectItem>
-            <SelectItem value="cancelled" className="text-white">Cancelled</SelectItem>
+            <SelectItem value="inactive" className="text-white">Inactive</SelectItem>
             <SelectItem value="past_due" className="text-white">Past Due</SelectItem>
             <SelectItem value="free" className="text-white">Free Tier Only</SelectItem>
             <SelectItem value="founder" className="text-white">Founder Tier</SelectItem>
@@ -524,6 +556,25 @@ export default function AdminUsers() {
                 )}
                 
                 <div className="flex flex-wrap gap-2 ml-auto">
+                  <Button
+                    onClick={() => handleToggleSubscriptionStatus(user)}
+                    variant="outline"
+                    size="sm"
+                    disabled={togglingStatus === user.id}
+                    className={isInactive 
+                      ? "bg-green-900/20 border-green-700 text-green-400 hover:bg-green-900/40"
+                      : "bg-orange-900/20 border-orange-700 text-orange-400 hover:bg-orange-900/40"
+                    }
+                  >
+                    {togglingStatus === user.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                    ) : isInactive ? (
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                    ) : (
+                      <Ban className="w-4 h-4 mr-1" />
+                    )}
+                    {isInactive ? 'Reactivate' : 'Deactivate'}
+                  </Button>
                   {!isOAuthUser && (
                     <Button
                       onClick={() => handleResetPassword(user)}
@@ -555,6 +606,7 @@ export default function AdminUsers() {
                     variant="outline"
                     size="sm"
                     className="bg-red-900/20 border-red-700 text-red-400 hover:bg-red-900/40"
+                    title="⚠️ Permanent deletion - GDPR only"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     Delete
