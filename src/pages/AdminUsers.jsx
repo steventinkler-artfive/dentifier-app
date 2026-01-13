@@ -4,16 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2, Key, Mail } from "lucide-react";
+import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2, Key, Mail, Shield } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function AdminUsers() {
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
@@ -31,8 +34,25 @@ export default function AdminUsers() {
   const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
-    loadUsers();
+    checkAdminAccess();
   }, []);
+
+  const checkAdminAccess = async () => {
+    try {
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+      
+      if (user.role !== 'admin') {
+        navigate(createPageUrl('Dashboard'));
+        return;
+      }
+      
+      await loadUsers();
+    } catch (error) {
+      console.error("Failed to check admin access:", error);
+      navigate(createPageUrl('Dashboard'));
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -132,7 +152,7 @@ export default function AdminUsers() {
   };
 
   const handleResetPassword = async (user) => {
-    const isOAuthUser = !user.password || user.auth_provider === 'google';
+    const isOAuthUser = user.auth_provider === 'google';
     
     if (isOAuthUser) {
       await showAlert("This user logs in with Google OAuth - password reset not available", "Info");
@@ -161,9 +181,8 @@ export default function AdminUsers() {
     }
   };
 
-  const getAuthMethod = (user) => {
-    if (user.auth_provider === 'google') return { method: 'Google OAuth', color: 'bg-blue-600' };
-    return { method: 'Email/Password', color: 'bg-slate-600' };
+  const isOAuthUser = (user) => {
+    return user.auth_provider === 'google';
   };
 
   const getTierBadgeColor = (tier) => {
@@ -233,7 +252,7 @@ export default function AdminUsers() {
     return matchesSearch && matchesFilter;
   });
 
-  if (loading) {
+  if (loading || !currentUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
@@ -242,6 +261,7 @@ export default function AdminUsers() {
   }
 
   return (
+    <TooltipProvider>
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -365,8 +385,7 @@ export default function AdminUsers() {
       <div className="space-y-4">
         {filteredUsers.map((user) => {
           const subscriptionStatus = getSubscriptionStatus(user.subscription_tier || 'starter');
-          const authInfo = getAuthMethod(user);
-          const isOAuthUser = authInfo.method === 'Google OAuth';
+          const isOAuth = isOAuthUser(user);
           
           return (
           <Card key={user.id} className="bg-slate-900 border-slate-800">
@@ -379,9 +398,17 @@ export default function AdminUsers() {
                       <p className="text-white font-semibold text-lg">{user.full_name}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-slate-400 text-sm">{user.email}</p>
-                        <Badge className={`${authInfo.color} text-white text-xs`}>
-                          {authInfo.method}
-                        </Badge>
+                        {isOAuth && (
+                          <Badge className="bg-blue-600/20 border border-blue-500 text-blue-300 text-xs px-2 py-0.5">
+                            <svg className="w-3 h-3 mr-1 inline-block" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                            </svg>
+                            Google
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <Badge className="bg-slate-700 text-slate-200">
@@ -422,7 +449,24 @@ export default function AdminUsers() {
                     <Key className="w-4 h-4" />
                     <span>Authentication Method</span>
                   </div>
-                  <p className="text-white text-sm font-medium">{authInfo.method}</p>
+                  <div className="flex items-center gap-2 text-white text-sm font-medium">
+                    {isOAuth ? (
+                      <>
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        </svg>
+                        Google OAuth
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4" />
+                        Email & Password
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="bg-slate-800 p-3 rounded-lg">
@@ -497,21 +541,42 @@ export default function AdminUsers() {
                 )}
                 
                 <div className="flex gap-2 ml-auto">
-                  <Button
-                    onClick={() => handleResetPassword(user)}
-                    variant="outline"
-                    size="sm"
-                    disabled={isOAuthUser || resettingPassword === user.id}
-                    title={isOAuthUser ? "This user logs in with Google - password reset not available" : "Send password reset email"}
-                    className={`bg-slate-800 border-slate-700 text-white hover:bg-slate-700 ${isOAuthUser ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {resettingPassword === user.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                    ) : (
-                      <Mail className="w-4 h-4 mr-1" />
-                    )}
-                    Reset Password
-                  </Button>
+                  {isOAuth ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            className="bg-slate-800/50 border-slate-700 text-slate-500 cursor-not-allowed opacity-60"
+                          >
+                            <Mail className="w-4 h-4 mr-1" />
+                            Reset Password
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-slate-800 border-slate-700 text-white">
+                        <p>This user logs in with Google OAuth</p>
+                        <p className="text-xs text-slate-400">Password reset not available</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <Button
+                      onClick={() => handleResetPassword(user)}
+                      variant="outline"
+                      size="sm"
+                      disabled={resettingPassword === user.id}
+                      className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+                    >
+                      {resettingPassword === user.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                      ) : (
+                        <Mail className="w-4 h-4 mr-1" />
+                      )}
+                      Reset Password
+                    </Button>
+                  )}
                   <Button
                     onClick={() => { setEditingUser(user); setShowEditDialog(true); }}
                     variant="outline"
@@ -694,5 +759,6 @@ export default function AdminUsers() {
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
