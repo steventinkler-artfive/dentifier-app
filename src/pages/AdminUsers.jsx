@@ -151,7 +151,7 @@ export default function AdminUsers() {
   };
 
   const handleResetPassword = async (user) => {
-    const isOAuthUser = !user.password || user.auth_provider === 'google';
+    const isOAuthUser = user.auth_provider === 'google';
     
     if (isOAuthUser) {
       await showAlert("This user logs in with Google OAuth - password reset not available", "Info");
@@ -181,7 +181,10 @@ export default function AdminUsers() {
   };
 
   const getAuthMethod = (user) => {
-    if (user.auth_provider === 'google') return { method: 'Google OAuth', color: 'bg-blue-600' };
+    // Check auth_provider field - 'google' for OAuth, 'email' or undefined for email/password
+    if (user.auth_provider === 'google') {
+      return { method: 'Google OAuth', color: 'bg-blue-600' };
+    }
     return { method: 'Email/Password', color: 'bg-slate-600' };
   };
 
