@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Mail, Shield } from "lucide-react";
+import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Mail, Shield, Users } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
