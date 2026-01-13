@@ -163,6 +163,20 @@ export default function AdminUsers() {
     setTogglingStatus(user.id);
     try {
       await base44.entities.User.update(user.id, { subscription_status: newStatus });
+      
+      // Send appropriate email notification
+      if (newStatus === 'cancelled') {
+        await base44.functions.invoke('sendSubscriptionCancelledEmail', {
+          email: user.email,
+          fullName: user.full_name
+        });
+      } else {
+        await base44.functions.invoke('sendSubscriptionReactivatedEmail', {
+          email: user.email,
+          fullName: user.full_name
+        });
+      }
+      
       await loadUsers();
       await showAlert(
         isActive ? "User subscription deactivated" : "User subscription reactivated", 
