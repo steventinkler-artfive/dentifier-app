@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import { Customer, Vehicle, Assessment, User, UserSetting } from "@/entities/all"; // Added User, UserSetting
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, ArrowLeft, ArrowRight, CheckCircle, Loader2, DollarSign, Users, Car, Calculator, Plus, Save } from "lucide-react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useAlert } from "@/components/ui/CustomAlert";
 
 import CustomerSelection from "../components/assessment/CustomerSelection";
 import VehicleForm from "../components/assessment/VehicleForm";
@@ -39,6 +41,7 @@ const STEPS = [
 
 export default function AssessmentPage() {
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
   const [searchParams] = useSearchParams();
 
   const [currentStep, setCurrentStep] = useState('customer');
@@ -50,10 +53,36 @@ export default function AssessmentPage() {
     currentAnalysis: null,
     currentQuote: null
   });
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+
+  useEffect(() => {
+    checkAccess();
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentStep]);
+
+  const checkAccess = async () => {
+    try {
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+      
+      if (user.subscription_status === 'cancelled') {
+        await showAlert(
+          "Your subscription has ended. Please reactivate to create new assessments.",
+          "Access Restricted"
+        );
+        navigate(createPageUrl('Dashboard'));
+        return;
+      }
+    } catch (error) {
+      console.error("Access check failed:", error);
+    } finally {
+      setCheckingAccess(false);
+    }
+  };
 
   const getCurrentStepIndex = () => STEPS.findIndex(step => step.id === currentStep);
 
