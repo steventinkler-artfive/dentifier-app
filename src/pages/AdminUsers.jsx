@@ -4,13 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Crown } from "lucide-react";
+import { Loader2, Users, Crown, Info } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
+  const [infoOpen, setInfoOpen] = useState(false);
   const { showAlert } = useAlert();
 
   useEffect(() => {
@@ -66,12 +68,80 @@ export default function AdminUsers() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-          <Users className="w-8 h-8" />
-          User Management
-        </h1>
-        <p className="text-slate-400 mt-1">Manage user subscription tiers</p>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+            <Users className="w-8 h-8" />
+            User Management
+          </h1>
+          <button
+            onClick={() => setInfoOpen(!infoOpen)}
+            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+            title="Subscription tier information"
+          >
+            <Info className="w-5 h-5 text-blue-400" />
+          </button>
+        </div>
+        <p className="text-slate-400">Manage user subscription tiers</p>
       </div>
+
+      {/* Subscription Tier Guide */}
+      <Collapsible open={infoOpen} onOpenChange={setInfoOpen}>
+        <CollapsibleContent>
+          <Card className="mb-6 bg-blue-900/20 border-blue-800">
+            <CardHeader>
+              <CardTitle className="text-blue-200 flex items-center gap-2">
+                <Info className="w-5 h-5" />
+                Subscription Tier Guide
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-white font-semibold">Starter (£20/month)</h3>
+                <ul className="text-blue-200 text-sm space-y-1 ml-4">
+                  <li>• Basic features with Dentifier branding on quotes</li>
+                  <li>• Cannot upload custom logo</li>
+                  <li>• Basic reports only</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-white font-semibold">Professional (£35/month)</h3>
+                <p className="text-blue-200 text-sm">Everything in Starter, plus:</p>
+                <ul className="text-blue-200 text-sm space-y-1 ml-4">
+                  <li>• Upload custom business logo</li>
+                  <li>• Remove Dentifier header branding</li>
+                  <li>• Advanced reports with filters and CSV export</li>
+                  <li>• Priority support</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-white font-semibold flex items-center gap-2">
+                  Founder (FREE forever)
+                  <Badge className="bg-amber-600">Beta Testers</Badge>
+                </h3>
+                <ul className="text-blue-200 text-sm space-y-1 ml-4">
+                  <li>• Beta testers only</li>
+                  <li>• Full Professional features for life</li>
+                  <li>• Reserved for early supporters who helped build Dentifier</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-white font-semibold flex items-center gap-2">
+                  Early Bird (£20/month forever)
+                  <Badge className="bg-blue-600">First 30 Only</Badge>
+                </h3>
+                <ul className="text-blue-200 text-sm space-y-1 ml-4">
+                  <li>• Launch offer - first 30 sign-ups only</li>
+                  <li>• Professional features at Starter price</li>
+                  <li>• Locked in at £20/month for life (saves £180/year)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
 
       <div className="space-y-4">
         {users.map((user) => (
