@@ -445,6 +445,7 @@ export default function QuotePDF() {
                 const isProTier = user?.subscription_tier === 'professional' || user?.subscription_tier === 'founder' || user?.subscription_tier === 'early_bird';
                 const hasCustomLogo = logoDisplayUrl && userSettings?.business_logo_url;
                 const displayLogo = (isProTier && hasCustomLogo) ? logoDisplayUrl : DEFAULT_DENTIFIER_LOGO;
+                const isStarterTier = !isProTier;
 
                 return (
                   <>
@@ -457,7 +458,9 @@ export default function QuotePDF() {
                         e.target.src = DEFAULT_DENTIFIER_LOGO;
                       }}
                     />
-                    <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
+                    {isStarterTier && (
+                      <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
+                    )}
                   </>
                 );
               })()}
