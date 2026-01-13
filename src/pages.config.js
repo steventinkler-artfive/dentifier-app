@@ -1,3 +1,4 @@
+import AdminUsers from './pages/AdminUsers';
 import Assessment from './pages/Assessment';
 import AssessmentDetail from './pages/AssessmentDetail';
 import Customers from './pages/Customers';
@@ -8,13 +9,13 @@ import Home from './pages/Home';
 import QuotePDF from './pages/QuotePDF';
 import Quotes from './pages/Quotes';
 import Reports from './pages/Reports';
-import Upgrade from './pages/Upgrade';
 import Settings from './pages/Settings';
-import AdminUsers from './pages/AdminUsers';
+import Upgrade from './pages/Upgrade';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AdminUsers": AdminUsers,
     "Assessment": Assessment,
     "AssessmentDetail": AssessmentDetail,
     "Customers": Customers,
@@ -25,9 +26,8 @@ export const PAGES = {
     "QuotePDF": QuotePDF,
     "Quotes": Quotes,
     "Reports": Reports,
-    "Upgrade": Upgrade,
     "Settings": Settings,
-    "AdminUsers": AdminUsers,
+    "Upgrade": Upgrade,
 }
 
 export const pagesConfig = {

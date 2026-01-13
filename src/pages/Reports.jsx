@@ -28,6 +28,7 @@ export default function Reports() {
   const [vehicles, setVehicles] = useState({});
   const [filteredAssessments, setFilteredAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
 
   // Filter states
@@ -70,6 +71,7 @@ export default function Reports() {
       // Filter only completed assessments
       const completedAssessments = assessmentData.filter(a => a.status === 'completed');
       setAssessments(completedAssessments);
+      setUser(currentUser);
 
       // Create customer lookup
       const customerLookup = customerData.reduce((acc, curr) => ({ ...acc, [curr.id]: curr }), {});
@@ -271,6 +273,9 @@ export default function Reports() {
     return { value: year.toString(), label: year.toString() };
   });
 
+  const isStarterTier = user?.subscription_tier === 'starter' || !user?.subscription_tier;
+  const isPremiumTier = ['professional', 'founder', 'early_bird'].includes(user?.subscription_tier);
+
   return (
     <div className="p-4 max-w-md mx-auto space-y-6">
       {/* Header */}
@@ -334,130 +339,146 @@ export default function Reports() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="bg-slate-900 border-slate-800">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Search className="w-5 h-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Client Dropdown */}
-          <div className="space-y-2">
-            <Label className="text-white">Select Client</Label>
-            <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                <SelectItem value="all" className="text-white">All Clients</SelectItem>
-                {Object.values(customers).sort((a, b) => {
-                  const nameA = a.business_name || a.name;
-                  const nameB = b.business_name || b.name;
-                  return nameA.localeCompare(nameB);
-                }).map(customer => (
-                  <SelectItem key={customer.id} value={customer.id} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
-                    {customer.business_name || customer.name}
-                    {customer.business_name && <span className="text-slate-400 text-xs ml-1">({customer.name})</span>}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Payment Status */}
-          <div className="space-y-2">
-            <Label className="text-white">Payment Status</Label>
-            <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="all" className="text-white">All</SelectItem>
-                <SelectItem value="paid" className="text-white">Paid</SelectItem>
-                <SelectItem value="pending" className="text-white">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Month/Year Filter */}
-          <div className="space-y-2">
-            <Label className="text-white">Filter by Month</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+      {/* Filters or Upgrade Prompt */}
+      {isStarterTier ? (
+        <Card className="bg-gradient-to-br from-rose-900/30 to-purple-900/30 border-rose-700">
+          <CardContent className="p-6 text-center">
+            <h3 className="text-white font-semibold text-lg mb-2">Want advanced reports and CSV exports?</h3>
+            <p className="text-slate-300 text-sm mb-4">
+              Upgrade to Professional to unlock advanced filters, date ranges, and CSV export functionality.
+            </p>
+            <Link to={createPageUrl('Upgrade')}>
+              <Button className="bg-rose-600 hover:bg-rose-700 text-white font-semibold">
+                Upgrade to Professional
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-slate-900 border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Search className="w-5 h-5" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Client Dropdown */}
+            <div className="space-y-2">
+              <Label className="text-white">Select Client</Label>
+              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                  <SelectValue placeholder="Month" />
+                  <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value={null} className="text-white">All Months</SelectItem>
-                  {months.map(m => (
-                    <SelectItem key={m.value} value={m.value} className="text-white">
-                      {m.label}
+                <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
+                  <SelectItem value="all" className="text-white">All Clients</SelectItem>
+                  {Object.values(customers).sort((a, b) => {
+                    const nameA = a.business_name || a.name;
+                    const nameB = b.business_name || b.name;
+                    return nameA.localeCompare(nameB);
+                  }).map(customer => (
+                    <SelectItem key={customer.id} value={customer.id} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
+                      {customer.business_name || customer.name}
+                      {customer.business_name && <span className="text-slate-400 text-xs ml-1">({customer.name})</span>}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
 
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
+            {/* Payment Status */}
+            <div className="space-y-2">
+              <Label className="text-white">Payment Status</Label>
+              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
-                  {years.map(y => (
-                    <SelectItem key={y.value} value={y.value} className="text-white">
-                      {y.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all" className="text-white">All</SelectItem>
+                  <SelectItem value="paid" className="text-white">Paid</SelectItem>
+                  <SelectItem value="pending" className="text-white">Pending</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Date Range */}
-          <div className="space-y-2">
-            <Label className="text-white">Or use Date Range</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-slate-400 text-xs">From</Label>
-                <Input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => {
-                    setFromDate(e.target.value);
-                    setSelectedMonth(""); // Clear month/year when date range is used
-                    setSelectedYear(new Date().getFullYear().toString()); 
-                  }}
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
-              </div>
-              <div>
-                <Label className="text-slate-400 text-xs">To</Label>
-                <Input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => {
-                    setToDate(e.target.value);
-                    setSelectedMonth(""); // Clear month/year when date range is used
-                    setSelectedYear(new Date().getFullYear().toString()); 
-                  }}
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
+            {/* Month/Year Filter */}
+            <div className="space-y-2">
+              <Label className="text-white">Filter by Month</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue placeholder="Month" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value={null} className="text-white">All Months</SelectItem>
+                    {months.map(m => (
+                      <SelectItem key={m.value} value={m.value} className="text-white">
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {years.map(y => (
+                      <SelectItem key={y.value} value={y.value} className="text-white">
+                        {y.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </div>
 
-          {/* Export Button */}
-          <Button 
-            onClick={exportToCSV} 
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
-            disabled={filteredAssessments.length === 0}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export to CSV ({filteredAssessments.length} records)
-          </Button>
-        </CardContent>
-      </Card>
+            {/* Date Range */}
+            <div className="space-y-2">
+              <Label className="text-white">Or use Date Range</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-slate-400 text-xs">From</Label>
+                  <Input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => {
+                      setFromDate(e.target.value);
+                      setSelectedMonth(""); // Clear month/year when date range is used
+                      setSelectedYear(new Date().getFullYear().toString()); 
+                    }}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-slate-400 text-xs">To</Label>
+                  <Input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => {
+                      setToDate(e.target.value);
+                      setSelectedMonth(""); // Clear month/year when date range is used
+                      setSelectedYear(new Date().getFullYear().toString()); 
+                    }}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Export Button */}
+            <Button 
+              onClick={exportToCSV} 
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              disabled={filteredAssessments.length === 0}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export to CSV ({filteredAssessments.length} records)
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Results */}
       <div className="space-y-3">
