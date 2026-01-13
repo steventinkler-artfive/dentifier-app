@@ -10,10 +10,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function AdminUsers() {
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
@@ -31,8 +33,25 @@ export default function AdminUsers() {
   const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
-    loadUsers();
+    checkAccess();
   }, []);
+
+  const checkAccess = async () => {
+    try {
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+      
+      if (user.role !== 'admin') {
+        navigate(createPageUrl('Dashboard'));
+        return;
+      }
+      
+      loadUsers();
+    } catch (error) {
+      console.error("Access check failed:", error);
+      navigate(createPageUrl('Dashboard'));
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -233,12 +252,16 @@ export default function AdminUsers() {
     return matchesSearch && matchesFilter;
   });
 
-  if (loading) {
+  if (loading || !currentUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
       </div>
     );
+  }
+
+  if (currentUser.role !== 'admin') {
+    return null;
   }
 
   return (
