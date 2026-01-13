@@ -423,9 +423,10 @@ export default function AdminUsers() {
 
       <div className="space-y-4">
         {filteredUsers.map((user) => {
-          const subscriptionStatus = getSubscriptionStatus(user.subscription_tier || 'starter');
+          const subscriptionStatus = getSubscriptionStatus(user);
           const authInfo = getAuthMethod(user);
           const isOAuthUser = authInfo.method === 'Google OAuth';
+          const isInactive = user.subscription_status === 'cancelled';
           
           return (
           <Card key={user.id} className="bg-slate-900 border-slate-800">
