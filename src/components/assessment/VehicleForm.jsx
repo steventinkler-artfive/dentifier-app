@@ -79,15 +79,17 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
 
   const checkDvlaConfiguration = async () => {
     try {
-      const user = await base44.auth.me();
-      const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+      // Check all UserSettings to see if DVLA is configured by any admin
+      const allSettings = await base44.entities.UserSetting.list();
       
-      if (settings && settings.length > 0) {
-        const userSettings = settings[0];
-        const useTest = userSettings.dvla_use_test_environment ?? false;
-        const hasKey = useTest ? !!userSettings.dvla_test_api_key : !!userSettings.dvla_prod_api_key;
-        setDvlaConfigured(hasKey);
-      }
+      // Find any setting that has DVLA configured
+      const dvlaConfigured = allSettings.some(settings => {
+        const useTest = settings.dvla_use_test_environment ?? false;
+        const hasKey = useTest ? !!settings.dvla_test_api_key : !!settings.dvla_prod_api_key;
+        return hasKey;
+      });
+      
+      setDvlaConfigured(dvlaConfigured);
     } catch (error) {
       console.error('Error checking DVLA configuration:', error);
     }
