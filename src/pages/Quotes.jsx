@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import { Assessment, Customer, Vehicle } from "@/entities/all";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -28,10 +29,11 @@ export default function Quotes() {
 
   const loadQuotes = async () => {
     try {
+      const user = await base44.auth.me();
       const [assessmentData, customerData, vehicleData] = await Promise.all([
-        Assessment.list('-created_date'),
-        Customer.list(),
-        Vehicle.list()
+        Assessment.filter({ created_by: user.email }, '-created_date'),
+        Customer.filter({ created_by: user.email }),
+        Vehicle.filter({ created_by: user.email })
       ]);
 
       setAssessments(assessmentData);

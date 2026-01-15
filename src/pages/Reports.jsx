@@ -61,11 +61,11 @@ export default function Reports() {
 
   const loadData = async () => {
     try {
-      const [assessmentData, customerData, vehicleData, currentUser] = await Promise.all([
-        Assessment.list('-created_date'),
-        Customer.list(),
-        Vehicle.list(),
-        User.me()
+      const currentUser = await User.me();
+      const [assessmentData, customerData, vehicleData] = await Promise.all([
+        Assessment.filter({ created_by: currentUser.email }, '-created_date'),
+        Customer.filter({ created_by: currentUser.email }),
+        Vehicle.filter({ created_by: currentUser.email })
       ]);
 
       // Filter only completed assessments
