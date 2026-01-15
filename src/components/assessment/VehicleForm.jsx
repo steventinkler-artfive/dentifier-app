@@ -164,10 +164,10 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
       
       let savedVehicle;
       if (vehicle) {
-        const updatedVehicle = await Vehicle.update(vehicle.id, vehicleData);
+        const updatedVehicle = await base44.entities.Vehicle.update(vehicle.id, vehicleData);
         savedVehicle = { ...vehicle, ...updatedVehicle };
       } else {
-        savedVehicle = await Vehicle.create(vehicleData);
+        savedVehicle = await base44.entities.Vehicle.create(vehicleData);
       }
       
       onVehicleSubmit(savedVehicle);
