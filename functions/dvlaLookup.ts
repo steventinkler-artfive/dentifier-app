@@ -16,28 +16,28 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Registration number is required' }, { status: 400 });
     }
 
-    // Get user settings to retrieve API key
-    const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+    // Get ALL user settings to find DVLA configuration (any admin user)
+    const allSettings = await base44.asServiceRole.entities.UserSetting.list();
     
-    if (!settings || settings.length === 0) {
-      return Response.json({ 
-        error: 'DVLA API not configured',
-        message: 'Please add your DVLA API key in Settings'
-      }, { status: 400 });
+    // Find the first setting that has DVLA configured
+    let apiKey = null;
+    let useTestEnvironment = false;
+    
+    for (const settings of allSettings) {
+      const useTest = settings.dvla_use_test_environment ?? false;
+      const key = useTest ? settings.dvla_test_api_key : settings.dvla_prod_api_key;
+      
+      if (key) {
+        apiKey = key;
+        useTestEnvironment = useTest;
+        break;
+      }
     }
-
-    const userSettings = settings[0];
-    
-    // Determine which API key to use based on environment setting
-    const useTestEnvironment = userSettings.dvla_use_test_environment ?? false;
-    const apiKey = useTestEnvironment 
-      ? userSettings.dvla_test_api_key 
-      : userSettings.dvla_prod_api_key;
 
     if (!apiKey) {
       return Response.json({ 
         error: 'DVLA API key not configured',
-        message: `Please add your DVLA ${useTestEnvironment ? 'Test' : 'Production'} API key in Settings`
+        message: 'Please contact your administrator to configure the DVLA API key'
       }, { status: 400 });
     }
 
