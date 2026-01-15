@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import { Customer } from "@/entities/all";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,8 @@ export default function CustomerSelection({ selectedCustomer, onCustomerSelect }
 
   const loadCustomers = async () => {
     try {
-      const data = await Customer.list('-created_date');
+      const user = await base44.auth.me();
+      const data = await Customer.filter({ created_by: user.email }, '-created_date');
       setCustomers(data);
     } finally {
       setLoading(false);
