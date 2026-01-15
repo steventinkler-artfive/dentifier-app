@@ -131,6 +131,8 @@ export default function AssessmentDetail() {
         setEditedNotes(foundAssessment.notes || '');
 
         const promises = [];
+        const currentUser = await base44.auth.me();
+
         if (foundAssessment.customer_id) {
           promises.push(base44.entities.Customer.get(foundAssessment.customer_id));
         } else {
@@ -140,7 +142,7 @@ export default function AssessmentDetail() {
         let vehicleFetchPromise;
         if (foundAssessment.is_multi_vehicle && foundAssessment.vehicles && foundAssessment.vehicles.length > 0) {
           const vehicleIds = foundAssessment.vehicles.map((v) => v.vehicle_id);
-          vehicleFetchPromise = base44.entities.Vehicle.list().then((allVehicles) => {
+          vehicleFetchPromise = base44.entities.Vehicle.filter({ created_by: currentUser.email }).then((allVehicles) => {
             const multiVehicleMap = {};
             vehicleIds.forEach((id) => {
               const found = allVehicles.find((v) => v.id === id);
@@ -155,7 +157,6 @@ export default function AssessmentDetail() {
         }
         promises.push(vehicleFetchPromise);
 
-        const currentUser = await base44.auth.me();
         if (currentUser && currentUser.email) {
           const settings = await base44.entities.UserSetting.filter({ user_email: currentUser.email });
           promises.push(settings.length > 0 ? Promise.resolve(settings[0]) : Promise.resolve(null));
@@ -907,7 +908,8 @@ export default function AssessmentDetail() {
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
-                      const customers = await base44.entities.Customer.list();
+                      const user = await base44.auth.me();
+                      const customers = await base44.entities.Customer.filter({ created_by: user.email });
                       setCustomerList(customers);
                       setIsAssigningCustomer(true);
                     }}
