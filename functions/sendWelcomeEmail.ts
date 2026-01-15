@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
         const { email, fullName } = await req.json();
 
         const logoUrl = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
-        const dashboardUrl = "https://dentifier.app/dashboard"; // Update with your actual domain
+        const dashboardUrl = "https://app.dentifierpro.com/dashboard";
         const supportEmail = "hello@dentifierpro.com";
         const companyWebsite = "dentifierpro.com";
 

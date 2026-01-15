@@ -68,10 +68,11 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
+      const user = await base44.auth.me();
       const [assessmentsData, customersData, vehiclesData] = await Promise.all([
-        base44.entities.Assessment.list('-created_date'),
-        base44.entities.Customer.list(),
-        base44.entities.Vehicle.list()
+        base44.entities.Assessment.filter({ created_by: user.email }, '-created_date'),
+        base44.entities.Customer.filter({ created_by: user.email }),
+        base44.entities.Vehicle.filter({ created_by: user.email })
       ]);
 
       const customersMap = customersData.reduce((map, customer) => {
