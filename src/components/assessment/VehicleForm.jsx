@@ -80,8 +80,8 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
 
   const checkDvlaConfiguration = async () => {
     try {
-      const user = await User.me();
-      const settings = await UserSetting.filter({ user_email: user.email });
+      const user = await base44.auth.me();
+      const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
       
       if (settings && settings.length > 0) {
         const userSettings = settings[0];
