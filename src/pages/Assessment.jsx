@@ -13,6 +13,7 @@ import VehicleForm from "../components/assessment/VehicleForm";
 import PhotoCapture from "../components/assessment/PhotoCapture";
 import DamageAnalysis from "../components/assessment/DamageAnalysis";
 import QuoteGeneration from "../components/assessment/QuoteGeneration";
+import { SkillsIncompleteBanner } from "@/components/onboarding/OnboardingBanners";
 
 const DentifierIcon = ({ className = "" }) => (
   <svg 
@@ -55,10 +56,24 @@ export default function AssessmentPage() {
   });
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
+  const [userSettings, setUserSettings] = useState(null);
 
   useEffect(() => {
     checkAccess();
+    loadUserSettings();
   }, []);
+
+  const loadUserSettings = async () => {
+    try {
+      const user = await base44.auth.me();
+      const settings = await UserSetting.filter({ user_email: user.email });
+      if (settings.length > 0) {
+        setUserSettings(settings[0]);
+      }
+    } catch (error) {
+      console.error('Failed to load user settings:', error);
+    }
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -304,6 +319,7 @@ export default function AssessmentPage() {
 
   return (
     <div className="p-4 max-w-md mx-auto">
+      <SkillsIncompleteBanner settings={userSettings} />
       <div className="mb-6">
         <div className="mb-4">
           <Link to={createPageUrl("Dashboard")}>
