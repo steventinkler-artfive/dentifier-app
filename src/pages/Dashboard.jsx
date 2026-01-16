@@ -15,6 +15,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
+import { BankingIncompleteBanner } from "@/components/onboarding/OnboardingBanners";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -29,6 +31,9 @@ export default function Dashboard() {
   const [vehiclesMap, setVehiclesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [welcomeEmailSent, setWelcomeEmailSent] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userSettings, setUserSettings] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -69,11 +74,21 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     try {
       const user = await base44.auth.me();
-      const [assessmentsData, customersData, vehiclesData] = await Promise.all([
+      setUser(user);
+      
+      const [assessmentsData, customersData, vehiclesData, settingsData] = await Promise.all([
         base44.entities.Assessment.filter({ created_by: user.email }, '-created_date'),
         base44.entities.Customer.filter({ created_by: user.email }),
-        base44.entities.Vehicle.filter({ created_by: user.email })
+        base44.entities.Vehicle.filter({ created_by: user.email }),
+        base44.entities.UserSetting.filter({ user_email: user.email })
       ]);
+
+      const settings = settingsData.length > 0 ? settingsData[0] : null;
+      setUserSettings(settings);
+      
+      if (settings && !settings.onboarding_completed) {
+        setShowOnboarding(true);
+      }
 
       const customersMap = customersData.reduce((map, customer) => {
         map[customer.id] = customer;
@@ -248,9 +263,18 @@ export default function Dashboard() {
     return linkTo ? <Link to={linkTo} className="block h-full">{cardContent}</Link> : cardContent;
   };
 
+  const handleOnboardingComplete = async () => {
+    setShowOnboarding(false);
+    await loadDashboardData();
+  };
+
+  if (showOnboarding && user) {
+    return <OnboardingWizard user={user} onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <div className="p-4 max-w-md mx-auto space-y-6">
+      <BankingIncompleteBanner settings={userSettings} />
       {/* Welcome Section */}
       <div className="bg-gradient-to-br from-rose-600 to-rose-500 rounded-2xl p-6 text-white custom-shadow">
         <h2 className="text-2xl font-bold mb-2">Welcome Back!</h2>
