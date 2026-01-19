@@ -419,90 +419,42 @@ export default function AssessmentDetail() {
     const docNumber = ref.replace(/[^a-zA-Z0-9-]/g, '');
     const custName = customer.business_name || customer.name;
     const bizName = userSettings?.business_name || 'Dentifier PDR';
-    const currencySymbol = getCurrencySymbol(assessment.currency || "GBP");
 
     // Subject line
     const subject = `${docType} #${docNumber} from ${bizName}`;
 
+    // Create full URL to PDF page
+    const pdfPath = createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`);
+    const pdfUrl = `${window.location.origin}${pdfPath}`;
+
     // Email body
-    let body = `Dear ${custName},%0A%0A`;
+    let body = `Hi ${custName},%0A%0A`;
     
     if (assessment.status === 'completed') {
-      const completionDate = new Date(assessment.updated_date).toLocaleDateString();
-      body += `Please find your invoice for PDR services completed on ${completionDate}.%0A%0A`;
-    } else {
-      body += `Please find your quote for PDR services.%0A%0A`;
-    }
-
-    // Add vehicle info
-    if (!assessment.is_multi_vehicle && vehicle) {
-      body += `Vehicle: ${vehicle.year} ${vehicle.make} ${vehicle.model}%0A%0A`;
-    }
-
-    // Add line items
-    body += `${docType} Details:%0A`;
-    body += `--------------------%0A`;
-    if (currentLineItems && currentLineItems.length > 0) {
-      currentLineItems.forEach(item => {
-        const itemTotal = ((item.quantity || 0) * (item.unit_price || 0)).toFixed(2);
-        body += `${item.description}: ${currencySymbol}${itemTotal}%0A`;
-      });
-    } else {
-      body += `Paintless Dent Repair Service: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}%0A`;
-    }
-    body += `--------------------%0A`;
-    body += `Total: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}%0A%0A`;
-
-    // Add assessment notes if toggle is on
-    if (includeNotesInQuote && assessment.notes) {
-      body += `Notes:%0A${encodeURIComponent(assessment.notes)}%0A%0A`;
-    }
-    
-    if (assessment.status === 'completed') {
-      // Invoice footer from settings
-      if (userSettings?.invoice_footer) {
-        body += `${userSettings.invoice_footer}%0A%0A`;
-      }
+      // Invoice email body
+      body += `Thank you for your business. Your invoice is available via the link below:%0A%0A`;
+      body += `${pdfUrl}%0A%0A`;
       
-      // Payment details
-      const paymentPreference = userSettings?.payment_method_preference;
-      const showBankTransfer = paymentPreference === 'Bank Transfer Only' || paymentPreference === 'Both';
-      const showPaymentLink = (paymentPreference === 'Payment Links Only' || paymentPreference === 'Both') && assessment.payment_link_url;
-
-      if (showBankTransfer || showPaymentLink) {
-        body += `Payment Details:%0A`;
-        if (showBankTransfer && (userSettings.bank_account_name || userSettings.bank_account_number)) {
-          body += `Bank Transfer:%0A`;
-          if (userSettings.bank_account_name) {
-            body += `Account Name: ${userSettings.bank_account_name}%0A`;
-          }
-          if (userSettings.bank_sort_code) {
-            body += `Sort Code: ${userSettings.bank_sort_code}%0A`;
-          }
-          if (userSettings.bank_account_number) {
-            body += `Account Number: ${userSettings.bank_account_number}%0A`;
-          }
-          body += `Reference: ${docNumber}%0A`;
-        }
-
-        if (showPaymentLink) {
-          body += `%0APay online: ${assessment.payment_link_url}%0A`;
-        }
-        body += `%0A`;
+      if (assessment.payment_link_url) {
+        body += `You can pay online here: ${assessment.payment_link_url}%0A%0A`;
+      } else {
+        body += `Payment details are included in the invoice.%0A%0A`;
       }
     } else {
-      body += `This quote is valid for 30 days. Please contact us if you have any questions.%0A%0A`;
+      // Quote email body
+      body += `Thank you for your enquiry. Please find your quote via the link below:%0A%0A`;
+      body += `${pdfUrl}%0A%0A`;
+      body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.%0A%0A`;
     }
 
-    body += `Thank you for your business.%0A%0A`;
+    // Footer
     body += `Best regards,%0A`;
     body += `${bizName}%0A`;
     if (userSettings?.contact_email) {
       body += `${userSettings.contact_email}%0A`;
     }
-    if (userSettings?.business_address) {
-      const address = userSettings.business_address.replace(/\n/g, ', ');
-      body += `${address}`;
+    if (userSettings?.phone) {
+      body += `${userSettings.phone}`;
     }
 
     // Create mailto link
