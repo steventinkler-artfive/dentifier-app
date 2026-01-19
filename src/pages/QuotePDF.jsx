@@ -84,21 +84,26 @@ export default function QuotePDF() {
 
     const loadDetails = async () => {
       try {
-        // Call the backend function to get filtered public data
-        const response = await base44.functions.invoke('getQuotePDFData', { 
-          assessment_id: assessmentId 
+        // Call the backend function directly via fetch (works without authentication)
+        const functionUrl = `${window.location.origin}/api/functions/getQuotePDFData`;
+        const fetchResponse = await fetch(functionUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assessment_id: assessmentId })
         });
+        
+        const response = await fetchResponse.json();
 
         if (!isMounted) return;
 
         console.log('Backend response:', response);
 
-        if (response.data && !response.data.error && response.data.assessment) {
-          const foundAssessment = response.data.assessment;
-          const foundCustomer = response.data.customer;
-          const fetchedVehicleData = response.data.vehicle;
-          const fetchedVehicles = response.data.vehicles || {};
-          const settings = response.data.userSettings;
+        if (response && !response.error && response.assessment) {
+          const foundAssessment = response.assessment;
+          const foundCustomer = response.customer;
+          const fetchedVehicleData = response.vehicle;
+          const fetchedVehicles = response.vehicles || {};
+          const settings = response.userSettings;
 
           setAssessment(foundAssessment);
           setCustomer(foundCustomer);
@@ -164,7 +169,7 @@ export default function QuotePDF() {
           }
         } else {
           // Handle error response from backend
-          console.error('Backend returned error or no data:', response.data);
+          console.error('Backend returned error or no data:', response);
           if (isMounted) {
             setAssessment(null);
             setCustomer(null);
