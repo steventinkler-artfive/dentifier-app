@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Assessment, Customer, Vehicle, UserSetting } from "@/entities/all";
-import { User } from "@/entities/User";
+import { base44 } from "@/api/base44Client";
 
 const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 import { useSearchParams, Link } from "react-router-dom";
@@ -85,110 +84,52 @@ export default function QuotePDF() {
 
     const loadDetails = async () => {
       try {
-        const foundAssessment = await Assessment.get(assessmentId);
+        // Call the backend function to get filtered public data
+        const response = await base44.functions.invoke('getQuotePDFData', { 
+          assessment_id: assessmentId 
+        });
+
         if (!isMounted) return;
 
-        if (foundAssessment) {
-          
-          const promises = [];
-          
-          // Fetch customer
-          if (foundAssessment.customer_id) {
-            promises.push(Customer.get(foundAssessment.customer_id));
-          } else {
-            promises.push(Promise.resolve(null));
-          }
+        if (response.data && response.data.assessment) {
+          const foundAssessment = response.data.assessment;
+          const foundCustomer = response.data.customer;
+          const fetchedVehicleData = response.data.vehicle;
+          const fetchedVehicles = response.data.vehicles || {};
+          const settings = response.data.userSettings;
 
-          // Fetch vehicles
-          if (foundAssessment.is_multi_vehicle && foundAssessment.vehicles && foundAssessment.vehicles.length > 0) {
-            const vehicleIds = foundAssessment.vehicles.map(v => v.vehicle_id);
-            const vehicleFetchPromise = Vehicle.list().then(allVehicles => {
-              const multiVehicleMap = {};
-              vehicleIds.forEach(id => {
-                const found = allVehicles.find(v => v.id === id);
-                if (found) multiVehicleMap[id] = found;
-              });
-              return multiVehicleMap;
-            });
-            promises.push(vehicleFetchPromise);
-          } else if (foundAssessment.vehicle_id) {
-            promises.push(Vehicle.get(foundAssessment.vehicle_id));
-          } else {
-            promises.push(Promise.resolve(null));
-          }
-
-          promises.push(User.me());
-
-          const [foundCustomer, fetchedVehicleData, loadedUser] = await Promise.all(promises);
-
-          if (!isMounted) return;
-          setUser(loadedUser);
+          setAssessment(foundAssessment);
           setCustomer(foundCustomer);
-
+          
           if (foundAssessment.is_multi_vehicle) {
-            setVehicles(fetchedVehicleData || {});
+            setVehicles(fetchedVehicles);
             setVehicle(null);
           } else {
             setVehicle(fetchedVehicleData);
             setVehicles({});
           }
 
-          // Load user settings
-          const settings = await UserSetting.filter({ user_email: loadedUser.email });
-          if (!isMounted) return;
+          // Get user for subscription tier check (logo display)
+          try {
+            const loadedUser = await base44.auth.me();
+            if (isMounted) setUser(loadedUser);
+          } catch (error) {
+            // User might not be authenticated for public view
+            if (isMounted) setUser(null);
+          }
 
-          let currentAssessment = foundAssessment;
-
-          if (settings.length > 0) {
-            setUserSettings(settings[0]);
+          if (settings) {
+            setUserSettings(settings);
             
-            // Assign quote/invoice numbers if not already assigned
-            const isCompleted = foundAssessment.status === 'completed';
-            const isQuoted = foundAssessment.status === 'quoted' || foundAssessment.status === 'approved';
-            
-            let needsUpdate = false;
-            const updates = {};
-            
-            // Assign quote number if status is quoted/approved and no quote number exists
-            if (isQuoted && !foundAssessment.quote_number) {
-              const quotePrefix = settings[0].quote_prefix || 'Q-';
-              const quoteNum = settings[0].next_quote_number || 1;
-              updates.quote_number = `${quotePrefix}${String(quoteNum).padStart(4, '0')}`;
-              
-              // Increment the next quote number in settings
-              await UserSetting.update(settings[0].id, {
-                next_quote_number: quoteNum + 1
-              });
-              needsUpdate = true;
-            }
-            
-            // Assign invoice number if status is completed and no invoice number exists
-            if (isCompleted && !foundAssessment.invoice_number) {
-              const invoicePrefix = settings[0].invoice_prefix || 'INV-';
-              const invoiceNum = settings[0].next_invoice_number || 1;
-              updates.invoice_number = `${invoicePrefix}${String(invoiceNum).padStart(4, '0')}`;
-              
-              // Increment the next invoice number in settings
-              await UserSetting.update(settings[0].id, {
-                next_invoice_number: invoiceNum + 1
-              });
-              needsUpdate = true;
-            }
-            
-            // Update assessment with new numbers
-            if (needsUpdate && isMounted) {
-              await Assessment.update(assessmentId, updates);
-              currentAssessment = { ...foundAssessment, ...updates };
-            }
-            
-            if (settings[0].business_logo_url) {
+            // Handle logo display
+            if (settings.business_logo_url) {
               try {
-                if (settings[0].business_logo_url.startsWith('data:') || settings[0].business_logo_url.startsWith('blob:')) {
-                  if (isMounted) setLogoDisplayUrl(settings[0].business_logo_url);
+                if (settings.business_logo_url.startsWith('data:') || settings.business_logo_url.startsWith('blob:')) {
+                  if (isMounted) setLogoDisplayUrl(settings.business_logo_url);
                 } else {
-                  const response = await fetch(settings[0].business_logo_url);
-                  if (!response.ok) throw new Error(`Logo fetch failed with status: ${response.status}`);
-                  const imageBlob = await response.blob();
+                  const logoResponse = await fetch(settings.business_logo_url);
+                  if (!logoResponse.ok) throw new Error(`Logo fetch failed with status: ${logoResponse.status}`);
+                  const imageBlob = await logoResponse.blob();
                   const localUrl = URL.createObjectURL(imageBlob);
                   if (isMounted) {
                     currentLogoBlobUrl = localUrl;
@@ -202,24 +143,17 @@ export default function QuotePDF() {
             } else {
               if (isMounted) setLogoDisplayUrl(null);
             }
-          } else {
-            if (isMounted) setLogoDisplayUrl(null);
-          }
-          if (isMounted) {
-            setAssessment(currentAssessment);
+
+            // Set document title
+            const isCompletedForTitle = foundAssessment.status === 'completed';
+            const refNum = isCompletedForTitle ? 
+              (foundAssessment.invoice_number || `INV-${foundAssessment.id.slice(-6)}`) : 
+              (foundAssessment.quote_number || `Q-${foundAssessment.id.slice(-6)}`);
             
-            // Set document title immediately after loading data
-            if (settings.length > 0) {
-              const isCompletedForTitle = currentAssessment.status === 'completed';
-              const refNum = isCompletedForTitle ? 
-                (currentAssessment.invoice_number || `INV-${currentAssessment.id.slice(-6)}`) : 
-                (currentAssessment.quote_number || `Q-${currentAssessment.id.slice(-6)}`);
-              
-              const docType = isCompletedForTitle ? 'Invoice' : 'Quote';
-              const docNum = refNum.replace(/[^a-zA-Z0-9-]/g, '');
-              const bizName = sanitizeBusinessName(settings[0].business_name);
-              document.title = `${docType}_${docNum}_${bizName}`;
-            }
+            const docType = isCompletedForTitle ? 'Invoice' : 'Quote';
+            const docNum = refNum.replace(/[^a-zA-Z0-9-]/g, '');
+            const bizName = sanitizeBusinessName(settings.business_name);
+            document.title = `${docType}_${docNum}_${bizName}`;
           }
         }
       } catch (error) {
