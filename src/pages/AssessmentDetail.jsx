@@ -427,31 +427,31 @@ export default function AssessmentDetail() {
     // Subject line
     const subject = `${docType} ${ref} from ${bizName}`;
 
-    // Email body
-    let body = `Hi ${custName},%0A%0A`;
+    // Email body - use \n for line breaks, encodeURIComponent will convert them to %0A
+    let body = `Hi ${custName},\n\n`;
     
     if (assessment.status === 'completed') {
       // Invoice email body
-      body += `Thank you for your business. Your invoice is available via the link below:%0A%0A`;
-      body += `View Invoice ${ref}:%0A${finalPdfUrl}%0A%0A`;
+      body += `Thank you for your business. Your invoice is available via the link below:\n\n`;
+      body += `View Invoice ${ref}:\n${finalPdfUrl}\n\n`;
       
       if (assessment.payment_link_url) {
-        body += `You can pay online here: ${assessment.payment_link_url}%0A%0A`;
+        body += `You can pay online here: ${assessment.payment_link_url}\n\n`;
       } else {
-        body += `Payment details are included in the invoice.%0A%0A`;
+        body += `Payment details are included in the invoice.\n\n`;
       }
     } else {
       // Quote email body
-      body += `Thank you for your enquiry. Please find your quote via the link below:%0A%0A`;
-      body += `View Quote ${ref}:%0A${finalPdfUrl}%0A%0A`;
-      body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.%0A%0A`;
+      body += `Thank you for your enquiry. Please find your quote via the link below:\n\n`;
+      body += `View Quote ${ref}:\n${finalPdfUrl}\n\n`;
+      body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.\n\n`;
     }
 
     // Footer
-    body += `Best regards,%0A`;
-    body += `${bizName}%0A`;
+    body += `Best regards,\n`;
+    body += `${bizName}\n`;
     if (userSettings?.contact_email) {
-      body += `${userSettings.contact_email}%0A`;
+      body += `${userSettings.contact_email}\n`;
     }
     if (userSettings?.phone) {
       body += `${userSettings.phone}`;
