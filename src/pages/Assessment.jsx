@@ -57,6 +57,7 @@ export default function AssessmentPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [userSettings, setUserSettings] = useState(null);
+  const [loadingUserSettings, setLoadingUserSettings] = useState(true);
 
   useEffect(() => {
     checkAccess();
@@ -72,6 +73,8 @@ export default function AssessmentPage() {
       }
     } catch (error) {
       console.error('Failed to load user settings:', error);
+    } finally {
+      setLoadingUserSettings(false);
     }
   };
 
@@ -319,7 +322,7 @@ export default function AssessmentPage() {
 
   return (
     <div className="p-4 max-w-md mx-auto">
-      <SkillsIncompleteBanner settings={userSettings} />
+      {!loadingUserSettings && userSettings && <SkillsIncompleteBanner settings={userSettings} />}
       <div className="mb-6">
         <div className="mb-4">
           <Link to={createPageUrl("Dashboard")}>

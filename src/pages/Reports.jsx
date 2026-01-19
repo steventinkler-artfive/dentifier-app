@@ -28,6 +28,7 @@ export default function Reports() {
   const [vehicles, setVehicles] = useState({});
   const [filteredAssessments, setFilteredAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [user, setUser] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
 
@@ -90,6 +91,7 @@ export default function Reports() {
       console.error('Error loading reports data:', error);
     } finally {
       setLoading(false);
+      setLoadingUser(false);
     }
   };
 
@@ -275,6 +277,10 @@ export default function Reports() {
 
   const isStarterTier = user?.subscription_tier === 'starter' || !user?.subscription_tier;
   const isPremiumTier = ['professional', 'founder', 'early_bird'].includes(user?.subscription_tier);
+
+  if (loadingUser) {
+    return null;
+  }
 
   return (
     <div className="p-4 max-w-md mx-auto space-y-6">
