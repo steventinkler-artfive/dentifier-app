@@ -84,13 +84,19 @@ export default function QuotePDF() {
 
     const loadDetails = async () => {
       try {
+        console.log('Loading PDF data for assessment:', assessmentId);
+        
         // Call the backend function directly via fetch (works without authentication)
         const functionUrl = `${window.location.origin}/api/functions/getQuotePDFData`;
+        console.log('Calling function URL:', functionUrl);
+        
         const fetchResponse = await fetch(functionUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ assessment_id: assessmentId })
         });
+        
+        console.log('Fetch response status:', fetchResponse.status);
         
         const response = await fetchResponse.json();
 
@@ -327,7 +333,8 @@ export default function QuotePDF() {
     return (
       <div className="bg-white text-black p-8">
         <h1 className="text-xl font-bold mb-4">Error</h1>
-        <p>Could not load quote details. Please go back and try again.</p>
+        <p>Could not load quote details. Please check the browser console for details.</p>
+        <p className="text-sm text-gray-600 mt-2">Assessment ID: {assessmentId}</p>
         <Link to={createPageUrl("Quotes")}>
           <Button variant="outline" className="mt-4">Back to Quotes</Button>
         </Link>
