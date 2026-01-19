@@ -17,7 +17,8 @@ import {
   CheckCircle,
   Clock,
   ExternalLink,
-  ArrowUpDown
+  ArrowUpDown,
+  Loader2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -278,8 +279,12 @@ export default function Reports() {
   const isStarterTier = user?.subscription_tier === 'starter' || !user?.subscription_tier;
   const isPremiumTier = ['professional', 'founder', 'early_bird'].includes(user?.subscription_tier);
 
-  if (loadingUser) {
-    return null;
+  if (loading || loadingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
+      </div>
+    );
   }
 
   return (
