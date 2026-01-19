@@ -15,8 +15,11 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
+        const isAuthenticated = await base44.auth.isAuthenticated();
+        if (isAuthenticated) {
+          const user = await base44.auth.me();
+          setCurrentUser(user);
+        }
       } catch (error) {
         console.error("Failed to load user:", error);
       } finally {
@@ -86,43 +89,46 @@ export default function Layout({ children, currentPageName }) {
         `}
       </style>
 
-      {/* Header - Hidden when printing */}
-      <header className="bg-slate-900 px-4 border-b border-slate-800 print:hidden h-20 flex items-center">
-        <div className="flex items-center justify-between max-w-md mx-auto w-full">
-          <div className="flex items-center">
-            <Link to={createPageUrl("Dashboard")} className="cursor-pointer hover:opacity-80 transition-opacity duration-200">
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68a8991579d29e7c386105d5/4087c6169_Asset19hi-res.png"
-                alt="Dentifier" 
-                className="h-[3.25rem] w-auto object-contain mt-2"
-                onError={(e) => {
-                  // Fallback to text if image fails to load
-                  e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = '<span class="text-xl font-bold text-white">Dentifier</span>';
-                }}
-              />
-            </Link>
+      {/* Header - Hidden when printing and for public pages */}
+      {currentPageName !== "QuotePDF" && (
+        <header className="bg-slate-900 px-4 border-b border-slate-800 print:hidden h-20 flex items-center">
+          <div className="flex items-center justify-between max-w-md mx-auto w-full">
+            <div className="flex items-center">
+              <Link to={createPageUrl("Dashboard")} className="cursor-pointer hover:opacity-80 transition-opacity duration-200">
+                <img
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68a8991579d29e7c386105d5/4087c6169_Asset19hi-res.png"
+                  alt="Dentifier" 
+                  className="h-[3.25rem] w-auto object-contain mt-2"
+                  onError={(e) => {
+                    // Fallback to text if image fails to load
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = '<span class="text-xl font-bold text-white">Dentifier</span>';
+                  }}
+                />
+              </Link>
+            </div>
+            <div className="flex items-center">
+              <Link to={createPageUrl("Settings")}>
+                <button className="p-2 rounded-lg hover:bg-slate-800 transition-colors duration-200">
+                  <Settings className="w-5 h-5 text-slate-400 hover:text-white" />
+                </button>
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center">
-            <Link to={createPageUrl("Settings")}>
-              <button className="p-2 rounded-lg hover:bg-slate-800 transition-colors duration-200">
-                <Settings className="w-5 h-5 text-slate-400 hover:text-white" />
-              </button>
-            </Link>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main Content */}
-      <main className="pb-20 min-h-screen">
+      <main className={currentPageName !== "QuotePDF" ? "pb-20 min-h-screen" : "min-h-screen"}>
         <AlertProvider>
-          {!loadingUser && <InactiveUserBanner user={currentUser} />}
+          {!loadingUser && currentPageName !== "QuotePDF" && <InactiveUserBanner user={currentUser} />}
           {children}
         </AlertProvider>
       </main>
 
-      {/* Bottom Navigation - Hidden when printing */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 print:hidden">
+      {/* Bottom Navigation - Hidden when printing and for public pages */}
+      {currentPageName !== "QuotePDF" && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 print:hidden">
         <div className="flex justify-around items-center py-2 max-w-md mx-auto">
           {navigationItems.map((item) => {
             const isActive = location.pathname === item.url;
@@ -140,6 +146,7 @@ export default function Layout({ children, currentPageName }) {
           })}
         </div>
       </nav>
-    </div>
-  );
-}
+      )}
+      </div>
+      );
+      }
