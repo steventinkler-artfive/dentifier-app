@@ -11,8 +11,12 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Assessment ID is required' }, { status: 400 });
         }
 
+        console.log('Fetching assessment with ID:', assessment_id);
+
         // Fetch Assessment with service-role to bypass RLS for public access
         const assessment = await base44.asServiceRole.entities.Assessment.get(assessment_id);
+        
+        console.log('Assessment fetched:', assessment ? 'Found' : 'Not found');
 
         if (!assessment) {
             return Response.json({ error: 'Assessment not found' }, { status: 404 });
@@ -123,6 +127,11 @@ Deno.serve(async (req) => {
         });
     } catch (error) {
         console.error('Error in getQuotePDFData function:', error);
-        return Response.json({ error: error.message }, { status: 500 });
+        console.error('Error stack:', error.stack);
+        return Response.json({ 
+            error: error.message,
+            details: error.toString(),
+            stack: error.stack 
+        }, { status: 500 });
     }
 });
