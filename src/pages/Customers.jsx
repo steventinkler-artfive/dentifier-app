@@ -12,7 +12,8 @@ import {
   Mail,
   MapPin,
   Edit,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 
@@ -74,6 +75,14 @@ export default function Customers() {
     setSelectedCustomer(null);
     setShowForm(true);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
+      </div>
+    );
+  }
 
   if (showForm) {
     return (
