@@ -83,6 +83,11 @@ export default function QuotePDF() {
     let currentLogoBlobUrl = null;
 
     const loadDetails = async () => {
+      if (!assessmentId) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+
       try {
         console.log('Loading PDF data for assessment:', assessmentId);
         
@@ -120,13 +125,12 @@ export default function QuotePDF() {
           } else {
             setVehicle(fetchedVehicleData);
             setVehicles({});
-          }
+            }
 
-          // For public PDF view, we don't need to check authentication
-          // Logo display is handled by backend based on subscription tier
-          if (isMounted) setUser(null);
+            // No authentication check for public PDF view
+            if (isMounted) setUser(null);
 
-          if (settings) {
+            if (settings) {
             setUserSettings(settings);
             
             // Handle logo display
@@ -188,19 +192,15 @@ export default function QuotePDF() {
       }
     };
 
-    if (assessmentId) {
-      loadDetails();
-    } else {
-      setLoading(false);
-    }
-    
+    loadDetails();
+
     return () => { 
       isMounted = false; 
       if (currentLogoBlobUrl) {
         URL.revokeObjectURL(currentLogoBlobUrl);
       }
     };
-  }, [assessmentId]);
+    }, [assessmentId]);
 
 
 
