@@ -122,19 +122,9 @@ export default function QuotePDF() {
             setVehicles({});
           }
 
-          // Get user for subscription tier check (logo display) - only if authenticated
-          try {
-            const isAuthenticated = await base44.auth.isAuthenticated();
-            if (isAuthenticated) {
-              const loadedUser = await base44.auth.me();
-              if (isMounted) setUser(loadedUser);
-            } else {
-              if (isMounted) setUser(null);
-            }
-          } catch (error) {
-            // User might not be authenticated for public view
-            if (isMounted) setUser(null);
-          }
+          // For public PDF view, we don't need to check authentication
+          // Logo display is handled by backend based on subscription tier
+          if (isMounted) setUser(null);
 
           if (settings) {
             setUserSettings(settings);
