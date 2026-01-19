@@ -154,34 +154,17 @@ export default function PricingQuotingForm({ formData, onChange }) {
         </CardContent>
       </Card>
 
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-3">Quick Pricing Matrix (3 most common)</h3>
-        <div className="space-y-3">
-          {['26mm - 50mm', '51mm - 80mm', '81mm - 120mm'].map((size, idx) => (
-            <div key={size} className="grid grid-cols-3 gap-3 items-center">
-              <Label className="text-slate-300 text-sm">Standard Dent {size}</Label>
-              <Input
-                type="number"
-                value={formData.pricing_matrix?.find(p => p.size_range === size && p.damage_type === 'Standard Dent')?.base_price || [120, 180, 240][idx]}
-                onChange={e => {
-                  const newMatrix = [...(formData.pricing_matrix || [])];
-                  const existingIdx = newMatrix.findIndex(p => p.size_range === size && p.damage_type === 'Standard Dent');
-                  if (existingIdx > -1) {
-                    newMatrix[existingIdx].base_price = parseFloat(e.target.value);
-                  } else {
-                    newMatrix.push({ damage_type: 'Standard Dent', size_range: size, base_price: parseFloat(e.target.value) });
-                  }
-                  onChange('pricing_matrix', newMatrix);
-                }}
-                className="bg-slate-800 border-slate-700 text-white"
-                placeholder="£"
-              />
-              <span className="text-slate-400 text-sm">£{formData.pricing_matrix?.find(p => p.size_range === size && p.damage_type === 'Standard Dent')?.base_price || [120, 180, 240][idx]}</span>
-            </div>
-          ))}
-        </div>
-        <p className="text-slate-400 text-xs mt-3">Configure full pricing matrix in Settings after onboarding</p>
-      </div>
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold text-white mb-2">Pricing Matrix Setup</h3>
+          <p className="text-slate-300 text-sm mb-4">
+            You can configure your detailed pricing matrix now or skip and set it up later in Settings.
+          </p>
+          <p className="text-slate-400 text-xs">
+            The pricing matrix allows you to set specific prices for different dent sizes and types. You can fully customize this in Settings at any time.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
