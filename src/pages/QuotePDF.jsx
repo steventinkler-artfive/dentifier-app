@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-
-const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Printer, ArrowLeft, Share2, CreditCard } from "lucide-react";
+
+const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
@@ -15,7 +14,6 @@ export default function QuotePDF() {
   const [customer, setCustomer] = useState(null);
   const [vehicle, setVehicle] = useState(null);
   const [vehicles, setVehicles] = useState({});
-  const [user, setUser] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [logoDisplayUrl, setLogoDisplayUrl] = useState(null);
@@ -127,8 +125,7 @@ export default function QuotePDF() {
             setVehicles({});
             }
 
-            // No authentication check for public PDF view
-            if (isMounted) setUser(null);
+            // No user data needed for public PDF view
 
             if (settings) {
             setUserSettings(settings);
@@ -402,23 +399,22 @@ export default function QuotePDF() {
           <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-6 sm:gap-0 print:mb-6 print:gap-2">
             <div className="order-2 sm:order-1">
               {(() => {
-                const isProTier = user?.subscription_tier === 'professional' || user?.subscription_tier === 'founder' || user?.subscription_tier === 'early_bird';
                 const hasCustomLogo = logoDisplayUrl && userSettings?.business_logo_url;
-                const displayLogo = (isProTier && hasCustomLogo) ? logoDisplayUrl : DEFAULT_DENTIFIER_LOGO;
-                const isStarterTier = !isProTier;
+                const displayLogo = hasCustomLogo ? logoDisplayUrl : DEFAULT_DENTIFIER_LOGO;
+                const showBusinessName = !hasCustomLogo;
 
                 return (
                   <>
                     <img 
                       src={displayLogo} 
-                      alt={isProTier && hasCustomLogo ? "Business Logo" : "Dentifier Logo"} 
+                      alt={hasCustomLogo ? "Business Logo" : "Dentifier Logo"} 
                       className="w-48 object-contain mb-2"
                       onError={(e) => {
                         console.error("Logo failed to load:", displayLogo);
                         e.target.src = DEFAULT_DENTIFIER_LOGO;
                       }}
                     />
-                    {isStarterTier && (
+                    {showBusinessName && (
                       <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
                     )}
                   </>
