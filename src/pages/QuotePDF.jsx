@@ -91,7 +91,9 @@ export default function QuotePDF() {
 
         if (!isMounted) return;
 
-        if (response.data && response.data.assessment) {
+        console.log('Backend response:', response);
+
+        if (response.data && !response.data.error && response.data.assessment) {
           const foundAssessment = response.data.assessment;
           const foundCustomer = response.data.customer;
           const fetchedVehicleData = response.data.vehicle;
@@ -155,9 +157,26 @@ export default function QuotePDF() {
             const bizName = sanitizeBusinessName(settings.business_name);
             document.title = `${docType}_${docNum}_${bizName}`;
           }
+        } else {
+          // Handle error response from backend
+          console.error('Backend returned error or no data:', response.data);
+          if (isMounted) {
+            setAssessment(null);
+            setCustomer(null);
+            setVehicle(null);
+            setVehicles({});
+            setUserSettings(null);
+          }
         }
       } catch (error) {
         console.error('Error loading details for PDF:', error);
+        if (isMounted) {
+          setAssessment(null);
+          setCustomer(null);
+          setVehicle(null);
+          setVehicles({});
+          setUserSettings(null);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
