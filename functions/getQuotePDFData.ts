@@ -14,7 +14,13 @@ Deno.serve(async (req) => {
         console.log('Fetching assessment with ID:', assessment_id);
 
         // Fetch Assessment with service-role to bypass RLS for public access
-        const assessment = await base44.asServiceRole.entities.Assessment.get(assessment_id);
+        let assessment;
+        try {
+            assessment = await base44.asServiceRole.entities.Assessment.get(assessment_id);
+        } catch (error) {
+            console.error('Error fetching assessment:', error);
+            return Response.json({ error: `Assessment not found: ${error.message}` }, { status: 404 });
+        }
         
         console.log('Assessment fetched:', assessment ? 'Found' : 'Not found');
 
