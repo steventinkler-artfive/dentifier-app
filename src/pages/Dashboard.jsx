@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [customersMap, setCustomersMap] = useState({});
   const [vehiclesMap, setVehiclesMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadingUserSettings, setLoadingUserSettings] = useState(true);
   const [welcomeEmailSent, setWelcomeEmailSent] = useState(false);
   const [user, setUser] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
@@ -89,6 +90,7 @@ export default function Dashboard() {
       if (settings && !settings.onboarding_completed) {
         setShowOnboarding(true);
       }
+      setLoadingUserSettings(false);
 
       const customersMap = customersData.reduce((map, customer) => {
         map[customer.id] = customer;
@@ -268,13 +270,17 @@ export default function Dashboard() {
     await loadDashboardData();
   };
 
+  if (loadingUserSettings) {
+    return null;
+  }
+
   if (showOnboarding && user) {
     return <OnboardingWizard user={user} onComplete={handleOnboardingComplete} />;
   }
 
   return (
     <div className="p-4 max-w-md mx-auto space-y-6">
-      <BankingIncompleteBanner settings={userSettings} />
+      {userSettings && <BankingIncompleteBanner settings={userSettings} />}
       {/* Welcome Section */}
       <div className="bg-gradient-to-br from-rose-600 to-rose-500 rounded-2xl p-6 text-white custom-shadow">
         <h2 className="text-2xl font-bold mb-2">Welcome Back!</h2>

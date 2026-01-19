@@ -9,6 +9,7 @@ import { base44 } from "@/api/base44Client";
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   // Load current user
   useEffect(() => {
@@ -18,6 +19,8 @@ export default function Layout({ children, currentPageName }) {
         setCurrentUser(user);
       } catch (error) {
         console.error("Failed to load user:", error);
+      } finally {
+        setLoadingUser(false);
       }
     };
     loadUser();
@@ -113,7 +116,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Main Content */}
       <main className="pb-20 min-h-screen">
         <AlertProvider>
-          <InactiveUserBanner user={currentUser} />
+          {!loadingUser && <InactiveUserBanner user={currentUser} />}
           {children}
         </AlertProvider>
       </main>
