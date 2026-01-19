@@ -416,16 +416,16 @@ export default function AssessmentDetail() {
 
     const docType = assessment.status === 'completed' ? 'Invoice' : 'Quote';
     const ref = getDisplayReference();
-    const docNumber = ref.replace(/[^a-zA-Z0-9-]/g, '');
     const custName = customer.business_name || customer.name;
     const bizName = userSettings?.business_name || 'Dentifier PDR';
 
-    // Subject line
-    const subject = `${docType} #${docNumber} from ${bizName}`;
+    // Use assessment.quote_pdf_url if available (publicly accessible), otherwise construct the QuotePDF page URL
+    const finalPdfUrl = assessment.quote_pdf_url 
+      ? assessment.quote_pdf_url 
+      : `${window.location.origin}${createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}`;
 
-    // Create full URL to PDF page
-    const pdfPath = createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`);
-    const pdfUrl = `${window.location.origin}${pdfPath}`;
+    // Subject line
+    const subject = `${docType} ${ref} from ${bizName}`;
 
     // Email body
     let body = `Hi ${custName},%0A%0A`;
@@ -433,7 +433,7 @@ export default function AssessmentDetail() {
     if (assessment.status === 'completed') {
       // Invoice email body
       body += `Thank you for your business. Your invoice is available via the link below:%0A%0A`;
-      body += `${pdfUrl}%0A%0A`;
+      body += `View Invoice ${ref}:%0A${finalPdfUrl}%0A%0A`;
       
       if (assessment.payment_link_url) {
         body += `You can pay online here: ${assessment.payment_link_url}%0A%0A`;
@@ -443,7 +443,7 @@ export default function AssessmentDetail() {
     } else {
       // Quote email body
       body += `Thank you for your enquiry. Please find your quote via the link below:%0A%0A`;
-      body += `${pdfUrl}%0A%0A`;
+      body += `View Quote ${ref}:%0A${finalPdfUrl}%0A%0A`;
       body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.%0A%0A`;
     }
 
@@ -458,7 +458,7 @@ export default function AssessmentDetail() {
     }
 
     // Create mailto link
-    const mailtoLink = `mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${body}`;
+    const mailtoLink = `mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
   };
 
