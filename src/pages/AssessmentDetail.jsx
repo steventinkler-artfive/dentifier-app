@@ -412,48 +412,79 @@ export default function AssessmentDetail() {
     }
   };
 
-  const handleGeneratePDF = async () => {
+  const handleViewPDF = async () => {
     if (!assessment) return;
-    setIsGeneratingPDF(true);
-
-    try {
-      await Promise.all([
-        base44.functions.invoke('generateAndUploadQuotePDF', {
-          assessment_id: assessment.id,
-          include_notes: false
-        }),
-        base44.functions.invoke('generateAndUploadQuotePDF', {
-          assessment_id: assessment.id,
-          include_notes: true
-        })
-      ]);
-
-      await loadAssessmentDetails();
-      alert('PDF generated successfully!');
-    } catch (error) {
-      console.error('Failed to generate PDFs:', error);
-      alert(`Failed to generate PDFs: ${error.message || 'Please try again.'}`);
-    } finally {
+    
+    // Check if PDFs exist, generate if not
+    const pdfUrl = includeNotesInQuote ? assessment.quote_pdf_with_notes_url : assessment.quote_pdf_url;
+    
+    if (!pdfUrl) {
+      setIsGeneratingPDF(true);
+      try {
+        await Promise.all([
+          base44.functions.invoke('generateAndUploadQuotePDF', {
+            assessment_id: assessment.id,
+            include_notes: false
+          }),
+          base44.functions.invoke('generateAndUploadQuotePDF', {
+            assessment_id: assessment.id,
+            include_notes: true
+          })
+        ]);
+        await loadAssessmentDetails();
+      } catch (error) {
+        console.error('Failed to generate PDFs:', error);
+        alert(`Failed to generate PDFs: ${error.message || 'Please try again.'}`);
+        setIsGeneratingPDF(false);
+        return;
+      }
       setIsGeneratingPDF(false);
     }
+    
+    // Navigate to PDF page
+    navigate(createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`));
   };
 
-  const handleEmail = () => {
+  const handleEmail = async () => {
     if (!assessment || !customer) return;
+
+    // Check if PDFs exist, generate if not
+    const pdfUrl = includeNotesInQuote 
+      ? assessment.quote_pdf_with_notes_url 
+      : assessment.quote_pdf_url;
+    
+    if (!pdfUrl) {
+      setIsGeneratingPDF(true);
+      try {
+        await Promise.all([
+          base44.functions.invoke('generateAndUploadQuotePDF', {
+            assessment_id: assessment.id,
+            include_notes: false
+          }),
+          base44.functions.invoke('generateAndUploadQuotePDF', {
+            assessment_id: assessment.id,
+            include_notes: true
+          })
+        ]);
+        await loadAssessmentDetails();
+      } catch (error) {
+        console.error('Failed to generate PDFs:', error);
+        alert(`Failed to generate PDFs: ${error.message || 'Please try again.'}`);
+        setIsGeneratingPDF(false);
+        return;
+      }
+      setIsGeneratingPDF(false);
+    }
 
     const docType = assessment.status === 'completed' ? 'Invoice' : 'Quote';
     const ref = getDisplayReference();
     const custName = customer.business_name || customer.name;
     const bizName = userSettings?.business_name || 'Dentifier PDR';
 
-    // Use the pre-generated PDF URLs based on notes toggle
-    const pdfUrl = includeNotesInQuote 
+    // Use the generated PDF URLs
+    const finalPdfUrl = includeNotesInQuote 
       ? assessment.quote_pdf_with_notes_url 
       : assessment.quote_pdf_url;
-
-    // Fallback to backend function if PDF URLs not yet generated
-    const productionOrigin = window.location.origin.replace(/^https:\/\/preview-sandbox--/, 'https://');
-    const finalPdfUrl = pdfUrl || `${productionOrigin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`;
 
     // Subject line
     const subject = `${docType} ${ref} from ${bizName}`;
@@ -1119,15 +1150,23 @@ export default function AssessmentDetail() {
           {/* Action Buttons - At Bottom of Quote Tab */}
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Link 
-                to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
-                className="block"
+              <Button 
+                onClick={handleViewPDF}
+                disabled={isGeneratingPDF}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
               >
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                  <FileText className="w-4 h-4 mr-2" />
-                  {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
-                </Button>
-              </Link>
+                {isGeneratingPDF ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4 mr-2" />
+                    {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
+                  </>
+                )}
+              </Button>
               <Button
                 onClick={handleShare}
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
@@ -1137,31 +1176,23 @@ export default function AssessmentDetail() {
               </Button>
             </div>
 
-            <Button 
-              onClick={handleGeneratePDF}
-              disabled={isGeneratingPDF}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
-            >
-              {isGeneratingPDF ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Generate Quote PDF
-                </>
-              )}
-            </Button>
-
             {customer?.email && (
               <Button 
                 onClick={handleEmail}
+                disabled={isGeneratingPDF}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               >
-                <Mail className="w-4 h-4 mr-2" />
-                Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}
+                {isGeneratingPDF ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}
+                  </>
+                )}
               </Button>
             )}
 
@@ -1540,15 +1571,23 @@ export default function AssessmentDetail() {
           {/* Action Buttons - At Bottom of Details Tab */}
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Link 
-                to={createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}
-                className="block"
+              <Button 
+                onClick={handleViewPDF}
+                disabled={isGeneratingPDF}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
               >
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                  <FileText className="w-4 h-4 mr-2" />
-                  {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
-                </Button>
-              </Link>
+                {isGeneratingPDF ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4 mr-2" />
+                    {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
+                  </>
+                )}
+              </Button>
               <Button
                 onClick={handleShare}
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
@@ -1558,31 +1597,23 @@ export default function AssessmentDetail() {
               </Button>
             </div>
 
-            <Button 
-              onClick={handleGeneratePDF}
-              disabled={isGeneratingPDF}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
-            >
-              {isGeneratingPDF ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Generate Quote PDF
-                </>
-              )}
-            </Button>
-
             {customer?.email && (
               <Button 
                 onClick={handleEmail}
+                disabled={isGeneratingPDF}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               >
-                <Mail className="w-4 h-4 mr-2" />
-                Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}
+                {isGeneratingPDF ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}
+                  </>
+                )}
               </Button>
             )}
 
