@@ -16,8 +16,11 @@ Deno.serve(async (req) => {
         // Fetch all assessments
         const allAssessments = await base44.asServiceRole.entities.Assessment.list();
         console.log('Found', allAssessments.length, 'assessments');
+        console.log('Looking for ID:', assessment_id);
+        console.log('First 3 IDs:', allAssessments.slice(0, 3).map(a => a.id));
         
         const assessment = allAssessments.find(a => a.id === assessment_id);
+        console.log('Match found:', !!assessment);
 
         if (!assessment) {
             console.log('Assessment not found');
