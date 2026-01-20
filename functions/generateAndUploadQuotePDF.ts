@@ -74,7 +74,10 @@ Deno.serve(async (req) => {
         const businessName = settings?.business_name || "Dentifier PDR";
         const businessAddress = settings?.business_address || "PDR Assessment & Quoting";
         const contactEmail = settings?.contact_email || "contact@dentifier.com";
-        const businessLogo = settings?.business_logo_url || "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
+        
+        // Use custom logo if available (Professional tier), otherwise use Dentifier logo (Starter tier)
+        const hasCustomLogo = settings?.business_logo_url && settings.business_logo_url.trim() !== '';
+        const businessLogo = hasCustomLogo ? settings.business_logo_url : "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 
         const referenceNumber = isCompleted ?
             (assessment.invoice_number || `INV-${assessment.id.slice(-6)}`) :
@@ -148,7 +151,8 @@ Deno.serve(async (req) => {
     <div class="header">
         <div>
             <img src="${businessLogo}" class="logo" alt="Logo" />
-            <h2>${businessName}</h2>
+            ${!hasCustomLogo ? `<h2>${businessName}</h2>` : ''}
+            ${businessAddress ? `<p style="font-size: 12px; color: #666; margin-top: 5px;">${businessAddress.replace(/\n/g, '<br/>')}</p>` : ''}
         </div>
         <div class="doc-info">
             <h2>${isCompleted ? 'INVOICE' : 'QUOTE'}</h2>

@@ -417,6 +417,9 @@ export default function QuotePDF() {
                     {showBusinessName && (
                       <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
                     )}
+                    {businessAddress && (
+                      <p className="text-gray-600 text-sm mt-1">{businessAddress.split('\n').map((line, i) => <span key={i}>{line}<br/></span>)}</p>
+                    )}
                   </>
                 );
               })()}

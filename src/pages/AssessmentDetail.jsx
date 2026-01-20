@@ -92,6 +92,7 @@ export default function AssessmentDetail() {
   const [detailsTab, setDetailsTab] = useState("analysis");
   const [isGeneratingPaymentLink, setIsGeneratingPaymentLink] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const openImageViewer = (index) => {
     setSelectedImageIndex(index);
@@ -240,24 +241,6 @@ export default function AssessmentDetail() {
       }
       
       await base44.entities.Assessment.update(assessment.id, updateData);
-      
-      // Auto-generate PDFs when status changes to quoted, approved, or completed
-      if (newStatus === 'quoted' || newStatus === 'approved' || newStatus === 'completed') {
-        try {
-          await Promise.all([
-            base44.functions.invoke('generateAndUploadQuotePDF', {
-              assessment_id: assessment.id,
-              include_notes: false
-            }),
-            base44.functions.invoke('generateAndUploadQuotePDF', {
-              assessment_id: assessment.id,
-              include_notes: true
-            })
-          ]);
-        } catch (error) {
-          console.error('Failed to generate PDFs:', error);
-        }
-      }
       
       // Auto-generate payment link if preference is set
       if (newStatus === 'completed' && userSettings) {
@@ -426,6 +409,32 @@ export default function AssessmentDetail() {
       alert(`Failed to generate payment link: ${error.message || 'Please check your payment provider settings and try again.'}`);
     } finally {
       setIsGeneratingPaymentLink(false);
+    }
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!assessment) return;
+    setIsGeneratingPDF(true);
+
+    try {
+      await Promise.all([
+        base44.functions.invoke('generateAndUploadQuotePDF', {
+          assessment_id: assessment.id,
+          include_notes: false
+        }),
+        base44.functions.invoke('generateAndUploadQuotePDF', {
+          assessment_id: assessment.id,
+          include_notes: true
+        })
+      ]);
+
+      await loadAssessmentDetails();
+      alert('PDF generated successfully!');
+    } catch (error) {
+      console.error('Failed to generate PDFs:', error);
+      alert(`Failed to generate PDFs: ${error.message || 'Please try again.'}`);
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
