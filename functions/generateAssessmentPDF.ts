@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
             return new Response('Assessment ID is required', { status: 400 });
         }
 
-        // Fetch Assessment using list with service-role to bypass RLS (more reliable than .get)
+        // Fetch Assessment using list with service-role to bypass RLS
         const allAssessments = await base44.asServiceRole.entities.Assessment.list();
         const assessment = allAssessments.find(a => a.id === assessment_id);
         

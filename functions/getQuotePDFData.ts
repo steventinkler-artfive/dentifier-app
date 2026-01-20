@@ -1,39 +1,36 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
+    console.log('getQuotePDFData called');
+    
     try {
-        console.log('=== getQuotePDFData function called ===');
         const base44 = createClientFromRequest(req);
-        console.log('Base44 client created');
-
-        // Expecting assessment_id in the request payload
         const { assessment_id } = await req.json();
+        
+        console.log('Assessment ID:', assessment_id);
 
         if (!assessment_id) {
             return Response.json({ error: 'Assessment ID is required' }, { status: 400 });
         }
 
-        console.log('Fetching assessment with ID:', assessment_id);
-
-        // Fetch Assessment using filter with service-role to bypass RLS
+        // Fetch all assessments
         const allAssessments = await base44.asServiceRole.entities.Assessment.list();
-        console.log('Total assessments found:', allAssessments.length);
-        console.log('Assessment IDs:', allAssessments.map(a => a.id));
+        console.log('Found', allAssessments.length, 'assessments');
+        
         const assessment = allAssessments.find(a => a.id === assessment_id);
 
         if (!assessment) {
-            console.error('Assessment not found with ID:', assessment_id);
-            console.error('Available IDs:', allAssessments.map(a => a.id).join(', '));
+            console.log('Assessment not found');
             return Response.json({ error: 'Assessment not found' }, { status: 404 });
         }
 
-        console.log('Assessment found:', assessment.id);
-        console.log('Assessment fetched successfully');
+        console.log('Assessment found');
 
         // Fetch Customer
         let customerData = null;
         if (assessment.customer_id) {
-            const customer = await base44.asServiceRole.entities.Customer.get(assessment.customer_id);
+            const allCustomers = await base44.asServiceRole.entities.Customer.list();
+            const customer = allCustomers.find(c => c.id === assessment.customer_id);
             if (customer) {
                 customerData = {
                     id: customer.id,
@@ -49,10 +46,11 @@ Deno.serve(async (req) => {
         let vehicleData = null;
         let vehiclesData = {};
 
+        const allVehicles = await base44.asServiceRole.entities.Vehicle.list();
+
         if (assessment.is_multi_vehicle && assessment.vehicles) {
-            // For multi-vehicle assessments, fetch each vehicle referenced
             for (const v of assessment.vehicles) {
-                const vehicle = await base44.asServiceRole.entities.Vehicle.get(v.vehicle_id);
+                const vehicle = allVehicles.find(veh => veh.id === v.vehicle_id);
                 if (vehicle) {
                     vehiclesData[vehicle.id] = {
                         id: vehicle.id,
@@ -65,8 +63,7 @@ Deno.serve(async (req) => {
                 }
             }
         } else if (assessment.vehicle_id) {
-            // For single-vehicle assessments
-            const vehicle = await base44.asServiceRole.entities.Vehicle.get(assessment.vehicle_id);
+            const vehicle = allVehicles.find(v => v.id === assessment.vehicle_id);
             if (vehicle) {
                 vehicleData = {
                     id: vehicle.id,
@@ -79,7 +76,7 @@ Deno.serve(async (req) => {
             }
         }
 
-        // Fetch UserSettings (technician's settings)
+        // Fetch UserSettings
         let userSettingsData = null;
         if (assessment.created_by) {
             const userSettings = await base44.asServiceRole.entities.UserSetting.filter({ user_email: assessment.created_by });
@@ -92,11 +89,16 @@ Deno.serve(async (req) => {
                     business_logo_url: settings.business_logo_url,
                     invoice_footer: settings.invoice_footer,
                     currency: settings.currency,
+                    payment_method_preference: settings.payment_method_preference,
+                    bank_account_name: settings.bank_account_name,
+                    bank_sort_code: settings.bank_sort_code,
+                    bank_account_number: settings.bank_account_number,
+                    bank_iban: settings.bank_iban,
                 };
             }
         }
 
-        // Filter and return only safe assessment fields
+        // Return safe assessment fields
         const safeAssessment = {
             id: assessment.id,
             quote_number: assessment.quote_number,
@@ -134,11 +136,9 @@ Deno.serve(async (req) => {
             userSettings: userSettingsData,
         });
     } catch (error) {
-        console.error('Error in getQuotePDFData function:', error);
-        console.error('Error stack:', error.stack);
+        console.error('Error:', error);
         return Response.json({ 
             error: error.message,
-            details: error.toString(),
             stack: error.stack 
         }, { status: 500 });
     }
