@@ -419,10 +419,10 @@ export default function AssessmentDetail() {
     const custName = customer.business_name || customer.name;
     const bizName = userSettings?.business_name || 'Dentifier PDR';
 
-    // Use assessment.quote_pdf_url if available (publicly accessible), otherwise construct the QuotePDF page URL
-    const finalPdfUrl = assessment.quote_pdf_url 
-      ? assessment.quote_pdf_url 
-      : `${window.location.origin}${createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)}`;
+    // Use the backend function URL which is publicly accessible (bypasses auth)
+    // Get the production domain - replace 'preview-sandbox--' URLs with the production domain
+    const productionOrigin = window.location.origin.replace(/^https:\/\/preview-sandbox--/, 'https://');
+    const finalPdfUrl = `${productionOrigin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`;
 
     // Subject line
     const subject = `${docType} ${ref} from ${bizName}`;
