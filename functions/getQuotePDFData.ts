@@ -9,40 +9,72 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Missing assessment_id' }, { status: 400 });
         }
 
-        // Fetch all data using service role
-        const [assessments, customers, vehicles, userSettings] = await Promise.all([
-            base44.asServiceRole.entities.Assessment.list(),
-            base44.asServiceRole.entities.Customer.list(),
-            base44.asServiceRole.entities.Vehicle.list(),
-            base44.asServiceRole.entities.UserSetting.list(),
-        ]);
+        // Try getting the assessment directly first
+        let assessment;
+        try {
+            assessment = await base44.asServiceRole.entities.Assessment.get(assessment_id);
+        } catch (error) {
+            return Response.json({ 
+                error: 'Assessment not found',
+                details: error.message 
+            }, { status: 404 });
+        }
 
-        const assessment = assessments.find(a => a.id === assessment_id);
         if (!assessment) {
             return Response.json({ error: 'Assessment not found' }, { status: 404 });
         }
 
-        // Find related data
-        const customer = assessment.customer_id ? customers.find(c => c.id === assessment.customer_id) : null;
-        const vehicle = assessment.vehicle_id ? vehicles.find(v => v.id === assessment.vehicle_id) : null;
-        const settings = assessment.created_by ? userSettings.find(s => s.user_email === assessment.created_by) : null;
-
-        // Build vehicles map for multi-vehicle
+        // Fetch related data
+        let customer = null;
+        let vehicle = null;
+        let settings = null;
         const vehiclesData = {};
+
+        if (assessment.customer_id) {
+            try {
+                customer = await base44.asServiceRole.entities.Customer.get(assessment.customer_id);
+            } catch (e) {
+                console.error('Customer fetch failed:', e);
+            }
+        }
+
+        if (assessment.vehicle_id) {
+            try {
+                vehicle = await base44.asServiceRole.entities.Vehicle.get(assessment.vehicle_id);
+            } catch (e) {
+                console.error('Vehicle fetch failed:', e);
+            }
+        }
+
         if (assessment.is_multi_vehicle && assessment.vehicles) {
-            assessment.vehicles.forEach(v => {
-                const veh = vehicles.find(vehicle => vehicle.id === v.vehicle_id);
-                if (veh) {
-                    vehiclesData[veh.id] = {
-                        id: veh.id,
-                        make: veh.make,
-                        model: veh.model,
-                        year: veh.year,
-                        color: veh.color,
-                        license_plate: veh.license_plate,
-                    };
+            for (const v of assessment.vehicles) {
+                try {
+                    const veh = await base44.asServiceRole.entities.Vehicle.get(v.vehicle_id);
+                    if (veh) {
+                        vehiclesData[veh.id] = {
+                            id: veh.id,
+                            make: veh.make,
+                            model: veh.model,
+                            year: veh.year,
+                            color: veh.color,
+                            license_plate: veh.license_plate,
+                        };
+                    }
+                } catch (e) {
+                    console.error('Vehicle fetch failed:', e);
                 }
-            });
+            }
+        }
+
+        if (assessment.created_by) {
+            try {
+                const userSettingsList = await base44.asServiceRole.entities.UserSetting.filter({ 
+                    user_email: assessment.created_by 
+                });
+                settings = userSettingsList[0];
+            } catch (e) {
+                console.error('Settings fetch failed:', e);
+            }
         }
 
         return Response.json({
@@ -96,6 +128,9 @@ Deno.serve(async (req) => {
             } : null,
         });
     } catch (error) {
-        return Response.json({ error: error.message }, { status: 500 });
+        return Response.json({ 
+            error: error.message,
+            stack: error.stack 
+        }, { status: 500 });
     }
 });
