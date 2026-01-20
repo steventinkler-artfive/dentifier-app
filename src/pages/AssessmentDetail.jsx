@@ -1137,6 +1137,24 @@ export default function AssessmentDetail() {
               </Button>
             </div>
 
+            <Button 
+              onClick={handleGeneratePDF}
+              disabled={isGeneratingPDF}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Generate Quote PDF
+                </>
+              )}
+            </Button>
+
             {customer?.email && (
               <Button 
                 onClick={handleEmail}
@@ -1539,6 +1557,24 @@ export default function AssessmentDetail() {
                 {copied ? 'Copied!' : 'Share'}
               </Button>
             </div>
+
+            <Button 
+              onClick={handleGeneratePDF}
+              disabled={isGeneratingPDF}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Generate Quote PDF
+                </>
+              )}
+            </Button>
 
             {customer?.email && (
               <Button 
