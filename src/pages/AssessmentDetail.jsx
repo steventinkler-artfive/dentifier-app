@@ -241,6 +241,24 @@ export default function AssessmentDetail() {
       
       await base44.entities.Assessment.update(assessment.id, updateData);
       
+      // Auto-generate PDFs when status changes to quoted, approved, or completed
+      if (newStatus === 'quoted' || newStatus === 'approved' || newStatus === 'completed') {
+        try {
+          await Promise.all([
+            base44.functions.invoke('generateAndUploadQuotePDF', {
+              assessment_id: assessment.id,
+              include_notes: false
+            }),
+            base44.functions.invoke('generateAndUploadQuotePDF', {
+              assessment_id: assessment.id,
+              include_notes: true
+            })
+          ]);
+        } catch (error) {
+          console.error('Failed to generate PDFs:', error);
+        }
+      }
+      
       // Auto-generate payment link if preference is set
       if (newStatus === 'completed' && userSettings) {
         const preference = userSettings.payment_method_preference || 'Bank Transfer Only';
@@ -419,10 +437,14 @@ export default function AssessmentDetail() {
     const custName = customer.business_name || customer.name;
     const bizName = userSettings?.business_name || 'Dentifier PDR';
 
-    // Use the backend function URL which is publicly accessible (bypasses auth)
-    // Get the production domain - replace 'preview-sandbox--' URLs with the production domain
+    // Use the pre-generated PDF URLs based on notes toggle
+    const pdfUrl = includeNotesInQuote 
+      ? assessment.quote_pdf_with_notes_url 
+      : assessment.quote_pdf_url;
+
+    // Fallback to backend function if PDF URLs not yet generated
     const productionOrigin = window.location.origin.replace(/^https:\/\/preview-sandbox--/, 'https://');
-    const finalPdfUrl = `${productionOrigin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`;
+    const finalPdfUrl = pdfUrl || `${productionOrigin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`;
 
     // Subject line
     const subject = `${docType} ${ref} from ${bizName}`;
