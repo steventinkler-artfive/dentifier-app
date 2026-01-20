@@ -13,15 +13,13 @@ Deno.serve(async (req) => {
 
         console.log('Fetching assessment with ID:', assessment_id);
 
-        // Fetch Assessment using filter with service-role to bypass RLS
-        const assessments = await base44.asServiceRole.entities.Assessment.filter({ id: assessment_id });
-        
-        if (!assessments || assessments.length === 0) {
+        // Fetch Assessment using get with service-role to bypass RLS
+        const assessment = await base44.asServiceRole.entities.Assessment.get(assessment_id);
+
+        if (!assessment) {
             console.error('Assessment not found with ID:', assessment_id);
             return Response.json({ error: 'Assessment not found' }, { status: 404 });
         }
-
-        const assessment = assessments[0];
         console.log('Assessment fetched successfully');
 
         // Fetch Customer
