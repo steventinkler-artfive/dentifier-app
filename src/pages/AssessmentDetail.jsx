@@ -597,7 +597,7 @@ export default function AssessmentDetail() {
       }
     }
 
-    shareText += `\nPowered by Dentifier`;
+    shareText += `\n\nPowered by Dentifier`;
 
     if (navigator.share) {
       try {

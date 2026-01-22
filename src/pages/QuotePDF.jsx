@@ -288,7 +288,7 @@ export default function QuotePDF() {
       }
     }
 
-    shareText += `\nPowered by Dentifier`;
+    shareText += `\n\nPowered by Dentifier`;
 
     if (navigator.share) {
       try {
