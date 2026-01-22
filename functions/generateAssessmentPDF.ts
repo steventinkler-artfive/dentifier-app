@@ -153,7 +153,6 @@ Deno.serve(async (req) => {
         <div>
             <img src="${businessLogo}" class="logo" alt="Logo" />
             ${!userSettings?.business_logo_url ? `<h2 style="font-size: 20px; margin: 0; color: #1f2937;">${businessName}</h2>` : ''}
-            ${businessAddress ? `<p style="color: #6b7280; font-size: 14px; margin-top: 4px; white-space: pre-wrap;">${businessAddress}</p>` : ''}
         </div>
         <div class="doc-info">
             <h2>${isCompleted ? 'INVOICE' : 'QUOTE'}</h2>
@@ -267,7 +266,12 @@ Deno.serve(async (req) => {
     ` : ''}
 
     <div class="footer">
-        <p>${invoiceFooter}</p>
+        <div style="text-align: center; margin-bottom: 16px;">
+            <h3 style="font-weight: 600; color: #1f2937; font-size: 14px; margin: 0 0 8px 0;">${businessName}</h3>
+            <p style="color: #4b5563; font-size: 12px; white-space: pre-wrap; margin: 2px 0;">${businessAddress}</p>
+            <p style="color: #4b5563; font-size: 12px; margin: 4px 0;">${contactEmail}</p>
+        </div>
+        <p style="text-align: center;">${invoiceFooter}</p>
     </div>
 
     <div class="powered-by">

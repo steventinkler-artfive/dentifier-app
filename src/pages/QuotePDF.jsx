@@ -410,7 +410,6 @@ export default function QuotePDF() {
               {!userSettings?.business_logo_url && (
                 <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
               )}
-              <p className="text-gray-600 text-sm mt-1 whitespace-pre-wrap">{businessAddress}</p>
             </div>
             <div className="text-right order-1 sm:order-2">
               <h2 className="text-xl font-semibold text-gray-700">
@@ -642,8 +641,13 @@ export default function QuotePDF() {
           )}
 
           {/* Footer */}
-          <div className="pt-6 mt-4 border-t border-gray-200 print:pt-4 print:mt-2 text-center" style={{ pageBreakInside: 'avoid' }}>
-            <p className="text-sm text-gray-600">{invoiceFooter}</p>
+          <div className="pt-6 mt-4 border-t border-gray-200 print:pt-4 print:mt-2" style={{ pageBreakInside: 'avoid' }}>
+            <div className="text-center mb-4">
+              <h3 className="font-semibold text-gray-700 text-sm mb-2">{businessName}</h3>
+              <p className="text-gray-600 text-xs whitespace-pre-wrap">{businessAddress}</p>
+              <p className="text-gray-600 text-xs mt-1">{contactEmail}</p>
+            </div>
+            <p className="text-sm text-gray-600 text-center">{invoiceFooter}</p>
           </div>
 
             {/* Footer - Only show bank details based on payment preference */}
