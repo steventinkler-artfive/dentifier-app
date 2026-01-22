@@ -398,31 +398,19 @@ export default function QuotePDF() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-6 sm:gap-0 print:mb-6 print:gap-2">
             <div className="order-2 sm:order-1">
-              {(() => {
-                const hasCustomLogo = logoDisplayUrl && userSettings?.business_logo_url;
-                const displayLogo = hasCustomLogo ? logoDisplayUrl : DEFAULT_DENTIFIER_LOGO;
-                const showBusinessName = !hasCustomLogo;
-
-                return (
-                  <>
-                    <img 
-                      src={displayLogo} 
-                      alt={hasCustomLogo ? "Business Logo" : "Dentifier Logo"} 
-                      className="w-48 object-contain mb-2"
-                      onError={(e) => {
-                        console.error("Logo failed to load:", displayLogo);
-                        e.target.src = DEFAULT_DENTIFIER_LOGO;
-                      }}
-                    />
-                    {showBusinessName && (
-                      <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
-                    )}
-                    {businessAddress && (
-                      <p className="text-gray-600 text-sm mt-1">{businessAddress.split('\n').map((line, i) => <span key={i}>{line}<br/></span>)}</p>
-                    )}
-                  </>
-                );
-              })()}
+              <img 
+                src={logoDisplayUrl || DEFAULT_DENTIFIER_LOGO} 
+                alt="Business Logo" 
+                className="w-48 object-contain mb-2"
+                onError={(e) => {
+                  console.error("Logo failed to load");
+                  e.target.src = DEFAULT_DENTIFIER_LOGO;
+                }}
+              />
+              {!userSettings?.business_logo_url && (
+                <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
+              )}
+              <p className="text-gray-600 text-sm mt-1 whitespace-pre-wrap">{businessAddress}</p>
             </div>
             <div className="text-right order-1 sm:order-2">
               <h2 className="text-xl font-semibold text-gray-700">
