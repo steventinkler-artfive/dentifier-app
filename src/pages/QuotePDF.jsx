@@ -642,17 +642,9 @@ export default function QuotePDF() {
           )}
 
           {/* Footer */}
-          <div className="flex justify-between items-end pt-6 mt-4 border-t border-gray-200 print:pt-4 print:mt-2" style={{ pageBreakInside: 'avoid' }}>
-            <div>
-              <h1 className="text-xl font-bold text-gray-800">{businessName}</h1>
-              <p className="text-gray-500 text-sm mt-1">{businessAddress}</p>
-              <p className="text-gray-500 text-sm mt-1">{contactEmail}</p>
-            </div>
-            <div className="text-right max-w-md">
-              <h3 className="font-semibold text-gray-500 mb-2">Notes</h3>
-              <p className="text-sm text-gray-600">{invoiceFooter}</p>
-            </div>
-            </div>
+          <div className="pt-6 mt-4 border-t border-gray-200 print:pt-4 print:mt-2 text-center" style={{ pageBreakInside: 'avoid' }}>
+            <p className="text-sm text-gray-600">{invoiceFooter}</p>
+          </div>
 
             {/* Footer - Only show bank details based on payment preference */}
             {isCompleted && userSettings && 

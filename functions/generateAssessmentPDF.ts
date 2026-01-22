@@ -91,21 +91,16 @@ Deno.serve(async (req) => {
                     [{ description: 'Paintless Dent Repair Service', total_price: vData.quote_amount }];
 
                 vehicleLineItems.forEach(item => {
-                    lineItemsHTML += `<tr><td style="padding-left: 20px;">${item.description}</td><td style="text-align: right;">${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
+                    lineItemsHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
                     subtotal += item.total_price;
                 });
-
-                const vehicleNotes = vData.include_notes_in_quote ? (vData.notes || '') : '';
-                if (vehicleNotes) {
-                    lineItemsHTML += `<tr><td colspan="2" style="padding-left: 20px; font-size: 12px; color: #666; padding-top: 5px;">Vehicle Notes: ${vehicleNotes}</td></tr>`;
-                }
             });
         } else {
             const lineItems = assessment.line_items && assessment.line_items.length > 0 ? assessment.line_items :
                 [{ description: 'Paintless Dent Repair Service', total_price: assessment.quote_amount }];
 
             lineItems.forEach(item => {
-                lineItemsHTML += `<tr><td>${item.description}</td><td style="text-align: right;">${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
+                lineItemsHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
                 subtotal += item.total_price;
             });
         }
@@ -119,30 +114,52 @@ Deno.serve(async (req) => {
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 30px; }
-        .logo { max-width: 200px; }
+        body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #374151; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+        .logo { max-width: 192px; height: auto; margin-bottom: 8px; }
         .doc-info { text-align: right; }
-        .section { margin-bottom: 20px; }
-        .section-title { font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        td { padding: 8px 0; }
-        .totals { text-align: right; }
-        .totals tr td:first-child { font-weight: bold; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #000; font-size: 12px; color: #666; }
-        .notes { background: #f5f5f5; padding: 15px; margin: 20px 0; }
+        .doc-info h2 { font-size: 20px; color: #4b5563; margin: 0 0 4px 0; }
+        .doc-info p { font-size: 14px; color: #6b7280; margin: 2px 0; }
+        .section { margin-bottom: 32px; }
+        .section-title { font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 8px; font-size: 14px; }
+        .section p { margin: 4px 0; font-size: 14px; }
+        .section p strong { color: #1f2937; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        table thead th { text-align: left; font-weight: 600; color: #6b7280; padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+        table thead th:last-child { text-align: right; }
+        table tbody td { padding: 16px 0; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+        table tbody td:last-child { text-align: right; font-weight: 500; color: #1f2937; }
+        .vehicle-header { font-weight: 600; padding-top: 16px; }
+        .totals { width: 50%; margin-left: auto; }
+        .totals tr td { padding: 8px 0; }
+        .totals tr td:first-child { font-weight: 500; color: #6b7280; }
+        .totals tr td:last-child { font-weight: 500; color: #1f2937; text-align: right; }
+        .totals .total-row { border-top: 2px solid #d1d5db; padding-top: 16px; }
+        .totals .total-row td { font-size: 20px; font-weight: 700; color: #1f2937; padding-top: 16px; }
+        .footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center; }
+        .footer p { font-size: 14px; color: #4b5563; margin: 8px 0; }
+        .notes { background: #f9fafb; padding: 16px; margin: 24px 0; border-radius: 8px; }
+        .notes strong { display: block; margin-bottom: 8px; font-size: 14px; color: #6b7280; }
+        .notes p { font-size: 14px; color: #4b5563; white-space: pre-wrap; margin: 0; }
+        .payment-box { background: #f0fdf4; border: 2px solid #86efac; padding: 16px; margin: 24px 0; border-radius: 8px; }
+        .bank-box { background: #f9fafb; padding: 16px; margin: 24px 0; border-radius: 8px; }
+        .bank-box strong { display: block; margin-bottom: 8px; font-size: 14px; color: #1f2937; }
+        .powered-by { text-align: center; margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+        .powered-by p { font-size: 12px; color: #9ca3af; }
     </style>
 </head>
 <body>
     <div class="header">
         <div>
             <img src="${businessLogo}" class="logo" alt="Logo" />
-            <h2>${businessName}</h2>
+            ${!userSettings?.business_logo_url ? `<h2 style="font-size: 20px; margin: 0; color: #1f2937;">${businessName}</h2>` : ''}
+            ${businessAddress ? `<p style="color: #6b7280; font-size: 14px; margin-top: 4px; white-space: pre-wrap;">${businessAddress}</p>` : ''}
         </div>
         <div class="doc-info">
             <h2>${isCompleted ? 'INVOICE' : 'QUOTE'}</h2>
             <p>#${referenceNumber}</p>
             <p>Date: ${new Date(assessment.created_date).toLocaleDateString()}</p>
+            ${isMultiVehicle && assessment.assessment_name ? `<p style="font-weight: 500; color: #4b5563; margin-top: 4px;">${assessment.assessment_name}</p>` : ''}
         </div>
     </div>
 
@@ -169,54 +186,92 @@ Deno.serve(async (req) => {
 
     <div class="section">
         <div class="section-title">${isCompleted ? 'INVOICE DETAILS' : 'QUOTE DETAILS'}</div>
-        <table>
-            ${lineItemsHTML}
-        </table>
+        ${isMultiVehicle ? `
+            ${assessment.vehicles.map((vData, idx) => {
+                const vehDetails = vehicles[vData.vehicle_id];
+                if (!vehDetails) return '';
+                
+                let vehicleHTML = `<h4 class="vehicle-header">${vehDetails.year} ${vehDetails.make} ${vehDetails.model}${vehDetails.license_plate ? ` - ${vehDetails.license_plate}` : ''}</h4>`;
+                vehicleHTML += `<table><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody>`;
+                
+                const vehicleLineItems = vData.line_items && vData.line_items.length > 0 ? vData.line_items : 
+                    [{ description: 'Paintless Dent Repair Service', total_price: vData.quote_amount }];
+                
+                vehicleLineItems.forEach(item => {
+                    vehicleHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
+                });
+                
+                vehicleHTML += `</tbody></table>`;
+                
+                const vehicleNotes = vData.include_notes_in_quote ? (vData.notes || '') : '';
+                if (vehicleNotes) {
+                    vehicleHTML += `<div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <p style="font-size: 12px; font-weight: 600; color: #6b7280; margin: 0 0 4px 0;">Vehicle Notes:</p>
+                        <p style="font-size: 14px; color: #4b5563; margin: 0; white-space: pre-wrap;">${vehicleNotes}</p>
+                    </div>`;
+                }
+                
+                vehicleHTML += `<div style="text-align: right; margin-bottom: 24px;"><span style="font-size: 14px; color: #6b7280;">Vehicle Subtotal: </span><span style="font-weight: 600; color: #1f2937;">${currencySymbol}${(vData.quote_amount || 0).toFixed(2)}</span></div>`;
+                
+                return vehicleHTML;
+            }).join('')}
+        ` : `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${lineItemsHTML}
+                </tbody>
+            </table>
+        `}
     </div>
 
-    ${notesForCustomer ? `
+    ${!isMultiVehicle && notesForCustomer ? `
     <div class="notes">
-        <strong>ASSESSMENT NOTES:</strong><br/>
-        ${notesForCustomer.replace(/\n/g, '<br/>')}
+        <strong>ASSESSMENT NOTES</strong>
+        <p>${notesForCustomer.replace(/\n/g, '<br/>')}</p>
     </div>
     ` : ''}
 
     <table class="totals">
-        <tr><td>Subtotal:</td><td>${currencySymbol}${subtotal.toFixed(2)}</td></tr>
-        ${assessment.discount_percentage > 0 ? `
-        <tr><td>Discount (${assessment.discount_percentage}%):</td><td>-${currencySymbol}${discountAmount.toFixed(2)}</td></tr>
+        <tr><td>Subtotal</td><td>${currencySymbol}${subtotal.toFixed(2)}</td></tr>
+        ${isMultiVehicle && assessment.discount_percentage > 0 ? `
+        <tr><td>Discount (${assessment.discount_percentage}%)</td><td style="color: #dc2626;">-${currencySymbol}${discountAmount.toFixed(2)}</td></tr>
         ` : ''}
-        <tr><td>VAT (0%):</td><td>${currencySymbol}0.00</td></tr>
-        <tr style="font-size: 18px; border-top: 2px solid #000;"><td>TOTAL:</td><td>${currencySymbol}${grandTotal.toFixed(2)} ${assessment.currency || 'GBP'}</td></tr>
+        <tr><td>VAT (0%)</td><td>${currencySymbol}0.00</td></tr>
+        <tr class="total-row"><td>Total</td><td>${currencySymbol}${grandTotal.toFixed(2)} ${assessment.currency || 'GBP'}</td></tr>
     </table>
 
     ${isCompleted && assessment.payment_link_url && userSettings?.payment_method_preference && 
       (userSettings.payment_method_preference === 'Payment Links Only' || userSettings.payment_method_preference === 'Both') ? `
-    <div style="background: #e6f7ff; padding: 15px; margin: 20px 0; border: 2px solid #1890ff;">
-        <strong>Pay Online:</strong><br/>
-        <a href="${assessment.payment_link_url}" style="color: #1890ff;">${assessment.payment_link_url}</a>
+    <div class="payment-box">
+        <h3 style="font-weight: 600; color: #1f2937; margin: 0 0 8px 0; font-size: 14px;">Pay Online</h3>
+        <p style="font-size: 14px; color: #4b5563; margin: 0 0 12px 0;">Click the link below to pay this invoice securely online:</p>
+        <a href="${assessment.payment_link_url}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Pay Now</a>
     </div>
     ` : ''}
 
     ${isCompleted && userSettings?.payment_method_preference && 
       (userSettings.payment_method_preference === 'Bank Transfer Only' || userSettings.payment_method_preference === 'Both') &&
-      (userSettings.bank_account_name || userSettings.bank_account_number) ? `
-    <div style="background: #f5f5f5; padding: 15px; margin: 20px 0;">
-        <strong>Bank Transfer Details:</strong><br/>
-        ${userSettings.bank_account_name ? `Account Name: ${userSettings.bank_account_name}<br/>` : ''}
-        ${userSettings.bank_sort_code ? `Sort Code: ${userSettings.bank_sort_code}<br/>` : ''}
-        ${userSettings.bank_account_number ? `Account Number: ${userSettings.bank_account_number}<br/>` : ''}
-        ${userSettings.bank_iban ? `IBAN: ${userSettings.bank_iban}<br/>` : ''}
-        Reference: ${referenceNumber}
+      (userSettings.bank_account_name || userSettings.bank_account_number || userSettings.bank_iban) ? `
+    <div class="bank-box">
+        <strong>Bank Transfer Details</strong>
+        ${userSettings.bank_account_name ? `<p style="font-size: 12px; color: #4b5563; margin: 2px 0;">Account Name: ${userSettings.bank_account_name}</p>` : ''}
+        ${userSettings.bank_account_number || userSettings.bank_sort_code ? `<p style="font-size: 12px; color: #4b5563; margin: 2px 0;">Account Number: ${userSettings.bank_account_number}${userSettings.bank_sort_code ? ` | Sort Code: ${userSettings.bank_sort_code}` : ''}</p>` : ''}
+        ${userSettings.bank_iban ? `<p style="font-size: 12px; color: #4b5563; margin: 2px 0;">IBAN: ${userSettings.bank_iban}</p>` : ''}
     </div>
     ` : ''}
 
     <div class="footer">
-        <p>${businessName}</p>
-        <p>${businessAddress}</p>
-        <p>${contactEmail}</p>
-        <p style="margin-top: 10px;">${invoiceFooter}</p>
-        <p style="text-align: center; margin-top: 20px;">POWERED BY DENTIFIER</p>
+        <p>${invoiceFooter}</p>
+    </div>
+
+    <div class="powered-by">
+        <p>POWERED BY DENTIFIER</p>
     </div>
 </body>
 </html>
