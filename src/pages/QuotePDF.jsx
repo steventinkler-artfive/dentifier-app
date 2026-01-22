@@ -212,11 +212,12 @@ export default function QuotePDF() {
     const ref = referenceNumber;
     const custName = customer?.business_name || customer?.name || "";
     const currencySymbol = getCurrencySymbol(assessment.currency || "GBP");
+    const docType = isCompleted ? 'Invoice' : 'Quote';
 
-    let shareText = `${isCompleted ? 'Invoice' : 'Quote'}: ${ref}\n`;
-    shareText += `From: ${businessName}\n`;
+    let shareText = `*${docType}: ${ref}*\n`;
+    shareText += `*From:* ${businessName}\n`;
     if (custName) {
-      shareText += `Customer: ${custName}\n`;
+      shareText += `*Customer:* ${custName}\n`;
     }
 
     if (isMultiVehicle) {
@@ -294,7 +295,7 @@ export default function QuotePDF() {
       try {
         await navigator.share({
           title: `${docType} ${ref}`,
-          text: shareText
+          text: shareText,
         });
       } catch (error) {
         if (error.name !== 'AbortError') {

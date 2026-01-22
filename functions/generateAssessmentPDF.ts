@@ -113,6 +113,7 @@ Deno.serve(async (req) => {
 <html>
 <head>
     <meta charset="UTF-8">
+    <title>${isCompleted ? 'Invoice' : 'Quote'}_${referenceNumber.replace(/[^a-zA-Z0-9-]/g, '')}_${(businessName || 'BUSINESS').replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-').toUpperCase().substring(0, 20)}</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #374151; }
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }

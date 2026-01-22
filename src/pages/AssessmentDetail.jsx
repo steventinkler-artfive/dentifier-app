@@ -510,8 +510,6 @@ export default function AssessmentDetail() {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
-    
     if (!assessment) return;
 
     const ref = getDisplayReference();
@@ -603,8 +601,7 @@ export default function AssessmentDetail() {
       try {
         await navigator.share({
           title: `Quote ${getDisplayReference()}`,
-          text: shareText,
-          url: url
+          text: shareText
         });
       } catch (error) {
         if (error.name !== 'AbortError') {
