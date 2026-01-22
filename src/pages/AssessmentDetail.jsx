@@ -414,89 +414,34 @@ export default function AssessmentDetail() {
 
   const handleViewPDF = async () => {
     if (!assessment) return;
-    
-    // Check if PDFs exist, generate if not
-    const pdfUrl = includeNotesInQuote ? assessment.quote_pdf_with_notes_url : assessment.quote_pdf_url;
-    
-    if (!pdfUrl) {
-      setIsGeneratingPDF(true);
-      try {
-        await Promise.all([
-          base44.functions.invoke('generateAndUploadQuotePDF', {
-            assessment_id: assessment.id,
-            include_notes: false
-          }),
-          base44.functions.invoke('generateAndUploadQuotePDF', {
-            assessment_id: assessment.id,
-            include_notes: true
-          })
-        ]);
-        await loadAssessmentDetails();
-      } catch (error) {
-        console.error('Failed to generate PDFs:', error);
-        alert(`Failed to generate PDFs: ${error.message || 'Please try again.'}`);
-        setIsGeneratingPDF(false);
-        return;
-      }
-      setIsGeneratingPDF(false);
-    }
-    
-    // Navigate to PDF page
+
+    // Navigate directly to PDF page - it will load data on its own
     navigate(createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`));
   };
 
   const handleEmail = async () => {
     if (!assessment || !customer) return;
 
-    // Check if PDFs exist, generate if not
-    const pdfUrl = includeNotesInQuote 
-      ? assessment.quote_pdf_with_notes_url 
-      : assessment.quote_pdf_url;
-    
-    if (!pdfUrl) {
-      setIsGeneratingPDF(true);
-      try {
-        await Promise.all([
-          base44.functions.invoke('generateAndUploadQuotePDF', {
-            assessment_id: assessment.id,
-            include_notes: false
-          }),
-          base44.functions.invoke('generateAndUploadQuotePDF', {
-            assessment_id: assessment.id,
-            include_notes: true
-          })
-        ]);
-        await loadAssessmentDetails();
-      } catch (error) {
-        console.error('Failed to generate PDFs:', error);
-        alert(`Failed to generate PDFs: ${error.message || 'Please try again.'}`);
-        setIsGeneratingPDF(false);
-        return;
-      }
-      setIsGeneratingPDF(false);
-    }
-
     const docType = assessment.status === 'completed' ? 'Invoice' : 'Quote';
     const ref = getDisplayReference();
     const custName = customer.business_name || customer.name;
     const bizName = userSettings?.business_name || 'Dentifier PDR';
 
-    // Use the generated PDF URLs
-    const finalPdfUrl = includeNotesInQuote 
-      ? assessment.quote_pdf_with_notes_url 
-      : assessment.quote_pdf_url;
+    // Use direct backend link that serves HTML inline
+    const includeNotesParam = includeNotesInQuote ? 'true' : 'false';
+    const pdfUrl = `${window.location.origin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesParam}`;
 
     // Subject line
     const subject = `${docType} ${ref} from ${bizName}`;
 
     // Email body - use \n for line breaks, encodeURIComponent will convert them to %0A
     let body = `Hi ${custName},\n\n`;
-    
+
     if (assessment.status === 'completed') {
       // Invoice email body
       body += `Thank you for your business. Your invoice is available via the link below:\n\n`;
-      body += `View Invoice ${ref}:\n${finalPdfUrl}\n\n`;
-      
+      body += `View Invoice ${ref}:\n${pdfUrl}\n\n`;
+
       if (assessment.payment_link_url) {
         body += `You can pay online here: ${assessment.payment_link_url}\n\n`;
       } else {
@@ -505,7 +450,7 @@ export default function AssessmentDetail() {
     } else {
       // Quote email body
       body += `Thank you for your enquiry. Please find your quote via the link below:\n\n`;
-      body += `View Quote ${ref}:\n${finalPdfUrl}\n\n`;
+      body += `View Quote ${ref}:\n${pdfUrl}\n\n`;
       body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.\n\n`;
     }
 

@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
                 const vehDetails = vehicles[vData.vehicle_id];
                 if (!vehDetails) return;
 
-                lineItemsHTML += `<tr><td colspan="2" style="font-weight: bold; padding-top: 10px;">${vehDetails.year} ${vehDetails.make} ${vehDetails.model}</td></tr>`;
+                lineItemsHTML += `<tr><td colspan="2" style="font-weight: bold; padding-top: 10px;">${vehDetails.year} ${vehDetails.make} ${vehDetails.model}${vehDetails.license_plate ? ` - ${vehDetails.license_plate}` : ''}</td></tr>`;
 
                 const vehicleLineItems = vData.line_items && vData.line_items.length > 0 ? vData.line_items :
                     [{ description: 'Paintless Dent Repair Service', total_price: vData.quote_amount }];
@@ -149,9 +149,9 @@ Deno.serve(async (req) => {
     <div class="section">
         <div class="section-title">BILLED TO</div>
         ${customer ? `
-            <p><strong>${customer.name}</strong></p>
-            ${customer.business_name ? `<p>(${customer.business_name})</p>` : ''}
-            ${customer.address ? `<p>${customer.address}</p>` : ''}
+            ${customer.business_name ? `<p><strong>${customer.business_name}</strong></p>` : ''}
+            <p><strong>${customer.business_name ? `Contact: ${customer.name}` : customer.name}</strong></p>
+            ${customer.address ? `<p>${customer.address.replace(/\n/g, '<br/>')}</p>` : ''}
             ${customer.email ? `<p>${customer.email}</p>` : ''}
             ${customer.phone ? `<p>${customer.phone}</p>` : ''}
         ` : '<p>DRAFT - Customer TBD</p>'}
@@ -160,9 +160,10 @@ Deno.serve(async (req) => {
     ${!isMultiVehicle && vehicle ? `
     <div class="section">
         <div class="section-title">VEHICLE</div>
-        <p>${vehicle.year} ${vehicle.make} ${vehicle.model}</p>
-        ${vehicle.color ? `<p>Color: ${vehicle.color}</p>` : ''}
-        ${vehicle.license_plate ? `<p>License: ${vehicle.license_plate}</p>` : ''}
+        <p><strong>${vehicle.year} ${vehicle.make} ${vehicle.model}</strong></p>
+        ${vehicle.color ? `<p>Colour: ${vehicle.color}</p>` : ''}
+        ${vehicle.license_plate ? `<p>Licence Plate: ${vehicle.license_plate}</p>` : ''}
+        ${vehicle.vin ? `<p>VIN: ${vehicle.vin}</p>` : ''}
     </div>
     ` : ''}
 

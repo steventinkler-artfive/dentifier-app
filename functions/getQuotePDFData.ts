@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
                             year: veh.year,
                             color: veh.color,
                             license_plate: veh.license_plate,
+                            vin: veh.vin,
                         };
                     }
                 } catch (e) {
@@ -103,6 +104,7 @@ Deno.serve(async (req) => {
                 business_name: customer.business_name,
                 email: customer.email,
                 phone: customer.phone,
+                address: customer.address,
             } : null,
             vehicle: vehicle ? {
                 id: vehicle.id,
@@ -111,6 +113,7 @@ Deno.serve(async (req) => {
                 year: vehicle.year,
                 color: vehicle.color,
                 license_plate: vehicle.license_plate,
+                vin: vehicle.vin,
             } : null,
             vehicles: vehiclesData,
             userSettings: settings ? {

@@ -442,8 +442,13 @@ export default function QuotePDF() {
               <h3 className="font-semibold text-gray-500 border-b pb-2 mb-2">BILLED TO</h3>
               {customer ? (
                 <>
-                  <p className="font-bold text-gray-800">{customer.name}</p>
-                  {customer.address && <p className="text-gray-600 break-words">{customer.address.split('\n').map((line, i) => <span key={i}>{line}<br/></span>)}</p>}
+                  {customer.business_name && (
+                    <p className="font-bold text-gray-800">{customer.business_name}</p>
+                  )}
+                  <p className={customer.business_name ? "text-gray-600" : "font-bold text-gray-800"}>
+                    {customer.business_name ? `Contact: ${customer.name}` : customer.name}
+                  </p>
+                  {customer.address && <p className="text-gray-600 break-words whitespace-pre-wrap">{customer.address}</p>}
                   {customer.email && <p className="text-gray-600 break-words">{customer.email}</p>}
                   {customer.phone && <p className="text-gray-600">{customer.phone}</p>}
                 </>
