@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Users, Mail, LogOut } from "lucide-react";
+import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Users, Mail } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
@@ -1296,17 +1296,6 @@ export default function Settings() {
             <Button onClick={handleSave} disabled={saving} className="w-full pink-gradient text-white font-semibold">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 Save Settings
-            </Button>
-
-            <Button 
-                onClick={async () => {
-                    await base44.auth.logout(createPageUrl("Home"));
-                }}
-                variant="outline"
-                className="w-full bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white"
-            >
-                <LogOut className="w-4 h-4 mr-2" />
-                Log Out
             </Button>
         </div>
     );
