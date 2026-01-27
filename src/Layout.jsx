@@ -49,8 +49,9 @@ export default function Layout({ children, currentPageName }) {
       return;
     }
 
-    // Check if user has access
+    // Check if user has access (admins always have access)
     const hasAccess = 
+      currentUser.role === 'admin' ||
       currentUser.subscription_status === 'trialing' ||
       currentUser.subscription_status === 'active' ||
       currentUser.is_beta_tester === true;
