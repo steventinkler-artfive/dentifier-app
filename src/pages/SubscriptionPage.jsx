@@ -73,10 +73,10 @@ export default function SubscriptionPage() {
             Choose Your Plan
           </h1>
           <p className="text-slate-400 text-lg">
-            Start your 14-day free trial. No credit card required.
+            Start your 14-day free trial. No charges for 14 days. Cancel anytime.
           </p>
           <p className="text-slate-500 text-sm mt-2">
-            Cancel anytime during your trial at no charge
+            You'll enter payment details at checkout, but won't be charged until day 15.
           </p>
         </div>
 

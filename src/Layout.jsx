@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { Home, Users, Camera, FileText, TrendingUp, Settings, Crown, Zap, Loader2 } from "lucide-react";
 import { AlertProvider } from "@/components/ui/CustomAlert";
 import InactiveUserBanner from "@/components/InactiveUserBanner";
+import UserMenu from "@/components/ui/UserMenu";
 import { base44 } from "@/api/base44Client";
 
 export default function Layout({ children, currentPageName }) {
@@ -173,17 +174,7 @@ export default function Layout({ children, currentPageName }) {
               </Link>
             </div>
             <div className="flex items-center gap-2">
-              {subscriptionInfo && (
-                <div className={`flex items-center gap-1 text-xs ${subscriptionInfo.color}`}>
-                  <subscriptionInfo.icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{subscriptionInfo.label}</span>
-                </div>
-              )}
-              <Link to={createPageUrl("Settings")}>
-                <button className="p-2 rounded-lg hover:bg-slate-800 transition-colors duration-200">
-                  <Settings className="w-5 h-5 text-slate-400 hover:text-white" />
-                </button>
-              </Link>
+              <UserMenu user={currentUser} />
             </div>
           </div>
         </header>

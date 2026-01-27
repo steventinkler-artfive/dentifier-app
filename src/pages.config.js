@@ -12,10 +12,10 @@ import Quotes from './pages/Quotes';
 import Reports from './pages/Reports';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
-import Upgrade from './pages/Upgrade';
+import Subscription from './pages/Subscription';
 import SubscriptionPage from './pages/SubscriptionPage';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
-import Subscription from './pages/Subscription';
+import Upgrade from './pages/Upgrade';
 import __Layout from './Layout.jsx';
 
 
@@ -34,10 +34,10 @@ export const PAGES = {
     "Reports": Reports,
     "ResetPassword": ResetPassword,
     "Settings": Settings,
-    "Upgrade": Upgrade,
+    "Subscription": Subscription,
     "SubscriptionPage": SubscriptionPage,
     "SubscriptionSuccess": SubscriptionSuccess,
-    "Subscription": Subscription,
+    "Upgrade": Upgrade,
 }
 
 export const pagesConfig = {
