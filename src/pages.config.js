@@ -13,6 +13,9 @@ import Reports from './pages/Reports';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import Upgrade from './pages/Upgrade';
+import SubscriptionPage from './pages/SubscriptionPage';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
+import Subscription from './pages/Subscription';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +35,9 @@ export const PAGES = {
     "ResetPassword": ResetPassword,
     "Settings": Settings,
     "Upgrade": Upgrade,
+    "SubscriptionPage": SubscriptionPage,
+    "SubscriptionSuccess": SubscriptionSuccess,
+    "Subscription": Subscription,
 }
 
 export const pagesConfig = {
