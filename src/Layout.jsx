@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Users, Camera, FileText, TrendingUp, Settings, Crown, Sparkles, Loader2 } from "lucide-react";
+import { Home, Users, Camera, FileText, TrendingUp, Settings, Crown, Zap, Loader2 } from "lucide-react";
 import { AlertProvider } from "@/components/ui/CustomAlert";
 import InactiveUserBanner from "@/components/InactiveUserBanner";
 import { base44 } from "@/api/base44Client";
@@ -79,7 +79,7 @@ export default function Layout({ children, currentPageName }) {
     if (!currentUser) return null;
 
     if (currentUser.is_beta_tester) {
-      return { label: 'Beta Tester', icon: Sparkles, color: 'text-purple-400' };
+      return { label: 'Beta Tester', icon: Zap, color: 'text-purple-400' };
     }
 
     if (currentUser.subscription_status === 'trialing' && currentUser.trial_end_date) {
@@ -88,7 +88,7 @@ export default function Layout({ children, currentPageName }) {
       const daysRemaining = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
       return { 
         label: `Trial - ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} left`, 
-        icon: Sparkles, 
+        icon: Zap, 
         color: 'text-blue-400' 
       };
     }

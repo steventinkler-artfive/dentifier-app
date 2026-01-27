@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Zap } from "lucide-react";
 import { createStripeCheckoutSession } from "@/functions/createStripeCheckoutSession";
 
 export default function SubscriptionPage() {
@@ -146,7 +146,7 @@ export default function SubscriptionPage() {
           <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-rose-600 border-2 relative overflow-hidden hover:shadow-2xl hover:shadow-rose-600/20 transition-all duration-300">
             <div className="absolute top-4 right-4">
               <Badge className="bg-rose-600 text-white">
-                <Sparkles className="w-3 h-3 mr-1" />
+                <Zap className="w-3 h-3 mr-1" />
                 Most Popular
               </Badge>
             </div>

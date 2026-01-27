@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, ArrowRight, Loader2, Calendar, CreditCard } from "lucide-react";
+import { CheckCircle, ArrowRight, Loader2, Calendar, CreditCard, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -74,7 +74,7 @@ export default function SubscriptionSuccess() {
 
           <div className="bg-slate-800 rounded-lg p-6 mb-8 space-y-4">
             <div className="flex items-center justify-center gap-3">
-              <Sparkles className="w-5 h-5 text-rose-400" />
+              <Zap className="w-5 h-5 text-rose-400" />
               <p className="text-white font-semibold text-lg">
                 {planName} Plan
               </p>
