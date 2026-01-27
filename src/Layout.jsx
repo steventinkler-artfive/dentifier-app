@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Users, Camera, FileText, TrendingUp, Settings } from "lucide-react";
+import { Home, Users, Camera, FileText, TrendingUp, Settings, Crown, Sparkles, Loader2 } from "lucide-react";
 import { AlertProvider } from "@/components/ui/CustomAlert";
 import InactiveUserBanner from "@/components/InactiveUserBanner";
 import { base44 } from "@/api/base44Client";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [checkingAccess, setCheckingAccess] = useState(true);
 
   // Load current user
   useEffect(() => {
@@ -29,6 +31,37 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
+  // Check subscription access
+  useEffect(() => {
+    if (loadingUser) return;
+
+    // Pages that don't require subscription check
+    const publicPages = ['Subscription', 'SubscriptionSuccess', 'SubscriptionPage', 'QuotePDF'];
+    if (publicPages.includes(currentPageName)) {
+      setCheckingAccess(false);
+      return;
+    }
+
+    // If no user, they'll be redirected to login by Base44
+    if (!currentUser) {
+      setCheckingAccess(false);
+      return;
+    }
+
+    // Check if user has access
+    const hasAccess = 
+      currentUser.subscription_status === 'trialing' ||
+      currentUser.subscription_status === 'active' ||
+      currentUser.is_beta_tester === true;
+
+    if (!hasAccess) {
+      navigate(createPageUrl('Subscription'));
+      return;
+    }
+
+    setCheckingAccess(false);
+  }, [currentUser, loadingUser, currentPageName, navigate]);
+
   // Scroll to top whenever location changes
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -41,6 +74,38 @@ export default function Layout({ children, currentPageName }) {
     { name: "Quotes", url: createPageUrl("Quotes"), icon: FileText },
     { name: "Reports", url: createPageUrl("Reports"), icon: TrendingUp }
   ];
+
+  const getSubscriptionDisplay = () => {
+    if (!currentUser) return null;
+
+    if (currentUser.is_beta_tester) {
+      return { label: 'Beta Tester', icon: Sparkles, color: 'text-purple-400' };
+    }
+
+    if (currentUser.subscription_status === 'trialing' && currentUser.trial_end_date) {
+      const trialEnd = new Date(currentUser.trial_end_date);
+      const now = new Date();
+      const daysRemaining = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+      return { 
+        label: `Trial - ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} left`, 
+        icon: Sparkles, 
+        color: 'text-blue-400' 
+      };
+    }
+
+    if (currentUser.subscription_status === 'active') {
+      const planName = currentUser.subscription_plan === 'professional' ? 'Professional' : 'Starter';
+      return { 
+        label: `${planName} Plan`, 
+        icon: Crown, 
+        color: 'text-green-400' 
+      };
+    }
+
+    return null;
+  };
+
+  const subscriptionInfo = getSubscriptionDisplay();
 
 
   return (
@@ -107,7 +172,13 @@ export default function Layout({ children, currentPageName }) {
                 />
               </Link>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              {subscriptionInfo && (
+                <div className={`flex items-center gap-1 text-xs ${subscriptionInfo.color}`}>
+                  <subscriptionInfo.icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{subscriptionInfo.label}</span>
+                </div>
+              )}
               <Link to={createPageUrl("Settings")}>
                 <button className="p-2 rounded-lg hover:bg-slate-800 transition-colors duration-200">
                   <Settings className="w-5 h-5 text-slate-400 hover:text-white" />
@@ -122,7 +193,13 @@ export default function Layout({ children, currentPageName }) {
       <main className={currentPageName !== "QuotePDF" ? "pb-20 min-h-screen" : "min-h-screen"}>
         <AlertProvider>
           {!loadingUser && currentPageName !== "QuotePDF" && <InactiveUserBanner user={currentUser} />}
-          {children}
+          {checkingAccess ? (
+            <div className="flex items-center justify-center min-h-screen">
+              <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
+            </div>
+          ) : (
+            children
+          )}
         </AlertProvider>
       </main>
 
