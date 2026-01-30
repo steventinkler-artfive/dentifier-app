@@ -228,7 +228,7 @@ export default function QuotePDF() {
           shareText += `${vInfo.year} ${vInfo.make} ${vInfo.model}\n`;
           if (v.line_items && v.line_items.length > 0) {
             v.line_items.forEach(item => {
-              shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}\n`;
+              shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}\n`;
             });
           } else {
             shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n`;
@@ -243,7 +243,7 @@ export default function QuotePDF() {
       shareText += `\nLine Items:\n`;
       if (assessment.line_items && assessment.line_items.length > 0) {
         assessment.line_items.forEach(item => {
-          shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}\n`;
+          shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}\n`;
         });
       } else {
         shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}\n`;
@@ -512,7 +512,7 @@ export default function QuotePDF() {
                                 <p className="font-medium">{item.description}</p>
                               </td>
                               <td className="text-right py-3 font-medium text-gray-800">
-                                {currencySymbol}{((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
+                                {currencySymbol}{((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}
                               </td>
                             </tr>
                           ))
@@ -564,7 +564,7 @@ export default function QuotePDF() {
                         <p className="font-medium">{item.description}</p>
                       </td>
                       <td className="text-right py-4 font-medium text-gray-800">
-                        {currencySymbol}{((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
+                        {currencySymbol}{((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}
                       </td>
                     </tr>
                   ))

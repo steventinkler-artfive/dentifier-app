@@ -88,20 +88,22 @@ Deno.serve(async (req) => {
                 lineItemsHTML += `<tr><td colspan="2" style="font-weight: bold; padding-top: 10px;">${vehDetails.year} ${vehDetails.make} ${vehDetails.model}${vehDetails.license_plate ? ` - ${vehDetails.license_plate}` : ''}</td></tr>`;
 
                 const vehicleLineItems = vData.line_items && vData.line_items.length > 0 ? vData.line_items :
-                    [{ description: 'Paintless Dent Repair Service', total_price: vData.quote_amount }];
+                    [{ description: 'Paintless Dent Repair Service', quantity: 1, unit_price: vData.quote_amount }];
 
                 vehicleLineItems.forEach(item => {
-                    lineItemsHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
-                    subtotal += item.total_price;
+                    const itemTotal = (item.quantity || 1) * (item.unit_price || 0);
+                    lineItemsHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${itemTotal.toFixed(2)}</td></tr>`;
+                    subtotal += itemTotal;
                 });
             });
         } else {
             const lineItems = assessment.line_items && assessment.line_items.length > 0 ? assessment.line_items :
-                [{ description: 'Paintless Dent Repair Service', total_price: assessment.quote_amount }];
+                [{ description: 'Paintless Dent Repair Service', quantity: 1, unit_price: assessment.quote_amount }];
 
             lineItems.forEach(item => {
-                lineItemsHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
-                subtotal += item.total_price;
+                const itemTotal = (item.quantity || 1) * (item.unit_price || 0);
+                lineItemsHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${itemTotal.toFixed(2)}</td></tr>`;
+                subtotal += itemTotal;
             });
         }
 
@@ -195,10 +197,11 @@ Deno.serve(async (req) => {
                 vehicleHTML += `<table><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody>`;
                 
                 const vehicleLineItems = vData.line_items && vData.line_items.length > 0 ? vData.line_items : 
-                    [{ description: 'Paintless Dent Repair Service', total_price: vData.quote_amount }];
+                    [{ description: 'Paintless Dent Repair Service', quantity: 1, unit_price: vData.quote_amount }];
                 
                 vehicleLineItems.forEach(item => {
-                    vehicleHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
+                    const itemTotal = (item.quantity || 1) * (item.unit_price || 0);
+                    vehicleHTML += `<tr><td><p style="font-weight: 500; margin: 0;">${item.description}</p></td><td>${currencySymbol}${itemTotal.toFixed(2)}</td></tr>`;
                 });
                 
                 vehicleHTML += `</tbody></table>`;
