@@ -37,7 +37,7 @@ export default function Layout({ children, currentPageName }) {
     if (loadingUser) return;
 
     // Pages that don't require subscription check
-    const publicPages = ['Subscription', 'SubscriptionSuccess', 'SubscriptionPage', 'QuotePDF'];
+    const publicPages = ['Subscription', 'SubscriptionSuccess', 'PublicPricing', 'QuotePDF'];
     if (publicPages.includes(currentPageName)) {
       setCheckingAccess(false);
       return;
