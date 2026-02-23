@@ -64,6 +64,7 @@ import Settings from './pages/Settings';
 import Subscription from './pages/Subscription';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import Upgrade from './pages/Upgrade';
+import PublicPricing from './pages/PublicPricing';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +86,7 @@ export const PAGES = {
     "Subscription": Subscription,
     "SubscriptionSuccess": SubscriptionSuccess,
     "Upgrade": Upgrade,
+    "PublicPricing": PublicPricing,
 }
 
 export const pagesConfig = {
