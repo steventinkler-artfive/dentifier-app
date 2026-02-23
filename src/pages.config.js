@@ -62,7 +62,6 @@ import Reports from './pages/Reports';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import Subscription from './pages/Subscription';
-import SubscriptionPage from './pages/SubscriptionPage';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import Upgrade from './pages/Upgrade';
 import __Layout from './Layout.jsx';
@@ -84,7 +83,6 @@ export const PAGES = {
     "ResetPassword": ResetPassword,
     "Settings": Settings,
     "Subscription": Subscription,
-    "SubscriptionPage": SubscriptionPage,
     "SubscriptionSuccess": SubscriptionSuccess,
     "Upgrade": Upgrade,
 }
