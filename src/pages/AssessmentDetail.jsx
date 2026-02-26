@@ -508,6 +508,7 @@ export default function AssessmentDetail() {
   };
 
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailConfirmOpen, setEmailConfirmOpen] = useState(false);
 
   const handleEmail = async () => {
     if (!assessment || !customer) return;
@@ -515,7 +516,11 @@ export default function AssessmentDetail() {
       await showAlert('This customer has no email address on file.', 'No Email');
       return;
     }
+    setEmailConfirmOpen(true);
+  };
 
+  const handleEmailConfirmed = async () => {
+    setEmailConfirmOpen(false);
     const isInvoice = assessment.status === 'completed';
     const ref = getDisplayReference();
     const custName = customer.business_name || customer.name;
