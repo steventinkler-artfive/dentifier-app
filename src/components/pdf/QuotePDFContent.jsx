@@ -75,7 +75,7 @@ export default function QuotePDFContent({
         padding: "48px",
         fontFamily: "Arial, sans-serif",
         fontSize: "14px",
-        lineHeight: "1.7",
+        lineHeight: "1.4",
         color: "#1f2937",
         width: "794px",
         boxSizing: "border-box",
