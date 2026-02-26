@@ -419,54 +419,51 @@ export default function AssessmentDetail() {
     navigate(createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`));
   };
 
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
   const handleEmail = async () => {
     if (!assessment || !customer) return;
+    if (!customer.email) {
+      await showAlert('This customer has no email address on file.', 'No Email');
+      return;
+    }
 
-    const docType = assessment.status === 'completed' ? 'Invoice' : 'Quote';
+    const isInvoice = assessment.status === 'completed';
     const ref = getDisplayReference();
     const custName = customer.business_name || customer.name;
     const bizName = userSettings?.business_name || 'Dentifier PDR';
+    const replyTo = userSettings?.contact_email || '';
 
-    // Use direct backend link that serves HTML inline
-    const includeNotesParam = includeNotesInQuote ? 'true' : 'false';
-    const pdfUrl = `${window.location.origin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesParam}`;
+    // Determine the PDF URL to use
+    const pdfUrl = isInvoice
+      ? (assessment.quote_pdf_url || `${window.location.origin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)
+      : (assessment.quote_pdf_url || `${window.location.origin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`);
 
-    // Subject line
-    const subject = `${docType} ${ref} from ${bizName}`;
+    setIsSendingEmail(true);
+    try {
+      const response = await base44.functions.invoke('sendQuoteInvoiceEmail', {
+        type: isInvoice ? 'invoice' : 'quote',
+        to: customer.email,
+        customer_name: custName,
+        business_name: bizName,
+        reply_to_email: replyTo,
+        pdf_url: pdfUrl,
+        quote_number: assessment.quote_number || ref,
+        invoice_number: assessment.invoice_number || ref,
+        payment_link_url: isInvoice ? (assessment.payment_link_url || null) : null
+      });
 
-    // Email body - use \n for line breaks, encodeURIComponent will convert them to %0A
-    let body = `Hi ${custName},\n\n`;
-
-    if (assessment.status === 'completed') {
-      // Invoice email body
-      body += `Thank you for your business. Your invoice is available via the link below:\n\n`;
-      body += `View Invoice ${ref}:\n${pdfUrl}\n\n`;
-
-      if (assessment.payment_link_url) {
-        body += `You can pay online here: ${assessment.payment_link_url}\n\n`;
+      if (response.data?.success) {
+        await showAlert(`${isInvoice ? 'Invoice' : 'Quote'} emailed successfully to ${customer.email}`, 'Email Sent');
       } else {
-        body += `Payment details are included in the invoice.\n\n`;
+        await showAlert(response.data?.error || 'Failed to send email. Please try again.', 'Error');
       }
-    } else {
-      // Quote email body
-      body += `Thank you for your enquiry. Please find your quote via the link below:\n\n`;
-      body += `View Quote ${ref}:\n${pdfUrl}\n\n`;
-      body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.\n\n`;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      await showAlert('Failed to send email. Please try again.', 'Error');
+    } finally {
+      setIsSendingEmail(false);
     }
-
-    // Footer
-    body += `Best regards,\n`;
-    body += `${bizName}\n`;
-    if (userSettings?.contact_email) {
-      body += `${userSettings.contact_email}\n`;
-    }
-    if (userSettings?.phone) {
-      body += `${userSettings.phone}`;
-    }
-
-    // Create mailto link
-    const mailtoLink = `mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
   };
 
   const handleCheckPaymentStatus = async () => {

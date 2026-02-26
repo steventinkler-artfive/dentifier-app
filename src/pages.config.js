@@ -56,6 +56,7 @@ import EditQuote from './pages/EditQuote';
 import EditVehicle from './pages/EditVehicle';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
+import PublicPricing from './pages/PublicPricing';
 import QuotePDF from './pages/QuotePDF';
 import Quotes from './pages/Quotes';
 import Reports from './pages/Reports';
@@ -64,7 +65,6 @@ import Settings from './pages/Settings';
 import Subscription from './pages/Subscription';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import Upgrade from './pages/Upgrade';
-import PublicPricing from './pages/PublicPricing';
 import __Layout from './Layout.jsx';
 
 
@@ -78,6 +78,7 @@ export const PAGES = {
     "EditVehicle": EditVehicle,
     "ForgotPassword": ForgotPassword,
     "Home": Home,
+    "PublicPricing": PublicPricing,
     "QuotePDF": QuotePDF,
     "Quotes": Quotes,
     "Reports": Reports,
@@ -86,7 +87,6 @@ export const PAGES = {
     "Subscription": Subscription,
     "SubscriptionSuccess": SubscriptionSuccess,
     "Upgrade": Upgrade,
-    "PublicPricing": PublicPricing,
 }
 
 export const pagesConfig = {
