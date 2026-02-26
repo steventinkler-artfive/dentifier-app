@@ -1761,6 +1761,9 @@ export default function AssessmentDetail() {
         </TabsContent>
       </Tabs>
 
+      {/* Email Confirmation Dialog */}
+      <EmailConfirmDialog />
+
       {/* Image Viewer */}
       <ImageViewer
         isOpen={isViewerOpen}
