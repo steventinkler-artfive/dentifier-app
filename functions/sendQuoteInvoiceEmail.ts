@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       attachments: [
         {
           filename,
-          content: pdfBase64,
+          content: pdfBase64Final,
           content_type: 'application/pdf'
         }
       ]
