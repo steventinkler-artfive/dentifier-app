@@ -399,6 +399,7 @@ export default function QuotePDFContent({
               href={assessment.payment_link_url}
               target="_blank"
               rel="noopener noreferrer"
+              ref={paymentButtonRef}
               style={{
                 display: "inline-block",
                 background: "#16a34a",
