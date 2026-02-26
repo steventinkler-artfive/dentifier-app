@@ -1539,13 +1539,13 @@ export default function AssessmentDetail() {
             {customer?.email && (
               <Button 
                 onClick={handleEmail}
-                disabled={isGeneratingPDF}
+                disabled={isSendingEmail}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               >
-                {isGeneratingPDF ? (
+                {isSendingEmail ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
+                    Sending...
                   </>
                 ) : (
                   <>
