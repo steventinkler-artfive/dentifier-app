@@ -42,7 +42,13 @@ Deno.serve(async (req) => {
       : `Quote ${refNumber} from ${business_name}`;
 
     const docLabelCap = type === 'invoice' ? 'Invoice' : 'Quote';
-    const filename = `${docLabelCap}-${refNumber}.pdf`;
+    const docNum = (refNumber || '').replace(/[^a-zA-Z0-9-]/g, '');
+    const bizSlug = (business_name || '')
+      .replace(/[^a-zA-Z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toUpperCase()
+      .substring(0, 20);
+    const filename = `${docLabelCap}_${docNum}${bizSlug ? '_' + bizSlug : ''}.pdf`;
 
     let pdfBase64Final;
     if (pdf_base64) {
