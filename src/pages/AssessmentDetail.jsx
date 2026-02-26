@@ -418,9 +418,90 @@ export default function AssessmentDetail() {
 
   const handleViewPDF = async () => {
     if (!assessment) return;
-
-    // Navigate directly to PDF page - it will load data on its own
     navigate(createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`));
+  };
+
+  /**
+   * Renders the QuotePDFContent component off-screen, captures it with
+   * html2canvas, and returns the PDF as a base64 string (no data: prefix).
+   */
+  const generatePdfAsBase64 = async () => {
+    // Resolve logo URL (fetch to blob for cross-origin safety)
+    let logoDisplayUrl = null;
+    if (userSettings?.business_logo_url) {
+      try {
+        const r = await fetch(userSettings.business_logo_url);
+        if (r.ok) {
+          const blob = await r.blob();
+          logoDisplayUrl = URL.createObjectURL(blob);
+        }
+      } catch (_) {}
+    }
+
+    // Create a hidden container
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.top = "-9999px";
+    container.style.left = "-9999px";
+    container.style.zIndex = "-1";
+    container.style.width = "794px";
+    document.body.appendChild(container);
+
+    // Render the shared PDF component into the hidden container
+    const root = ReactDOM.createRoot(container);
+    await new Promise((resolve) => {
+      root.render(
+        React.createElement(QuotePDFContent, {
+          assessment,
+          customer,
+          vehicle,
+          vehicles,
+          userSettings,
+          logoDisplayUrl,
+          includeNotes: includeNotesInQuote,
+        })
+      );
+      // Allow one paint cycle for the component to render
+      setTimeout(resolve, 300);
+    });
+
+    let pdfBase64 = null;
+    try {
+      const canvas = await html2canvas(container.firstChild, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF({ unit: "px", format: "a4", orientation: "portrait" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+      let yOffset = 0;
+      let remainingHeight = imgHeight;
+      let firstPage = true;
+
+      while (remainingHeight > 0) {
+        if (!firstPage) pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, -yOffset, imgWidth, imgHeight);
+        yOffset += pageHeight;
+        remainingHeight -= pageHeight;
+        firstPage = false;
+      }
+
+      // Get base64 without the data URI prefix
+      pdfBase64 = pdf.output("datauristring").split(",")[1];
+    } finally {
+      root.unmount();
+      document.body.removeChild(container);
+      if (logoDisplayUrl) URL.revokeObjectURL(logoDisplayUrl);
+    }
+
+    return pdfBase64;
   };
 
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -438,20 +519,22 @@ export default function AssessmentDetail() {
     const bizName = userSettings?.business_name || 'Dentifier PDR';
     const replyTo = userSettings?.contact_email || '';
 
-    // Determine the PDF URL to use
-    const pdfUrl = isInvoice
-      ? (assessment.quote_pdf_url || `${window.location.origin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`)
-      : (assessment.quote_pdf_url || `${window.location.origin}/api/functions/generateAssessmentPDF?id=${assessment.id}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`);
-
     setIsSendingEmail(true);
     try {
+      // Generate PDF on the frontend using the exact same rendering as the PDF view page
+      const pdfBase64 = await generatePdfAsBase64();
+      if (!pdfBase64) {
+        await showAlert('Failed to generate PDF. Please try again.', 'Error');
+        return;
+      }
+
       const response = await base44.functions.invoke('sendQuoteInvoiceEmail', {
         type: isInvoice ? 'invoice' : 'quote',
         to: customer.email,
         customer_name: custName,
         business_name: bizName,
         reply_to_email: replyTo,
-        pdf_url: pdfUrl,
+        pdf_base64: pdfBase64,
         quote_number: assessment.quote_number || ref,
         invoice_number: assessment.invoice_number || ref,
         payment_link_url: isInvoice ? (assessment.payment_link_url || null) : null
