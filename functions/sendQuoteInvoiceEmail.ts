@@ -1,5 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -30,16 +40,15 @@ Deno.serve(async (req) => {
       ? `Invoice ${refNumber} from ${business_name}`
       : `Quote ${refNumber} from ${business_name}`;
 
-    const docLabel = type === 'invoice' ? 'invoice' : 'quote';
     const docLabelCap = type === 'invoice' ? 'Invoice' : 'Quote';
 
-    // Fetch the PDF from the URL to attach it
+    // Fetch the PDF as ArrayBuffer and convert to base64
     const pdfResponse = await fetch(pdf_url);
     if (!pdfResponse.ok) {
       return Response.json({ error: 'Failed to fetch PDF for attachment' }, { status: 500 });
     }
     const pdfBuffer = await pdfResponse.arrayBuffer();
-    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+    const pdfBase64 = arrayBufferToBase64(pdfBuffer);
     const filename = `${docLabelCap}-${refNumber}.pdf`;
 
     // Build email body
@@ -73,7 +82,8 @@ Deno.serve(async (req) => {
       attachments: [
         {
           filename,
-          content: pdfBase64
+          content: pdfBase64,
+          content_type: 'application/pdf'
         }
       ]
     };
