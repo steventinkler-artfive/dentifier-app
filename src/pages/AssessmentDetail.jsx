@@ -468,10 +468,13 @@ export default function AssessmentDetail() {
     let pdfBase64 = null;
     try {
       const canvas = await html2canvas(container.firstChild, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
+        imageTimeout: 15000,
+        removeContainer: false,
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
