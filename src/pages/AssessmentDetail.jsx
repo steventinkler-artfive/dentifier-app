@@ -461,8 +461,8 @@ export default function AssessmentDetail() {
           includeNotes: includeNotesInQuote,
         })
       );
-      // Allow one paint cycle for the component to render
-      setTimeout(resolve, 300);
+      // Allow enough time for fonts and images to fully render
+      setTimeout(resolve, 800);
     });
 
     let pdfBase64 = null;
