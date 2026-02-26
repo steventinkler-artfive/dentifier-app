@@ -561,6 +561,51 @@ export default function AssessmentDetail() {
     }
   };
 
+  // Email confirmation dialog component
+  const EmailConfirmDialog = () => {
+    if (!emailConfirmOpen) return null;
+    const isInvoice = assessment.status === 'completed';
+    const ref = getDisplayReference();
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl">
+          <h2 className="text-white text-lg font-semibold mb-1">
+            Send {isInvoice ? 'Invoice' : 'Quote'}
+          </h2>
+          <p className="text-slate-400 text-sm mb-4">Please confirm the details below before sending.</p>
+          <div className="space-y-3 mb-6">
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 text-sm">Document</span>
+              <span className="text-white text-sm font-medium">{isInvoice ? 'Invoice' : 'Quote'}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 text-sm">Reference</span>
+              <span className="text-white text-sm font-medium">{ref}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 text-sm">Send to</span>
+              <span className="text-blue-400 text-sm font-medium break-all text-right ml-2">{customer?.email}</span>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setEmailConfirmOpen(false)}
+              className="flex-1 py-2.5 rounded-lg border border-slate-600 text-slate-300 text-sm font-medium hover:bg-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleEmailConfirmed}
+              className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium transition-colors"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleCheckPaymentStatus = async () => {
     if (!assessment || !assessment.payment_link_url) return;
     
