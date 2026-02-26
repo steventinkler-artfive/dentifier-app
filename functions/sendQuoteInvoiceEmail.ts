@@ -57,7 +57,6 @@ Deno.serve(async (req) => {
       const pdfBuffer = await pdfResponse.arrayBuffer();
       pdfBase64Final = arrayBufferToBase64(pdfBuffer);
     }
-    const pdfBase64 = pdfBase64Final;
 
     // Build email body
     let body = `Hi ${customer_name},\n\n`;
