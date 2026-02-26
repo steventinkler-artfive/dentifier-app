@@ -404,17 +404,7 @@ export default function QuotePDFContent({
           </div>
         )}
 
-      {/* Footer */}
-      <div style={{ paddingTop: "24px", marginTop: "16px", borderTop: "1px solid #e5e7eb" }}>
-        <div style={{ textAlign: "center", marginBottom: "16px" }}>
-          <h3 style={{ fontWeight: "600", color: "#374151", fontSize: "14px", marginBottom: "8px" }}>{businessName}</h3>
-          <p style={{ color: "#4b5563", fontSize: "12px", whiteSpace: "pre-wrap" }}>{businessAddress}</p>
-          <p style={{ color: "#4b5563", fontSize: "12px", marginTop: "4px" }}>{contactEmail}</p>
-        </div>
-        <p style={{ fontSize: "14px", color: "#4b5563", textAlign: "center" }}>{invoiceFooter}</p>
-      </div>
-
-      {/* Bank details */}
+      {/* Bank details (invoices only) */}
       {isCompleted &&
         userSettings &&
         (userSettings.payment_method_preference === "Bank Transfer Only" ||
@@ -422,7 +412,7 @@ export default function QuotePDFContent({
         (userSettings.bank_account_name ||
           userSettings.bank_account_number ||
           userSettings.bank_iban) && (
-          <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid #e5e7eb" }}>
+          <div style={{ marginTop: "0", paddingTop: "0" }}>
             <div style={{ padding: "12px", background: "#f9fafb", borderRadius: "4px" }}>
               <h3 style={{ fontWeight: "600", color: "#374151", fontSize: "14px", marginBottom: "8px" }}>
                 Bank Transfer Details
@@ -445,14 +435,25 @@ export default function QuotePDFContent({
           </div>
         )}
 
-      {/* Dentifier branding */}
-      <div style={{ textAlign: "center", marginTop: "32px", paddingTop: "16px", borderTop: "1px solid #e5e7eb" }}>
-        <p style={{ fontSize: "12px", color: "#9ca3af" }}>POWERED BY DENTIFIER</p>
-        <img
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68a8991579d29e7c386105d5/f8b406687_dentifierfullcolourstraphi-res.png"
-          alt="Dentifier Logo"
-          style={{ height: "24px", margin: "8px auto 0", display: "block" }}
-        />
+      {/* Two-column footer: business info left, footer text + branding right */}
+      <div style={{ paddingTop: "16px", marginTop: "24px", borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        {/* Left column: business name, address, email */}
+        <div style={{ flex: "0 0 auto", maxWidth: "50%" }}>
+          <h3 style={{ fontWeight: "600", color: "#374151", fontSize: "13px", marginBottom: "4px" }}>{businessName}</h3>
+          <p style={{ color: "#4b5563", fontSize: "11px", whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{businessAddress}</p>
+          {contactEmail && <p style={{ color: "#4b5563", fontSize: "11px", marginTop: "2px" }}>{contactEmail}</p>}
+        </div>
+
+        {/* Right column: footer text + Dentifier branding */}
+        <div style={{ flex: "0 0 auto", maxWidth: "46%", textAlign: "right" }}>
+          <p style={{ fontSize: "12px", color: "#4b5563", marginBottom: "12px" }}>{invoiceFooter}</p>
+          <p style={{ fontSize: "10px", color: "#9ca3af", marginBottom: "4px" }}>POWERED BY DENTIFIER</p>
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68a8991579d29e7c386105d5/f8b406687_dentifierfullcolourstraphi-res.png"
+            alt="Dentifier Logo"
+            style={{ height: "20px", display: "inline-block" }}
+          />
+        </div>
       </div>
     </div>
   );
