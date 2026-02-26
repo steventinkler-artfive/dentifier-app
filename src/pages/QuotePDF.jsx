@@ -329,44 +329,25 @@ export default function QuotePDF() {
     );
   }
 
-  const currencySymbol = getCurrencySymbol(assessment.currency || 'GBP');
-  const isDraft = !customer;
+  // Only need shouldIncludeNotes for the shared component
+  const shouldIncludeNotes = includeNotesParam || assessment.include_notes_in_quote;
+  
+  // isCompleted needed for handleShare
   const isCompleted = assessment.status === 'completed';
   const isMultiVehicle = assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0;
-
   const businessName = userSettings?.business_name || "Dentifier PDR";
-  const businessAddress = userSettings?.business_address || "PDR Assessment & Quoting";
-  const contactEmail = userSettings?.contact_email || "contact@dentifier.com";
-  
-  // Get the appropriate reference number
-  const referenceNumber = isCompleted ? 
-    (assessment.invoice_number || `INV-${assessment.id.slice(-6)}`) : 
-    (assessment.quote_number || `Q-${assessment.id.slice(-6)}`);
-  
-  // Get invoice footer
-  const invoiceFooter = isCompleted && userSettings?.invoice_footer ? 
-    userSettings.invoice_footer : 
-    (isCompleted ? "Thank you for your business! Payment is due within 7 days." : 
-      (isDraft ? "This is a draft quote and subject to change. Quote will be finalised once customer details are confirmed. Thank you for your business!" : 
-        "This quote is valid for 30 days. Thank you for your business!"));
-  
-  // Use assessment notes if include_notes_in_quote is enabled (from URL param or assessment data)
-  const shouldIncludeNotes = includeNotesParam || assessment.include_notes_in_quote;
-  const notesForCustomer = shouldIncludeNotes ? (assessment.notes || '') : '';
-
-  // Calculate totals for multi-vehicle
-  let subtotal = 0;
-  let discountAmount = 0;
+  const referenceNumber = isCompleted
+    ? assessment.invoice_number || `INV-${assessment.id.slice(-6)}`
+    : assessment.quote_number || `Q-${assessment.id.slice(-6)}`;
+  const currencySymbol = getCurrencySymbol(assessment.currency || 'GBP');
   let grandTotal = 0;
-
   if (isMultiVehicle) {
-    subtotal = assessment.vehicles.reduce((sum, v) => sum + (v.quote_amount || 0), 0);
-    discountAmount = (subtotal * (assessment.discount_percentage || 0)) / 100;
-    grandTotal = subtotal - discountAmount;
+    const subtotal = assessment.vehicles.reduce((sum, v) => sum + (v.quote_amount || 0), 0);
+    grandTotal = subtotal - (subtotal * (assessment.discount_percentage || 0)) / 100;
   } else {
-    subtotal = assessment.quote_amount || 0;
-    grandTotal = subtotal;
+    grandTotal = assessment.quote_amount || 0;
   }
+  const notesForCustomer = shouldIncludeNotes ? (assessment.notes || '') : '';
 
   return (
     <div className="bg-gray-100 min-h-screen p-4 sm:p-8 print:bg-white print:p-0 print:min-h-0">
