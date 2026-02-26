@@ -26,12 +26,13 @@ Deno.serve(async (req) => {
       business_name,
       reply_to_email,
       pdf_url,
+      pdf_base64,
       quote_number,
       invoice_number,
       payment_link_url
     } = await req.json();
 
-    if (!type || !to || !pdf_url) {
+    if (!type || !to || (!pdf_url && !pdf_base64)) {
       return Response.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
@@ -41,15 +42,22 @@ Deno.serve(async (req) => {
       : `Quote ${refNumber} from ${business_name}`;
 
     const docLabelCap = type === 'invoice' ? 'Invoice' : 'Quote';
-
-    // Fetch the PDF as ArrayBuffer and convert to base64
-    const pdfResponse = await fetch(pdf_url);
-    if (!pdfResponse.ok) {
-      return Response.json({ error: 'Failed to fetch PDF for attachment' }, { status: 500 });
-    }
-    const pdfBuffer = await pdfResponse.arrayBuffer();
-    const pdfBase64 = arrayBufferToBase64(pdfBuffer);
     const filename = `${docLabelCap}-${refNumber}.pdf`;
+
+    let pdfBase64Final;
+    if (pdf_base64) {
+      // Use the base64 content provided directly from the frontend
+      pdfBase64Final = pdf_base64;
+    } else {
+      // Fallback: fetch from URL and convert
+      const pdfResponse = await fetch(pdf_url);
+      if (!pdfResponse.ok) {
+        return Response.json({ error: 'Failed to fetch PDF for attachment' }, { status: 500 });
+      }
+      const pdfBuffer = await pdfResponse.arrayBuffer();
+      pdfBase64Final = arrayBufferToBase64(pdfBuffer);
+    }
+    const pdfBase64 = pdfBase64Final;
 
     // Build email body
     let body = `Hi ${customer_name},\n\n`;

@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Printer, ArrowLeft, Share2, CreditCard } from "lucide-react";
-
-const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
+import { Printer, ArrowLeft, Share2 } from "lucide-react";
+import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
