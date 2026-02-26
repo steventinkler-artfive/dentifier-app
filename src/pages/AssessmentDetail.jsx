@@ -448,6 +448,7 @@ export default function AssessmentDetail() {
     document.body.appendChild(container);
 
     // Render the shared PDF component into the hidden container
+    let paymentButtonRect = null;
     const root = ReactDOM.createRoot(container);
     await new Promise((resolve) => {
       root.render(
@@ -459,6 +460,7 @@ export default function AssessmentDetail() {
           userSettings,
           logoDisplayUrl,
           includeNotes: includeNotesInQuote,
+          onPaymentButtonRendered: (rect) => { paymentButtonRect = rect; },
         })
       );
       // Allow enough time for fonts and images to fully render
@@ -467,7 +469,8 @@ export default function AssessmentDetail() {
 
     let pdfBase64 = null;
     try {
-      const canvas = await html2canvas(container.firstChild, {
+      const contentEl = container.firstChild;
+      const canvas = await html2canvas(contentEl, {
         scale: 3,
         useCORS: true,
         allowTaint: true,
@@ -483,6 +486,7 @@ export default function AssessmentDetail() {
       const pageHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = pageWidth;
       const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      const pdfScaleFactor = pageWidth / contentEl.offsetWidth;
 
       let yOffset = 0;
       let remainingHeight = imgHeight;
@@ -491,6 +495,19 @@ export default function AssessmentDetail() {
       while (remainingHeight > 0) {
         if (!firstPage) pdf.addPage();
         pdf.addImage(imgData, "JPEG", 0, -yOffset, imgWidth, imgHeight);
+
+        // Add clickable link annotation over the Pay Now button
+        if (paymentButtonRect && assessment.payment_link_url) {
+          const refRect = contentEl.getBoundingClientRect();
+          const bx = (paymentButtonRect.left - refRect.left) * pdfScaleFactor;
+          const by = (paymentButtonRect.top - refRect.top) * pdfScaleFactor;
+          const bw = paymentButtonRect.width * pdfScaleFactor;
+          const bh = paymentButtonRect.height * pdfScaleFactor;
+          if (by + bh > yOffset && by < yOffset + pageHeight) {
+            pdf.link(bx, by - yOffset, bw, bh, { url: assessment.payment_link_url });
+          }
+        }
+
         yOffset += pageHeight;
         remainingHeight -= pageHeight;
         firstPage = false;
