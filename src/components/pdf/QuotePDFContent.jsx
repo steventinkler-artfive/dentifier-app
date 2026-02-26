@@ -15,7 +15,15 @@ export default function QuotePDFContent({
   userSettings,
   logoDisplayUrl,
   includeNotes,
+  onPaymentButtonRendered,
 }) {
+  const paymentButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (paymentButtonRef.current && onPaymentButtonRendered) {
+      onPaymentButtonRendered(paymentButtonRef.current.getBoundingClientRect());
+    }
+  }, [onPaymentButtonRendered, assessment.payment_link_url]);
   const getCurrencySymbol = (currency) => {
     const symbols = { GBP: "£", USD: "$", EUR: "€", CAD: "C$", AUD: "A$" };
     return symbols[currency] || "£";
