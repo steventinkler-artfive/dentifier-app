@@ -679,7 +679,7 @@ export default function Settings() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-white">Contact Email</Label>
+                                <Label className="text-white">Business Email (shown on quotes)</Label>
                                 <Input
                                     type="email"
                                     value={formData.contact_email}
