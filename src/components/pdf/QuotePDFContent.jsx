@@ -328,7 +328,7 @@ export default function QuotePDFContent({
 
       {/* Single-vehicle notes */}
       {!isMultiVehicle && notesForCustomer && (
-        <div style={{ marginBottom: "48px" }}>
+        <div style={{ marginBottom: "16px" }}>
           <h3 style={{ fontWeight: "600", color: "#6b7280", borderBottom: "1px solid #e5e7eb", paddingBottom: "8px", marginBottom: "8px", fontSize: "14px" }}>
             ASSESSMENT NOTES
           </h3>
