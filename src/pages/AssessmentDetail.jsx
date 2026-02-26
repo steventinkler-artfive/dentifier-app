@@ -41,6 +41,10 @@ import {
   Edit2,
   CreditCard
 } from "lucide-react";
+import QuotePDFContent from "@/components/pdf/QuotePDFContent";
+import ReactDOM from "react-dom/client";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 const DentifierIcon = ({ className = "" }) => (
   <svg
