@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     if (type === 'invoice') {
       body += `Thank you for your business. Please find your invoice attached to this email.\n\n`;
       if (payment_link_url) {
-        body += `You can pay online here: ${payment_link_url}\n\n`;
+        body += `You can pay online here: ${payment_link_url}\n\nIf the button in the attached PDF is not clickable, please copy and paste the link above into your browser.\n\n`;
       } else {
         body += `Payment details are included in the attached invoice.\n\n`;
       }
