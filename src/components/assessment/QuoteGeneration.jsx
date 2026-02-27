@@ -665,31 +665,25 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       setCalculationBreakdown(breakdownDetails);
       setEstimatedTime(totalEstimatedHours);
       
-      // Generate AI-powered assessment notes if global settings available
-      let assessmentNotes = 'Quote calculated programmatically based on your pricing matrix and damage characteristics.';
+      // Generate customer-facing AI assessment notes
+      let assessmentNotes = '';
       
       if (globalSettings?.llm_quote_instructions) {
         try {
-          const notesPrompt = `${globalSettings.llm_quote_instructions}
+          const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
+          const notesPrompt = `You are writing customer-facing notes for a PDR (Paintless Dent Repair) quote. These notes will be shown to the customer on their quote document.
 
-You are generating ASSESSMENT NOTES for a PDR technician's internal reference.
+Write 2-4 plain English sentences describing what the customer can expect from this repair. 
+- Focus on the outcome for the customer, not technical repair details or methods.
+- Be reassuring but honest.
+- Do NOT mention pricing, labour rates, or calculation methods.
+- Do NOT use jargon like "PDR", "tool access", "repair method", or "matrix".
+${hasStretchedMetal ? '- IMPORTANT: One or more dents have stretched metal. You MUST include an honest caveat that while significant improvement is expected, a complete 100% restoration may not be achievable due to the metal condition.' : ''}
 
-DAMAGE ITEMS SUMMARY:
-${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} - ${item.damage_type} (${item.size_range})${item.depth ? `, ${item.depth}` : ''}${item.affects_body_line ? ', Body Line' : ''}${item.has_stretched_metal ? ', Stretched Metal' : ''}${item.notes ? ` - Notes: ${item.notes}` : ''}`).join('\n')}
+DAMAGE BEING REPAIRED:
+${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} - ${item.damage_type} (${item.size_range}${item.depth ? `, ${item.depth}` : ''}${item.affects_body_line ? ', affects body line' : ''}${item.has_stretched_metal ? ', stretched metal present' : ''})`).join('\n')}
 
-CALCULATED QUOTE DETAILS:
-${calculatedLineItems.map(item => `- ${item.description}: ${getCurrencySymbol()}${item.total_price.toFixed(2)}`).join('\n')}
-
-Total: ${getCurrencySymbol()}${calculatedLineItems.reduce((sum, item) => sum + item.total_price, 0).toFixed(2)}
-
-TASK: Write a brief assessment note (2-3 sentences) for the technician about this repair job. Include:
-- Overall assessment of the repair complexity
-- Any specific challenges or considerations
-- Expected outcome quality
-
-Keep it professional, concise, and specific to this job. DO NOT include pricing or calculations - focus on the repair assessment.
-
-OUTPUT: Plain text only, no formatting, quotes, or JSON.`;
+OUTPUT: Plain text only. 2-4 sentences. No bullet points, no headings, no JSON.`;
 
           const notesResponse = await base44.integrations.Core.InvokeLLM({
             prompt: notesPrompt
@@ -697,12 +691,11 @@ OUTPUT: Plain text only, no formatting, quotes, or JSON.`;
           
           const generatedNotes = typeof notesResponse === 'string' ? notesResponse.trim() : notesResponse;
           
-          if (generatedNotes && generatedNotes.length > 0 && generatedNotes.length < 500) {
+          if (generatedNotes && generatedNotes.length > 10 && generatedNotes.length < 800) {
             assessmentNotes = generatedNotes;
           }
         } catch (notesError) {
           console.error('Failed to generate AI assessment notes:', notesError);
-          // Keep default notes on error
         }
       }
       
