@@ -1768,8 +1768,17 @@ export default function AssessmentDetail() {
         </TabsContent>
       </Tabs>
 
-      {/* Email Confirmation Dialog */}
-      <EmailConfirmDialog />
+      {/* Email Modal */}
+      <EmailModal
+        isOpen={emailModalOpen}
+        onClose={() => setEmailModalOpen(false)}
+        initialTo={emailModalDefaults.to}
+        initialSubject={emailModalDefaults.subject}
+        initialMessage={emailModalDefaults.message}
+        onSend={handleSendEmail}
+        isSending={isSendingEmail}
+        docType={assessment.status === 'completed' ? 'invoice' : 'quote'}
+      />
 
       {/* Image Viewer */}
       <ImageViewer
