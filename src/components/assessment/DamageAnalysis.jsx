@@ -141,6 +141,46 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
       }
 
       // Build detailed technician profile with skill matrix
+      // Only include skills/tools RELEVANT to the damage types and repair methods on this job
+      const selectedDamageTypes = [...new Set(damageItems.map(i => (i.damage_type || '').toLowerCase()))];
+      const selectedRepairMethods = [...new Set(damageItems.map(i => (i.repair_method || '').toLowerCase()))];
+      const hasBodyLineDamage = damageItems.some(i => i.affects_body_line);
+      const usesGluePull = selectedRepairMethods.some(m => m.includes('glue pull'));
+
+      // Filter tools to only those relevant to selected repair methods
+      let relevantTools = [];
+      if (userSettings?.available_pdr_tools?.length > 0) {
+        relevantTools = userSettings.available_pdr_tools.filter(tool => {
+          const t = tool.toLowerCase();
+          if (usesGluePull && (t.includes('glue') || t.includes('pull'))) return true;
+          if (!usesGluePull && (t.includes('rod') || t.includes('tap') || t.includes('pick') || t.includes('bar') || t.includes('hook'))) return true;
+          // Always include general tools
+          if (t.includes('light') || t.includes('lamp') || t.includes('board')) return true;
+          return false;
+        });
+        // Fallback: if filter removes everything, just pass all tools
+        if (relevantTools.length === 0) relevantTools = userSettings.available_pdr_tools;
+      }
+
+      // Filter skills to only those directly relevant to the damage types/methods on this job
+      const relevantSkills = (userSettings?.specialized_damage_skills || []).filter(skill => {
+        const skillLower = skill.type.toLowerCase();
+        // Match against selected damage types
+        const matchesDamageType = selectedDamageTypes.some(dt =>
+          skillLower.includes(dt) || dt.includes(skillLower) ||
+          (skillLower.includes('door ding') && dt.includes('door ding')) ||
+          (skillLower.includes('hail') && dt.includes('hail')) ||
+          (skillLower.includes('crease') && dt.includes('crease'))
+        );
+        // Include body line skill only if body line damage is present
+        const isBodyLineSkill = skillLower.includes('body line');
+        if (isBodyLineSkill) return hasBodyLineDamage;
+        // Include glue pull skill only if glue pull method is selected
+        const isGluePullSkill = skillLower.includes('glue');
+        if (isGluePullSkill) return usesGluePull;
+        return matchesDamageType;
+      });
+
       let technicianContext = `
 TECHNICIAN PROFILE AND BUSINESS CONTEXT:
 - Years of Experience: ${userSettings?.years_experience || 'Not specified'} years
@@ -149,59 +189,44 @@ TECHNICIAN PROFILE AND BUSINESS CONTEXT:
 ${sizeFlags.length > 0 ? `\nWARNING - Size Flags:\n${sizeFlags.join('\n')}` : ''}
 `;
 
-      if (userSettings?.available_pdr_tools?.length > 0) {
-        technicianContext += `- Available Tools: ${userSettings.available_pdr_tools.join(', ')}\n`;
+      if (relevantTools.length > 0) {
+        technicianContext += `- Relevant Available Tools: ${relevantTools.join(', ')}\n`;
       }
 
-      if (userSettings?.specialized_damage_skills?.length > 0) {
-        technicianContext += `\nSPECIALIZED DAMAGE SKILLS (CRITICAL FOR ASSESSMENT):\n`;
-        userSettings.specialized_damage_skills.forEach(skill => {
+      if (relevantSkills.length > 0) {
+        technicianContext += `\nSPECIALIZED DAMAGE SKILLS RELEVANT TO THIS JOB:\n`;
+        relevantSkills.forEach(skill => {
           technicianContext += `  * ${skill.type}: ${skill.level}\n`;
         });
-        technicianContext += `\nIMPORTANT: When assessing Technical Risks and Repair Suitability, you MUST consider the technician's skill level for each damage type. If a damage item's type matches one of the above and the technician's skill level is "Beginner" or "Don't do this type", this should significantly impact your risk assessment and repair_suitability rating.\n`;
+        technicianContext += `\nIMPORTANT: Consider the technician's skill level for each damage type listed above when assessing Technical Risks and Repair Suitability.\n`;
       }
 
-      // Cross-reference damage items with technician's skills
+      // Cross-reference damage items with RELEVANT skills only
       const skillWarnings = [];
-      if (userSettings?.specialized_damage_skills?.length > 0) {
+      relevantSkills.forEach(skill => {
         damageItems.forEach((item, index) => {
-          if (item.damage_type) {
-            const matchingSkill = userSettings.specialized_damage_skills.find(skill => {
-              const skillLower = skill.type.toLowerCase();
-              const damageTypeLower = item.damage_type.toLowerCase();
-              
-              return skillLower.includes(damageTypeLower) || 
-                     damageTypeLower.includes(skillLower) ||
-                     (skillLower.includes('door ding') && damageTypeLower.includes('door ding')) ||
-                     (skillLower.includes('hail') && damageTypeLower.includes('hail')) ||
-                     (skillLower.includes('crease') && damageTypeLower.includes('crease'));
-            });
+          const skillLower = skill.type.toLowerCase();
+          const isBodyLineSkill = skillLower.includes('body line');
 
-            if (matchingSkill) {
-              if (matchingSkill.level === "Don't do this type") {
-                skillWarnings.push(`⚠️ CRITICAL: Damage item ${index + 1} (${item.panel} - ${item.damage_type}) - Technician indicates they DON'T do this type of repair. Consider marking as "Not suitable for PDR" or "Refer to specialist".`);
-              } else if (matchingSkill.level === "Beginner") {
-                skillWarnings.push(`⚠️ WARNING: Damage item ${index + 1} (${item.panel} - ${item.damage_type}) - Technician's skill level is BEGINNER for this damage type. Increase technical risks and consider lower repair_suitability.`);
-              }
+          if (isBodyLineSkill && item.affects_body_line) {
+            if (skill.level === "Don't do this type") {
+              skillWarnings.push(`⚠️ CRITICAL: Damage item ${index + 1} (${item.panel} - Body Line) - Technician indicates they DON'T do body line repairs.`);
+            } else if (skill.level === "Beginner") {
+              skillWarnings.push(`⚠️ WARNING: Damage item ${index + 1} (${item.panel} - Body Line) - Technician is BEGINNER at body line repairs. This significantly increases technical risk.`);
             }
-          }
-
-          // Check for body line repairs skill when affects_body_line is true
-          if (item.affects_body_line) {
-            const bodyLineSkill = userSettings.specialized_damage_skills.find(skill => 
-              skill.type === "Body line repairs"
-            );
-            
-            if (bodyLineSkill) {
-              if (bodyLineSkill.level === "Don't do this type") {
-                skillWarnings.push(`⚠️ CRITICAL: Damage item ${index + 1} (${item.panel} - Body Line) - Technician indicates they DON'T do body line repairs. Consider marking as "Not suitable for PDR" or "Refer to specialist".`);
-              } else if (bodyLineSkill.level === "Beginner") {
-                skillWarnings.push(`⚠️ WARNING: Damage item ${index + 1} (${item.panel} - Body Line) - Technician's skill level is BEGINNER for body line repairs. This significantly increases technical risk. Mention in technical_risks.`);
+          } else if (!isBodyLineSkill && item.damage_type) {
+            const damageTypeLower = item.damage_type.toLowerCase();
+            const matches = skillLower.includes(damageTypeLower) || damageTypeLower.includes(skillLower);
+            if (matches) {
+              if (skill.level === "Don't do this type") {
+                skillWarnings.push(`⚠️ CRITICAL: Damage item ${index + 1} (${item.panel} - ${item.damage_type}) - Technician indicates they DON'T do this type of repair.`);
+              } else if (skill.level === "Beginner") {
+                skillWarnings.push(`⚠️ WARNING: Damage item ${index + 1} (${item.panel} - ${item.damage_type}) - Technician's skill level is BEGINNER for this damage type.`);
               }
             }
           }
         });
-      }
+      });
 
       if (skillWarnings.length > 0) {
         technicianContext += `\nSKILL LEVEL WARNINGS FOR THIS ASSESSMENT:\n${skillWarnings.join('\n')}\n`;
