@@ -40,9 +40,9 @@ Deno.serve(async (req) => {
     }
 
     const refNumber = type === 'invoice' ? invoice_number : quote_number;
-    const subject = type === 'invoice'
+    const subject = customSubject || (type === 'invoice'
       ? `Invoice ${refNumber} from ${business_name}`
-      : `Quote ${refNumber} from ${business_name}`;
+      : `Quote ${refNumber} from ${business_name}`);
 
     const docLabelCap = type === 'invoice' ? 'Invoice' : 'Quote';
     const docNum = (refNumber || '').replace(/[^a-zA-Z0-9-]/g, '');
@@ -67,24 +67,25 @@ Deno.serve(async (req) => {
       pdfBase64Final = arrayBufferToBase64(pdfBuffer);
     }
 
-    // Build email body
-    let body = `Hi ${customer_name},\n\n`;
-
-    if (type === 'invoice') {
-      body += `Thank you for your business. Please find your invoice attached to this email.\n\n`;
-      if (payment_link_url) {
-        body += `You can pay online here: ${payment_link_url}\n\nIf the button in the attached PDF is not clickable, please copy and paste the link above into your browser.\n\n`;
+    // Use the custom body from the modal, or fall back to auto-generated
+    let body = customBody;
+    if (!body) {
+      body = `Hi ${customer_name},\n\n`;
+      if (type === 'invoice') {
+        body += `Thank you for your business. Please find your invoice attached to this email.\n\n`;
+        if (payment_link_url) {
+          body += `You can pay online here: ${payment_link_url}\n\nIf the button in the attached PDF is not clickable, please copy and paste the link above into your browser.\n\n`;
+        } else {
+          body += `Payment details are included in the attached invoice.\n\n`;
+        }
       } else {
-        body += `Payment details are included in the attached invoice.\n\n`;
+        body += `Thank you for your enquiry. Please find your quote attached to this email.\n\n`;
+        body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.\n\n`;
       }
-    } else {
-      body += `Thank you for your enquiry. Please find your quote attached to this email.\n\n`;
-      body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.\n\n`;
-    }
-
-    body += `Best regards,\n${business_name}`;
-    if (reply_to_email) {
-      body += `\n${reply_to_email}`;
+      body += `Best regards,\n${business_name}`;
+      if (reply_to_email) {
+        body += `\n${reply_to_email}`;
+      }
     }
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -92,6 +93,7 @@ Deno.serve(async (req) => {
     const emailPayload = {
       from: 'quotes@dentifierpro.com',
       to: [to],
+      cc: cc ? cc.split(',').map(e => e.trim()).filter(Boolean) : undefined,
       reply_to: reply_to_email || undefined,
       subject,
       text: body,
