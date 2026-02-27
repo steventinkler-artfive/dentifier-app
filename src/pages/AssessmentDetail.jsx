@@ -526,7 +526,8 @@ export default function AssessmentDetail() {
   };
 
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [emailConfirmOpen, setEmailConfirmOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailModalDefaults, setEmailModalDefaults] = useState({ to: '', subject: '', message: '' });
 
   const handleEmail = async () => {
     if (!assessment || !customer) return;
@@ -534,11 +535,41 @@ export default function AssessmentDetail() {
       await showAlert('This customer has no email address on file.', 'No Email');
       return;
     }
-    setEmailConfirmOpen(true);
+
+    const isInvoice = assessment.status === 'completed';
+    const ref = getDisplayReference();
+    const custName = customer.business_name || customer.name;
+    const bizName = userSettings?.business_name || 'Dentifier PDR';
+    const replyTo = userSettings?.contact_email || '';
+    const total = formatCurrency(assessment.quote_amount || 0, assessment.currency || 'GBP');
+
+    const defaultSubject = isInvoice
+      ? `Invoice ${ref} from ${bizName}`
+      : `Quote ${ref} from ${bizName}`;
+
+    let defaultMessage = `Hi ${custName},\n\n`;
+    if (isInvoice) {
+      defaultMessage += `Please find attached your invoice ${ref} for a total of ${total}.\n\n`;
+      if (assessment.payment_link_url) {
+        defaultMessage += `You can pay online here: ${assessment.payment_link_url}\n\nIf the button in the attached PDF is not clickable, please copy and paste the link above into your browser.\n\n`;
+      } else {
+        defaultMessage += `Payment details are included in the attached invoice.\n\n`;
+      }
+      if (userSettings?.invoice_footer) {
+        defaultMessage += `${userSettings.invoice_footer}\n\n`;
+      }
+    } else {
+      defaultMessage += `Please find attached your quote ${ref} for a total of ${total}.\n\n`;
+      defaultMessage += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.\n\n`;
+    }
+    defaultMessage += `Best regards,\n${bizName}`;
+    if (replyTo) defaultMessage += `\n${replyTo}`;
+
+    setEmailModalDefaults({ to: customer.email, subject: defaultSubject, message: defaultMessage });
+    setEmailModalOpen(true);
   };
 
-  const handleEmailConfirmed = async () => {
-    setEmailConfirmOpen(false);
+  const handleSendEmail = async (to, cc, subject, message) => {
     const isInvoice = assessment.status === 'completed';
     const ref = getDisplayReference();
     const custName = customer.business_name || customer.name;
@@ -547,7 +578,6 @@ export default function AssessmentDetail() {
 
     setIsSendingEmail(true);
     try {
-      // Generate PDF on the frontend using the exact same rendering as the PDF view page
       const pdfBase64 = await generatePdfAsBase64();
       if (!pdfBase64) {
         await showAlert('Failed to generate PDF. Please try again.', 'Error');
@@ -556,7 +586,10 @@ export default function AssessmentDetail() {
 
       const response = await base44.functions.invoke('sendQuoteInvoiceEmail', {
         type: isInvoice ? 'invoice' : 'quote',
-        to: customer.email,
+        to,
+        cc,
+        subject,
+        body: message,
         customer_name: custName,
         business_name: bizName,
         reply_to_email: replyTo,
@@ -567,7 +600,8 @@ export default function AssessmentDetail() {
       });
 
       if (response.data?.success) {
-        await showAlert(`${isInvoice ? 'Invoice' : 'Quote'} emailed successfully to ${customer.email}`, 'Email Sent');
+        setEmailModalOpen(false);
+        await showAlert(`${isInvoice ? 'Invoice' : 'Quote'} emailed successfully to ${to}`, 'Email Sent');
       } else {
         await showAlert(response.data?.error || 'Failed to send email. Please try again.', 'Error');
       }
@@ -577,51 +611,6 @@ export default function AssessmentDetail() {
     } finally {
       setIsSendingEmail(false);
     }
-  };
-
-  // Email confirmation dialog component
-  const EmailConfirmDialog = () => {
-    if (!emailConfirmOpen) return null;
-    const isInvoice = assessment.status === 'completed';
-    const ref = getDisplayReference();
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
-        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl">
-          <h2 className="text-white text-lg font-semibold mb-1">
-            Send {isInvoice ? 'Invoice' : 'Quote'}
-          </h2>
-          <p className="text-slate-400 text-sm mb-4">Please confirm the details below before sending.</p>
-          <div className="space-y-3 mb-6">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">Document</span>
-              <span className="text-white text-sm font-medium">{isInvoice ? 'Invoice' : 'Quote'}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">Reference</span>
-              <span className="text-white text-sm font-medium">{ref}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">Send to</span>
-              <span className="text-blue-400 text-sm font-medium break-all text-right ml-2">{customer?.email}</span>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setEmailConfirmOpen(false)}
-              className="flex-1 py-2.5 rounded-lg border border-slate-600 text-slate-300 text-sm font-medium hover:bg-slate-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleEmailConfirmed}
-              className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium transition-colors"
-            >
-              Send
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   const handleCheckPaymentStatus = async () => {
