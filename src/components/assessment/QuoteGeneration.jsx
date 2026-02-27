@@ -671,17 +671,19 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       if (globalSettings?.llm_quote_instructions) {
         try {
           const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
-          const notesPrompt = `You are writing customer-facing notes for a PDR (Paintless Dent Repair) quote. These notes will be shown to the customer on their quote document.
+          const notesPrompt = `You are writing customer-facing notes for a professional dent repair quote. These notes will appear on the customer's quote document.
 
-Write 2-4 plain English sentences describing what the customer can expect from this repair. 
-- Focus on the outcome for the customer, not technical repair details or methods.
-- Be reassuring but honest.
-- Do NOT mention pricing, labour rates, or calculation methods.
-- Do NOT use jargon like "PDR", "tool access", "repair method", or "matrix".
-${hasStretchedMetal ? '- IMPORTANT: One or more dents have stretched metal. You MUST include an honest caveat that while significant improvement is expected, a complete 100% restoration may not be achievable due to the metal condition.' : ''}
+TONE RULES — follow these strictly:
+- Confident and professional. Never apologetic or weak.
+- Do NOT use phrases like "We appreciate your understanding", "we hope", "unfortunately", or "we apologise".
+- Do NOT use jargon: no "PDR", "tool access", "repair method", "matrix", "multiplier".
+- Reference the specific panel and damage type — do not write generic notes.
+- 2-4 sentences maximum.
+
+${hasStretchedMetal ? `STRETCHED METAL RULE: This repair involves metal stretch. You MUST include this exact sentence (do not paraphrase): "Please note this repair involves metal stretch, which means a full factory restoration may not be achievable. Your technician will deliver the best possible result and discuss the outcome with you before work begins."` : ''}
 
 DAMAGE BEING REPAIRED:
-${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} - ${item.damage_type} (${item.size_range}${item.depth ? `, ${item.depth}` : ''}${item.affects_body_line ? ', affects body line' : ''}${item.has_stretched_metal ? ', stretched metal present' : ''})`).join('\n')}
+${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} — ${item.damage_type}${item.size_range ? ` (${item.size_range})` : ''}${item.depth ? `, ${item.depth} depth` : ''}${item.affects_body_line ? ', crosses body line' : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}`).join('\n')}
 
 OUTPUT: Plain text only. 2-4 sentences. No bullet points, no headings, no JSON.`;
 
