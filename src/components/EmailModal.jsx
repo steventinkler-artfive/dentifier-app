@@ -57,16 +57,6 @@ export default function EmailModal({
 
         {/* Body */}
         <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* From */}
-          <div className="space-y-1.5">
-            <Label className="text-slate-400 text-sm">From</Label>
-            <Input
-              value="quotes@dentifierpro.com"
-              readOnly
-              className="bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed"
-            />
-          </div>
-
           {/* To */}
           <div className="space-y-1.5">
             <Label className="text-slate-400 text-sm">To</Label>

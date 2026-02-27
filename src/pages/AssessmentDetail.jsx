@@ -549,7 +549,7 @@ export default function AssessmentDetail() {
 
     let defaultMessage = `Hi ${custName},\n\n`;
     if (isInvoice) {
-      defaultMessage += `Please find attached your invoice ${ref} for a total of ${total}.\n\n`;
+      defaultMessage += `Please find attached your invoice ${ref}.\n\n`;
       if (assessment.payment_link_url) {
         defaultMessage += `You can pay online here: ${assessment.payment_link_url}\n\nIf the button in the attached PDF is not clickable, please copy and paste the link above into your browser.\n\n`;
       } else {
@@ -559,7 +559,7 @@ export default function AssessmentDetail() {
         defaultMessage += `${userSettings.invoice_footer}\n\n`;
       }
     } else {
-      defaultMessage += `Please find attached your quote ${ref} for a total of ${total}.\n\n`;
+      defaultMessage += `Please find attached your quote ${ref}.\n\n`;
       defaultMessage += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.\n\n`;
     }
     defaultMessage += `Best regards,\n${bizName}`;
