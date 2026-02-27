@@ -301,6 +301,16 @@ ${sizeFlags.length > 0 ? '\nCRITICAL: ' + sizeFlags.join(' ') + ' Mention this i
 
 ${skillWarnings.length > 0 ? '\nCRITICAL SKILL WARNINGS: ' + skillWarnings.join(' ') + ' These MUST be addressed in your risk_assessment and additional_notes.' : ''}
 
+MANUAL INPUT FLAGS — THESE MUST DRIVE technical_risks AND additional_notes (not photo analysis):
+${damageItems.map((item, idx) => {
+  const flags = [];
+  if (item.has_stretched_metal) flags.push('HAS_STRETCHED_METAL=TRUE');
+  if (item.affects_body_line) flags.push('AFFECTS_BODY_LINE=TRUE');
+  if (item.repair_method === 'Limited Tool Access') flags.push('REPAIR_METHOD=LIMITED_TOOL_ACCESS');
+  if (item.repair_method === 'Glue Pull Only') flags.push('REPAIR_METHOD=GLUE_PULL_ONLY');
+  return `Item ${idx + 1} (${item.panel}): depth=${item.depth || 'not set'}, repair_method=${item.repair_method || 'not set'}, material=${item.material || 'Steel'}${flags.length > 0 ? ', FLAGS: ' + flags.join(', ') : ', FLAGS: none'}`;
+}).join('\n')}
+
 Provide a professional damage analysis report that genuinely reflects this technician's capabilities and experience level.
 
 REMINDER: dent_count in your response MUST be ${totalDentsFromData} (from the structured data), NOT the number of photos (${photos.length}).`;
