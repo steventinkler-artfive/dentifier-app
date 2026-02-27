@@ -12,7 +12,7 @@ import {
   Mail,
   MapPin,
   Edit,
-  ArrowRight,
+  Trash2,
   Loader2
 } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
