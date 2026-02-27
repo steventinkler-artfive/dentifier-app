@@ -1044,8 +1044,10 @@ export default function AssessmentDetail() {
                     </div>
                   )}
                 </div>
+              ) : !isAssigningCustomer && !customer ? (
+                <p className="text-slate-400 text-xs">No customer assigned</p>
               ) : null}
-              {isAssigningCustomer ? (
+              {isAssigningCustomer && (
                 showAddCustomerForm ? (
                   <div className="space-y-4">
                     <CustomerForm
@@ -1057,7 +1059,7 @@ export default function AssessmentDetail() {
                     />
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-3 mt-3">
                     <div className="relative">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                       <Input
@@ -1102,7 +1104,7 @@ export default function AssessmentDetail() {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => setIsAssigningCustomer(false)}
+                        onClick={() => { setIsAssigningCustomer(false); setSearchTerm(""); }}
                         className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 text-sm"
                       >
                         Cancel
@@ -1110,8 +1112,6 @@ export default function AssessmentDetail() {
                     </div>
                   </div>
                 )
-              ) : (
-                <p className="text-slate-400 text-xs">No customer assigned</p>
               )}
             </CardContent>
           </Card>
