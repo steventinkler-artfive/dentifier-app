@@ -275,12 +275,22 @@ CRITICAL ANALYSIS REQUIREMENTS:
 
 CRITICAL: You MUST always provide technical_risks in your risk_assessment. Never omit this field. If there are no significant risks, you MUST still include the array with at least: ["Standard repair within your capabilities. No unusual risks identified."]
 
+STRETCHED METAL RULE: If ANY damage item has has_stretched_metal=true, you MUST include "Stretched metal present — full factory restoration may not be achievable. Discuss realistic outcome expectations with the customer before starting work." as a technical risk. This is mandatory and must never be omitted.
+
 DEPTH INTERPRETATION GUIDELINES:
 - "Shallow" dents are the EASIEST to repair - mention this is favorable for PDR
 - "Medium" dents require more skill but are still standard PDR work
 - "Deep/Sharp" dents are CHALLENGING and may require advanced techniques
 - DO NOT say shallow dents are challenging - this is incorrect
 - Shallow = Easy/Favorable, Medium = Moderate, Deep = Difficult
+
+ADDITIONAL NOTES REQUIREMENTS:
+Your additional_notes MUST directly reference the specific inputs provided — depth, repair method, any flags (stretched metal, body line). For example:
+- If depth is Medium and repair method is Glue Pull: mention both specifically
+- If stretched metal is present: explicitly state this in additional_notes
+- If body line is affected: call it out specifically
+- Do NOT write generic commentary about size alone — reference the actual parameters selected
+- Be specific and concrete, not vague
 
 ${sizeFlags.length > 0 ? '\nCRITICAL: ' + sizeFlags.join(' ') + ' Mention this in your additional_notes and consider lowering repair_suitability if appropriate.' : ''}
 
