@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import ReactDOM from "react-dom/client";
+import EmailModal from "@/components/EmailModal";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 

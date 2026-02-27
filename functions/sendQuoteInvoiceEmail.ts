@@ -22,6 +22,9 @@ Deno.serve(async (req) => {
     const {
       type,
       to,
+      cc,
+      subject: customSubject,
+      body: customBody,
       customer_name,
       business_name,
       reply_to_email,
