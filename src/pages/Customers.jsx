@@ -76,6 +76,16 @@ export default function Customers() {
     setShowForm(true);
   };
 
+  const handleDeleteCustomer = async (customer) => {
+    if (!window.confirm(`Delete ${customer.business_name || customer.name}? This cannot be undone.`)) return;
+    try {
+      await Customer.delete(customer.id);
+      await loadCustomers();
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
