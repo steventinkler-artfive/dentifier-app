@@ -210,7 +210,7 @@ export default function Customers() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-3">
+                  <div className="flex items-center gap-1 ml-3">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -219,7 +219,14 @@ export default function Customers() {
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <ArrowRight className="w-4 h-4 text-slate-500" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteCustomer(customer)}
+                      className="text-slate-400 hover:text-red-400 hover:bg-red-900/20"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
