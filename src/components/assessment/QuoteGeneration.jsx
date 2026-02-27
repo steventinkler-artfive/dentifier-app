@@ -671,21 +671,24 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       if (globalSettings?.llm_quote_instructions) {
         try {
           const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
-          const notesPrompt = `You are writing customer-facing notes for a professional dent repair quote. These notes will appear on the customer's quote document.
+          const notesPrompt = `You are writing customer-facing notes for a professional dent repair quote. These notes appear on the customer's quote document.
 
-TONE RULES — follow these strictly:
-- Confident and professional. Never apologetic or weak.
-- Do NOT use phrases like "We appreciate your understanding", "we hope", "unfortunately", or "we apologise".
-- Do NOT use jargon: no "PDR", "tool access", "repair method", "matrix", "multiplier".
-- Reference the specific panel and damage type — do not write generic notes.
-- 2-4 sentences maximum.
+STRUCTURE — follow this exact order:
+1. Start with a positive, confident statement about the expected improvement the customer will see (reference the specific panel and damage type).
+2. ${hasStretchedMetal ? 'Include this stretched metal caveat — use this exact wording: "Please note this repair involves metal stretch, which means a full factory restoration may not be achievable."' : 'Do NOT mention stretched metal — it is not present on this job.'}
+3. Close with: "Your technician will deliver the best possible result and advise you of the outcome on completion."
 
-${hasStretchedMetal ? `STRETCHED METAL RULE: This repair involves metal stretch. You MUST include this exact sentence (do not paraphrase): "Please note this repair involves metal stretch, which means a full factory restoration may not be achievable. Your technician will deliver the best possible result and discuss the outcome with you before work begins."` : ''}
+TONE RULES:
+- Confident and professional. Never apologetic.
+- Do NOT use: "We appreciate your understanding", "we hope", "unfortunately", "we apologise", "discuss the outcome with you before work begins".
+- Do NOT use jargon: no "PDR", "tool access", "repair method", "matrix".
+- Reference the specific panel and damage type — not generic.
+- 3 sentences total (one per structure point above${hasStretchedMetal ? '' : ', skip point 2'}).
 
 DAMAGE BEING REPAIRED:
 ${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} — ${item.damage_type}${item.size_range ? ` (${item.size_range})` : ''}${item.depth ? `, ${item.depth} depth` : ''}${item.affects_body_line ? ', crosses body line' : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}`).join('\n')}
 
-OUTPUT: Plain text only. 2-4 sentences. No bullet points, no headings, no JSON.`;
+OUTPUT: Plain text only. ${hasStretchedMetal ? '3' : '2'} sentences. No bullet points, no headings, no JSON.`;
 
           const notesResponse = await base44.integrations.Core.InvokeLLM({
             prompt: notesPrompt

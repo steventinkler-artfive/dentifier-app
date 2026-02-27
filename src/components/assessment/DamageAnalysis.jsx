@@ -273,9 +273,14 @@ CRITICAL ANALYSIS REQUIREMENTS:
 4. Consider the technician's years of experience and available tools when assessing difficulty
 5. Flag any dents exceeding the technician's stated maximum size
 
-CRITICAL: You MUST always provide technical_risks in your risk_assessment. Never omit this field. If there are no significant risks, you MUST still include the array with at least: ["Standard repair within your capabilities. No unusual risks identified."]
+CRITICAL: You MUST always provide technical_risks in your risk_assessment. Never omit this field.
 
-STRETCHED METAL RULE: If ANY damage item has has_stretched_metal=true, you MUST include "Stretched metal present — full factory restoration may not be achievable. Discuss realistic outcome expectations with the customer before starting work." as a technical risk. This is mandatory and must never be omitted.
+TECHNICAL RISKS RULES — these are driven by the manually entered flags, NOT by photo interpretation:
+- If has_stretched_metal=true on ANY item: you MUST include "Stretched metal present — full restoration to factory finish may not be achievable." as a risk. This is MANDATORY.
+- If affects_body_line=true on ANY item: you MUST include a risk about the body line complexity.
+- If repair_method is "Limited Tool Access": include a risk about limited access increasing difficulty.
+- If repair_method is "Glue Pull Only": include a note about glue pull limitations if tool finishing is also needed.
+- ONLY use "Standard repair within your capabilities. No unusual risks identified." if has_stretched_metal=false AND affects_body_line=false AND repair_method is NOT "Limited Tool Access" or "Glue Pull Only" for complex damage.
 
 DEPTH INTERPRETATION GUIDELINES:
 - "Shallow" dents are the EASIEST to repair - mention this is favorable for PDR
@@ -285,12 +290,12 @@ DEPTH INTERPRETATION GUIDELINES:
 - Shallow = Easy/Favorable, Medium = Moderate, Deep = Difficult
 
 ADDITIONAL NOTES REQUIREMENTS:
-Your additional_notes MUST directly reference the specific inputs provided — depth, repair method, any flags (stretched metal, body line). For example:
-- If depth is Medium and repair method is Glue Pull: mention both specifically
-- If stretched metal is present: explicitly state this in additional_notes
-- If body line is affected: call it out specifically
-- Do NOT write generic commentary about size alone — reference the actual parameters selected
-- Be specific and concrete, not vague
+Your additional_notes field must be a concise factual summary of the key manually-entered parameters — NOT a re-interpretation of photos. Format it as a plain confirmation of what was entered, for example: "Medium depth standard dent on the rear quarter panel, glue pull access required, stretched metal present."
+- Always include: depth level, damage type, repair method
+- If stretched metal: include "stretched metal present"
+- If body line: include "affects body line"
+- If aluminium: include "aluminium panel"
+- Keep to 1-2 short sentences. Factual only — no opinions on difficulty or suitability here (those go in other fields).
 
 ${sizeFlags.length > 0 ? '\nCRITICAL: ' + sizeFlags.join(' ') + ' Mention this in your additional_notes and consider lowering repair_suitability if appropriate.' : ''}
 
