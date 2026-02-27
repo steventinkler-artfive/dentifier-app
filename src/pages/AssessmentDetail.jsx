@@ -993,32 +993,20 @@ export default function AssessmentDetail() {
                   <UserIcon className="w-4 h-4 text-blue-400" />
                   Customer
                 </CardTitle>
-                {customer ? (
-                  <Link to={createPageUrl("Customers")}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-400 hover:text-blue-300 text-xs h-auto py-1"
-                    >
-                      <Edit className="w-3 h-3" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      const user = await base44.auth.me();
-                      const customers = await base44.entities.Customer.filter({ created_by: user.email });
-                      setCustomerList(customers);
-                      setIsAssigningCustomer(true);
-                    }}
-                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 text-xs h-auto py-1"
-                  >
-                    <UserPlus className="w-3 h-3 mr-1" />
-                    Assign
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    const user = await base44.auth.me();
+                    const customers = await base44.entities.Customer.filter({ created_by: user.email });
+                    setCustomerList(customers);
+                    setIsAssigningCustomer(true);
+                  }}
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 text-xs h-auto py-1"
+                >
+                  <UserPlus className="w-3 h-3 mr-1" />
+                  {customer ? 'Change' : 'Assign'}
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="text-sm">
@@ -1056,7 +1044,8 @@ export default function AssessmentDetail() {
                     </div>
                   )}
                 </div>
-              ) : isAssigningCustomer ? (
+              ) : null}
+              {isAssigningCustomer ? (
                 showAddCustomerForm ? (
                   <div className="space-y-4">
                     <CustomerForm
