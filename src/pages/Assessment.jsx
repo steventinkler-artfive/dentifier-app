@@ -457,11 +457,12 @@ export default function AssessmentPage() {
             vehicle={assessmentData.currentVehicle}
             analysis={assessmentData.currentAnalysis}
             photos={photos}
-            damageItems={damageItems} // Added damageItems prop
+            damageItems={damageItems}
             onAddAnotherVehicle={handleAddAnotherVehicle}
             onFinalSave={handleFinalSave}
             isPerPanelPricing={chargePerPanel}
-            isMultiVehicleMode={true}
+            isMultiVehicleMode={assessmentData.completedVehicles.length > 0}
+            autoSave={!chargePerPanel && assessmentData.completedVehicles.length === 0}
           />
         )}
       </div>
