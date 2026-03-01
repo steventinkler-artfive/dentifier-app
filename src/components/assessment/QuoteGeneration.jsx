@@ -419,7 +419,8 @@ export default function QuoteGeneration({
   onAddAnotherVehicle,
   onFinalSave,
   isPerPanelPricing = false,
-  isMultiVehicleMode = false
+  isMultiVehicleMode = false,
+  autoSave = false
 }) {
   const navigate = useNavigate();
   const [generating, setGenerating] = useState(false);
@@ -433,6 +434,7 @@ export default function QuoteGeneration({
   const [userSettings, setUserSettings] = useState(null);
   const [error, setError] = useState(null);
   const [quoteGenerated, setQuoteGenerated] = useState(false);
+  const [autoSaveTriggered, setAutoSaveTriggered] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
