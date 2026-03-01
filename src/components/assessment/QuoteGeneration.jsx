@@ -696,25 +696,34 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
             openingSentenceInstruction = 'OPENING SENTENCE: Do NOT mention access or repair method. Go straight to the positive outcome statement about the expected improvement.';
           }
 
+          const gluePullLiability = hasGluePull
+            ? ' Please note: glue pulling carries a small risk of paint lift. While rare, by proceeding with this repair the vehicle owner acknowledges and accepts this risk.'
+            : '';
+
+          const sentenceCount = hasGluePull
+            ? (hasStretchedMetal ? 6 : 5)
+            : (hasStretchedMetal ? 5 : 4);
+
           const notesPrompt = `You are writing customer-facing notes for a professional dent repair quote. These notes appear on the customer's quote document. Write in first person as the business — use "we" not "your technician".
 
 STRUCTURE — follow this exact order, one sentence per point:
 1. ${openingSentenceInstruction}
 2. A positive statement about the expected improvement to the appearance of the specific panel(s) after the repair.
-${hasStretchedMetal ? '3. Include this stretched metal caveat — use this exact wording: "While we will work to restore it as much as possible, please keep in mind that due to the condition of the metal, a complete 100% restoration may not be achievable."' : ''}
-${hasStretchedMetal ? '4.' : '3.'} Close with the goal: "Our goal is to make the damage less noticeable and enhance the overall look of your vehicle."
+${hasStretchedMetal ? '3. Use this exact wording: "While we will work to restore it as much as possible, please keep in mind that due to the condition of the metal, a complete 100% restoration may not be achievable."' : ''}
+${hasStretchedMetal ? '4.' : '3.'} Use this exact wording: "Our goal is to make the damage less noticeable and enhance the overall look of your vehicle."
+${hasGluePull ? `${hasStretchedMetal ? '5.' : '4.'} Use this exact wording: "Please note: glue pulling carries a small risk of paint lift. While rare, by proceeding with this repair the vehicle owner acknowledges and accepts this risk."` : ''}
 
-TONE RULES:
-- First person, "we" not "your technician". Confident and professional. Never apologetic.
-- Do NOT use: "We appreciate your understanding", "we hope", "unfortunately", "we apologise", "advise you of the outcome on completion", "discuss with you before work begins".
-- Do NOT use jargon: no "PDR", "tool access", "repair method", "matrix".
-- Reference the specific panel(s) and damage type — not generic.
-- ${hasStretchedMetal ? '4' : '3'} sentences total.
+STRICT RULES:
+- Write "we" not "your technician". Professional and confident. Never apologetic.
+- Do NOT use: "We are confident", "We appreciate your understanding", "we hope", "unfortunately", "we apologise", "advise you of the outcome on completion", "discuss with you before work begins", "making it look much better than it currently does"
+- No jargon: no "PDR", "tool access", "repair method", "matrix"
+- Reference the specific panel(s) and damage type — not generic
+- Maximum ${sentenceCount} sentences total
 
 DAMAGE BEING REPAIRED:
 ${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} — ${item.damage_type}${item.size_range ? ` (${item.size_range})` : ''}${item.depth ? `, ${item.depth} depth` : ''}${item.affects_body_line ? ', crosses body line' : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}${item.repair_method ? `, method: ${item.repair_method}` : ''}`).join('\n')}
 
-OUTPUT: Plain text only. ${hasStretchedMetal ? '4' : '3'} sentences. No bullet points, no headings, no JSON.`;
+OUTPUT: Plain text only. No bullet points, no headings, no JSON.`;
 
           const notesResponse = await base44.integrations.Core.InvokeLLM({
             prompt: notesPrompt
@@ -1016,7 +1025,10 @@ OUTPUT: Plain text only. ${hasStretchedMetal ? '4' : '3'} sentences. No bullet p
                 ) : (
                   <>
                     <p><span className="font-semibold">Matrix Base:</span> {breakdown.matrixEntry?.damage_type} - {breakdown.matrixEntry?.size_range} ({getCurrencySymbol()}{breakdown.matrixEntry?.base_price?.toFixed(2)})</p>
-                    <p><span className="font-semibold">Estimated Repair Time (for internal use):</span> {breakdown.roundedHoursForTech} hrs</p>
+                    <div>
+                      <p><span className="font-semibold">Estimated Repair Time (for internal use):</span> {breakdown.roundedHoursForTech} hrs</p>
+                      <p className="text-slate-500 text-xs mt-0.5">Guide only — actual time will vary depending on experience and conditions.</p>
+                    </div>
                     <p><span className="font-semibold">Final Price:</span> {getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2)}</p>
                   </>
                 )}
