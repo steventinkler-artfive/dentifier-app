@@ -429,6 +429,18 @@ export default function AssessmentPage() {
           />
         )}
 
+        {currentStep === 'quote' && !chargePerPanel && assessmentData.completedVehicles.length === 0 && (
+          <div className="fixed inset-0 bg-slate-950/80 flex items-center justify-center z-50">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-rose-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <Save className="w-8 h-8 text-white" />
+              </div>
+              <p className="text-white font-semibold text-lg">Generating & Saving Quote...</p>
+              <p className="text-slate-400 text-sm mt-1">This will only take a moment</p>
+            </div>
+          </div>
+        )}
+
         {currentStep === 'analysis' && (
           (chargePerPanel && !assessmentData.currentAnalysis) ? (
             <Card className="bg-slate-800 border-slate-700">
