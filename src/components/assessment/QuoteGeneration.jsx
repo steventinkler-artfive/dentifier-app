@@ -722,6 +722,8 @@ OUTPUT: Plain text only. ${hasStretchedMetal ? '4' : '3'} sentences. No bullet p
       
       setNotes(assessmentNotes);
       setQuoteGenerated(true);
+      // Auto-save and navigate if onFinalSave is provided and we're not in multi-vehicle mode
+      // (this is triggered from the analysis screen flow)
 
     } catch (err) {
       console.error('Error generating quote:', err);

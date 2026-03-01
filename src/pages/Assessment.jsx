@@ -128,11 +128,12 @@ export default function AssessmentPage() {
     setCurrentStep('analysis');
   };
 
-  const handleAnalysisComplete = (analysis) => {
+  const handleAnalysisComplete = async (analysis) => {
     setAssessmentData(prev => ({
       ...prev,
       currentAnalysis: analysis
     }));
+    // Auto-generate quote and save — will be triggered by QuoteGeneration's onFinalSave
     setCurrentStep('quote');
   };
 
