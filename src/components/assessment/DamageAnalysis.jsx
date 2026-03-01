@@ -283,23 +283,29 @@ TECHNICAL RISKS RULES — these are driven by the manually entered flags, NOT by
 - ONLY use "Standard repair within your capabilities. No unusual risks identified." if has_stretched_metal=false AND affects_body_line=false AND repair_method is NOT "Limited Tool Access" or "Glue Pull Only" for complex damage.
 
 DEPTH INTERPRETATION GUIDELINES:
-- "Shallow" dents are the EASIEST to repair - mention this is favorable for PDR
+- "Shallow" dents are the EASIEST to repair — mention this is favorable for PDR
 - "Medium" dents require more skill but are still standard PDR work
 - "Deep/Sharp" dents are CHALLENGING and may require advanced techniques
-- DO NOT say shallow dents are challenging - this is incorrect
+- DO NOT say shallow dents are challenging — this is incorrect
 - Shallow = Easy/Favorable, Medium = Moderate, Deep = Difficult
 
+PDR SUITABILITY RATING RULES — driven by manual inputs, NOT photo analysis:
+The repair_suitability field MUST follow these rules based on the manually entered depth:
+- Shallow depth → minimum rating is "Good for PDR". Only use "Excellent for PDR" if no complicating flags. NEVER rate shallow as "Moderate", "Difficult", or "Not suitable".
+- Medium depth → start at "Good for PDR". Downgrade to "Moderate" only if body line is affected OR stretched metal is present.
+- Deep depth → start at "Moderate". Downgrade to "Difficult" if body line OR stretched metal is also present.
+- "Not suitable for PDR" → ONLY use this if repair_method is "Strip & Re-fit" and damage is clearly beyond PDR scope.
+- Photo analysis MUST NOT override or reduce the suitability below what the manual depth indicates.
+- Glue pull alone does NOT reduce suitability — it is a valid standard repair method.
+
 ADDITIONAL NOTES REQUIREMENTS:
-Your additional_notes field must be a concise factual summary of the key manually-entered parameters — NOT a re-interpretation of photos. Format it as a plain confirmation of what was entered, for example: "Medium depth standard dent on the rear quarter panel, glue pull access required, stretched metal present."
+Your additional_notes field must be a concise factual summary of the key manually-entered parameters — NOT a re-interpretation of photos. Format it as a plain confirmation of what was entered, for example: "Medium depth standard dent on the rear quarter panel, glue pull repair method selected, stretched metal present."
 - Always include: depth level, damage type, repair method
+- If repair method is "Glue Pull Only", write: "glue pull repair method selected" — do NOT say "glue pull access required" — glue pull is an external technique, not an access restriction
 - If stretched metal: include "stretched metal present"
 - If body line: include "affects body line"
 - If aluminium: include "aluminium panel"
 - Keep to 1-2 short sentences. Factual only — no opinions on difficulty or suitability here (those go in other fields).
-
-GLUE PULL LIABILITY NOTICE (MANDATORY): If ANY damage item has repair_method = "Glue Pull Only", you MUST append the following to the end of additional_notes, exactly as written:
-"PLEASE NOTE: Glue pulling carries a small risk of paint lift. While rare, by accepting this job the vehicle owner acknowledges and accepts this risk. The technician accepts no liability for such occurrences."
-This notice is tech-facing only and must appear without exception when glue pull is selected.
 
 ${sizeFlags.length > 0 ? '\nCRITICAL: ' + sizeFlags.join(' ') + ' Mention this in your additional_notes and consider lowering repair_suitability if appropriate.' : ''}
 
