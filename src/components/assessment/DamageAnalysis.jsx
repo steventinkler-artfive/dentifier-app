@@ -297,6 +297,10 @@ Your additional_notes field must be a concise factual summary of the key manuall
 - If aluminium: include "aluminium panel"
 - Keep to 1-2 short sentences. Factual only — no opinions on difficulty or suitability here (those go in other fields).
 
+GLUE PULL LIABILITY NOTICE (MANDATORY): If ANY damage item has repair_method = "Glue Pull Only", you MUST append the following to the end of additional_notes, exactly as written:
+"PLEASE NOTE: Glue pulling carries a small risk of paint lift. While rare, by accepting this job the vehicle owner acknowledges and accepts this risk. The technician accepts no liability for such occurrences."
+This notice is tech-facing only and must appear without exception when glue pull is selected.
+
 ${sizeFlags.length > 0 ? '\nCRITICAL: ' + sizeFlags.join(' ') + ' Mention this in your additional_notes and consider lowering repair_suitability if appropriate.' : ''}
 
 ${skillWarnings.length > 0 ? '\nCRITICAL SKILL WARNINGS: ' + skillWarnings.join(' ') + ' These MUST be addressed in your risk_assessment and additional_notes.' : ''}

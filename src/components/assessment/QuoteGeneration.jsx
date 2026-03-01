@@ -671,24 +671,40 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       if (globalSettings?.llm_quote_instructions) {
         try {
           const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
-          const notesPrompt = `You are writing customer-facing notes for a professional dent repair quote. These notes appear on the customer's quote document.
+          const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only');
+          const hasLimitedAccess = damageItems.some(i => i.repair_method === 'Limited Tool Access');
+          const hasNoAccess = damageItems.some(i => i.repair_method === 'Strip & Re-fit' || i.repair_method === 'Unsure');
 
-STRUCTURE — follow this exact order:
-1. Start with a positive, confident statement about the expected improvement the customer will see (reference the specific panel and damage type).
-2. ${hasStretchedMetal ? 'Include this stretched metal caveat — use this exact wording: "Please note this repair involves metal stretch, which means a full factory restoration may not be achievable."' : 'Do NOT mention stretched metal — it is not present on this job.'}
-3. Close with: "Your technician will deliver the best possible result and advise you of the outcome on completion."
+          let openingSentenceInstruction = '';
+          if (hasGluePull) {
+            openingSentenceInstruction = 'OPENING SENTENCE (mandatory): "This is a glue pull only repair due to the location and access of the dent."';
+          } else if (hasLimitedAccess) {
+            openingSentenceInstruction = 'OPENING SENTENCE (mandatory): Write one sentence acknowledging that access to this area is restricted, but that the repair will be carried out to the highest standard.';
+          } else if (hasNoAccess) {
+            openingSentenceInstruction = 'OPENING SENTENCE (mandatory): Write one sentence noting that this area has limited or no direct access, and explain how the repair will be approached.';
+          } else {
+            openingSentenceInstruction = 'OPENING SENTENCE: Do NOT mention access or repair method. Go straight to the positive outcome statement about the expected improvement.';
+          }
+
+          const notesPrompt = `You are writing customer-facing notes for a professional dent repair quote. These notes appear on the customer's quote document. Write in first person as the business — use "we" not "your technician".
+
+STRUCTURE — follow this exact order, one sentence per point:
+1. ${openingSentenceInstruction}
+2. A positive statement about the expected improvement to the appearance of the specific panel(s) after the repair.
+${hasStretchedMetal ? '3. Include this stretched metal caveat — use this exact wording: "While we will work to restore it as much as possible, please keep in mind that due to the condition of the metal, a complete 100% restoration may not be achievable."' : ''}
+${hasStretchedMetal ? '4.' : '3.'} Close with the goal: "Our goal is to make the damage less noticeable and enhance the overall look of your vehicle."
 
 TONE RULES:
-- Confident and professional. Never apologetic.
-- Do NOT use: "We appreciate your understanding", "we hope", "unfortunately", "we apologise", "discuss the outcome with you before work begins".
+- First person, "we" not "your technician". Confident and professional. Never apologetic.
+- Do NOT use: "We appreciate your understanding", "we hope", "unfortunately", "we apologise", "advise you of the outcome on completion", "discuss with you before work begins".
 - Do NOT use jargon: no "PDR", "tool access", "repair method", "matrix".
-- Reference the specific panel and damage type — not generic.
-- 3 sentences total (one per structure point above${hasStretchedMetal ? '' : ', skip point 2'}).
+- Reference the specific panel(s) and damage type — not generic.
+- ${hasStretchedMetal ? '4' : '3'} sentences total.
 
 DAMAGE BEING REPAIRED:
-${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} — ${item.damage_type}${item.size_range ? ` (${item.size_range})` : ''}${item.depth ? `, ${item.depth} depth` : ''}${item.affects_body_line ? ', crosses body line' : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}`).join('\n')}
+${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} — ${item.damage_type}${item.size_range ? ` (${item.size_range})` : ''}${item.depth ? `, ${item.depth} depth` : ''}${item.affects_body_line ? ', crosses body line' : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}${item.repair_method ? `, method: ${item.repair_method}` : ''}`).join('\n')}
 
-OUTPUT: Plain text only. ${hasStretchedMetal ? '3' : '2'} sentences. No bullet points, no headings, no JSON.`;
+OUTPUT: Plain text only. ${hasStretchedMetal ? '4' : '3'} sentences. No bullet points, no headings, no JSON.`;
 
           const notesResponse = await base44.integrations.Core.InvokeLLM({
             prompt: notesPrompt
