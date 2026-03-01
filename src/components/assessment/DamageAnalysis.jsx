@@ -193,12 +193,6 @@ OUTPUT: JSON only. No other text.`;
       const suitability = computeSuitability(damageItems);
       const riskFlags = computeRiskFlags(damageItems);
 
-      // Enforce glue pull liability notice
-      const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only');
-      const liabilityNotice = hasGluePull
-        ? 'PLEASE NOTE: Glue pulling carries a small risk of paint lift. While rare, by accepting this job the vehicle owner acknowledges and accepts this risk. The technician accepts no liability for such occurrences.'
-        : null;
-
       // Build the full analysis object (for downstream use)
       const fullAnalysis = {
         damage_report: {
@@ -209,12 +203,9 @@ OUTPUT: JSON only. No other text.`;
         confidence_assessment: {
           quote_confidence: 4,
           repair_suitability: suitability,
-          additional_notes: [
-            damageItems.map((item, idx) =>
-              `${idx + 1}. ${item.panel} — ${item.depth || ''} ${item.damage_type}${item.repair_method ? `, ${item.repair_method === 'Glue Pull Only' ? 'glue pull repair method selected' : item.repair_method}` : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}${item.affects_body_line ? ', affects body line' : ''}${item.material === 'Aluminum' ? ', aluminium panel' : ''}`
-            ).join('. '),
-            liabilityNotice
-          ].filter(Boolean).join(' ')
+          additional_notes: damageItems.map((item, idx) =>
+            `${idx + 1}. ${item.panel} — ${item.depth || ''} ${item.damage_type}${item.repair_method ? `, ${item.repair_method === 'Glue Pull Only' ? 'glue pull repair method selected' : item.repair_method}` : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}${item.affects_body_line ? ', affects body line' : ''}${item.material === 'Aluminum' ? ', aluminium panel' : ''}`
+          ).join('. ')
         },
         risk_assessment: {
           technical_risks: riskFlags.length > 0
