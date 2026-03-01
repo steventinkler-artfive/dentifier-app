@@ -866,6 +866,19 @@ OUTPUT: Plain text only. No bullet points, no headings, no JSON.`;
     return symbols[curr] || '£';
   };
 
+  // In auto-save mode, always show a loading screen — never show the review UI
+  if (autoSave) {
+    return (
+      <Card className="bg-slate-800 border-slate-700">
+        <CardContent className="p-8 text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-rose-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-white mb-2">Generating & Saving Quote...</h3>
+          <p className="text-slate-400">This will only take a moment</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (generating) {
     return (
       <Card className="bg-slate-800 border-slate-700">
