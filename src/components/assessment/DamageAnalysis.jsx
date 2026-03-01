@@ -400,6 +400,18 @@ REMINDER: dent_count in your response MUST be ${totalDentsFromData} (from the st
         response.damage_report.dent_count = totalDentsFromData;
       }
 
+      // Enforce glue pull liability notice in code — do not rely on LLM
+      const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only');
+      if (hasGluePull && response.confidence_assessment) {
+        const liabilityNotice = 'PLEASE NOTE: Glue pulling carries a small risk of paint lift. While rare, by accepting this job the vehicle owner acknowledges and accepts this risk. The technician accepts no liability for such occurrences.';
+        const existingNotes = response.confidence_assessment.additional_notes || '';
+        if (!existingNotes.includes('paint lift')) {
+          response.confidence_assessment.additional_notes = existingNotes
+            ? `${existingNotes} ${liabilityNotice}`
+            : liabilityNotice;
+        }
+      }
+
       setAnalysis(response);
     } catch (err) {
       console.error('Error performing analysis:', err);
