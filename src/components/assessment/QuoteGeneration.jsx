@@ -471,6 +471,14 @@ export default function QuoteGeneration({
     }
   }, [userSettings, generating, quoteGenerated]);
 
+  // Auto-save once quote is generated (single-vehicle flow from analysis screen)
+  useEffect(() => {
+    if (autoSave && quoteGenerated && !generating && !autoSaveTriggered && lineItems.length > 0) {
+      setAutoSaveTriggered(true);
+      handleFinalSave();
+    }
+  }, [autoSave, quoteGenerated, generating, lineItems]);
+
   useEffect(() => {
     const total = lineItems.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
     setQuoteAmount(total);
