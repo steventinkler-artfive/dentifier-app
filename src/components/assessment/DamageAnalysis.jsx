@@ -245,27 +245,24 @@ OUTPUT: JSON only. No other text.`;
       console.error('Error performing analysis:', err);
       setError(err.message || 'Failed to analyze damage');
       // Fallback
-      const suitability = computeSuitability(damageItems);
+      const confidenceScore = computeConfidenceScore(damageItems);
       const riskFlags = computeRiskFlags(damageItems);
       setAnalysis({
         damage_report: {
           vehicle_panel: damageItems[0]?.panel || 'Multiple panels',
           dent_count: damageItems.reduce((sum, item) => sum + (item.dent_count || 1), 0),
-          dent_summary: damageItems.map(i => `${i.panel}: ${i.damage_type}`).join('; ')
         },
         confidence_assessment: {
-          quote_confidence: 3,
-          repair_suitability: suitability,
-          additional_notes: `Analysis partial — manual inputs used. ${damageItems.map(i => `${i.depth || ''} ${i.damage_type} on ${i.panel}`).join('; ')}.`
+          quote_confidence: confidenceScore,
+          repair_suitability: confidenceLabel(confidenceScore),
         },
         risk_assessment: {
           technical_risks: riskFlags.length > 0 ? riskFlags.map(f => f.text) : ['Standard repair. No unusual risks identified.'],
-          estimated_difficulty: 'Moderate'
         },
         _ui: {
           confidence_check: 'Could not complete photo analysis — based on manual inputs only.',
           photo_observation: 'No additional observations from photo analysis.',
-          suitability,
+          confidenceScore,
           riskFlags
         }
       });
