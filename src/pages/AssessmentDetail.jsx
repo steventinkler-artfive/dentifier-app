@@ -1550,80 +1550,89 @@ export default function AssessmentDetail() {
                   </TabsList>
 
                   <TabsContent value="analysis" className="p-4 space-y-3 text-sm">
-                    {currentDamageAnalysis ? (
-                      <>
-                        {currentDamageAnalysis.damage_report && (
-                          <div className="space-y-2">
-                            <div>
-                              <p className="text-slate-400 text-xs">Panel</p>
-                              <p className="text-white text-sm">
-                                {currentDamageAnalysis.damage_report.vehicle_panel || 'N/A'}
-                              </p>
+                    {currentDamageAnalysis ? (() => {
+                      const ui = currentDamageAnalysis._ui || {};
+                      const score = ui.confidenceScore ?? currentDamageAnalysis.confidence_assessment?.quote_confidence ?? 4;
+                      const riskFlags = ui.riskFlags || 
+                        (currentDamageAnalysis.risk_assessment?.technical_risks || []).map(t => ({ text: t }));
+                      const photoObs = ui.photo_observation;
+                      const confidenceCheck = ui.confidence_check;
+
+                      const scoreBg = score >= 5 ? 'bg-green-900/30 border-green-700' : score === 4 ? 'bg-blue-900/30 border-blue-700' : score === 3 ? 'bg-yellow-900/30 border-yellow-700' : score === 2 ? 'bg-orange-900/30 border-orange-700' : 'bg-red-900/30 border-red-700';
+                      const scoreText = score >= 5 ? 'text-green-300' : score === 4 ? 'text-blue-300' : score === 3 ? 'text-yellow-300' : score === 2 ? 'text-orange-300' : 'text-red-300';
+                      const scoreLabel = score >= 5 ? 'Excellent — repair is well suited to PDR' : score === 4 ? 'Good — no significant concerns identified' : score === 3 ? 'Moderate — repair complexity is higher than standard, proceed with care' : score === 2 ? 'Difficult — this job has significant complexity, assess carefully before proceeding' : 'High risk — consider whether PDR is appropriate for this damage';
+
+                      return (
+                        <>
+                          {/* Panel & Count */}
+                          {currentDamageAnalysis.damage_report && (
+                            <div className="grid grid-cols-2 gap-2 pb-2">
+                              {currentDamageAnalysis.damage_report.vehicle_panel && (
+                                <div>
+                                  <p className="text-slate-400 text-xs">Panel(s)</p>
+                                  <p className="text-white text-sm">{currentDamageAnalysis.damage_report.vehicle_panel}</p>
+                                </div>
+                              )}
+                              {currentDamageAnalysis.damage_report.dent_count && (
+                                <div>
+                                  <p className="text-slate-400 text-xs">Count</p>
+                                  <p className="text-white text-sm">{currentDamageAnalysis.damage_report.dent_count}</p>
+                                </div>
+                              )}
                             </div>
-                            <div>
-                              <p className="text-slate-400 text-xs">Location</p>
-                              <p className="text-white text-sm">
-                                {currentDamageAnalysis.damage_report.dent_location || 'N/A'}
-                              </p>
+                          )}
+
+                          {/* Assessment Confidence */}
+                          <div className={`p-3 rounded-lg border ${scoreBg}`}>
+                            <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Assessment Confidence</p>
+                            <div className="flex items-baseline gap-1 mb-1">
+                              <span className={`text-2xl font-bold ${scoreText}`}>{score}</span>
+                              <span className="text-slate-500 text-xs">/5</span>
                             </div>
-                            <div>
-                              <p className="text-slate-400 text-xs">Count</p>
-                              <p className="text-white text-sm">
-                                {currentDamageAnalysis.damage_report.dent_count || 'N/A'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-slate-400 text-xs">Summary</p>
-                              <p className="text-white text-sm">
-                                {currentDamageAnalysis.damage_report.dent_summary || 'N/A'}
-                              </p>
-                            </div>
-                            {currentDamageAnalysis.damage_report.dent_details && (
-                              <div className="space-y-2 pt-2 border-t border-slate-700">
-                                {currentDamageAnalysis.damage_report.dent_details.size_range && (
-                                  <div>
-                                    <p className="text-slate-400 text-xs">Size Range</p>
-                                    <p className="text-white text-sm">
-                                      {currentDamageAnalysis.damage_report.dent_details.size_range}
-                                    </p>
-                                  </div>
-                                )}
-                                {currentDamageAnalysis.damage_report.dent_details.depth && (
-                                  <div>
-                                    <p className="text-slate-400 text-xs">Depth</p>
-                                    <p className="text-white text-sm">
-                                      {currentDamageAnalysis.damage_report.dent_details.depth}
-                                    </p>
-                                  </div>
-                                )}
+                            <p className={`text-xs font-medium ${scoreText}`}>{scoreLabel}</p>
+                          </div>
+
+                          {/* Photo vs Inputs */}
+                          {confidenceCheck && (
+                            <div className="p-3 bg-slate-800 rounded-lg flex items-start gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-slate-400 text-xs mb-1">Photo vs Inputs</p>
+                                <p className="text-white text-xs">{confidenceCheck}</p>
                               </div>
+                            </div>
+                          )}
+
+                          {/* Risk Flags */}
+                          <div className="space-y-1.5">
+                            {riskFlags.length === 0 || (riskFlags.length === 1 && riskFlags[0].text?.toLowerCase().includes('no unusual')) ? (
+                              <div className="flex items-center gap-2 p-2.5 bg-green-900/20 border border-green-800 rounded-lg">
+                                <CheckCircle className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                                <p className="text-green-300 text-xs">No unusual risks identified for this job.</p>
+                              </div>
+                            ) : (
+                              riskFlags.map((flag, i) => (
+                                <div key={i} className="flex items-start gap-2 p-2.5 bg-amber-900/20 border border-amber-700 rounded-lg">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+                                  <p className="text-amber-200 text-xs">{flag.text}</p>
+                                </div>
+                              ))
                             )}
                           </div>
-                        )}
-                        {currentDamageAnalysis.confidence_assessment && (
-                          <div className="p-3 bg-slate-800 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-slate-400 text-xs">Confidence</p>
-                              <Badge className="bg-blue-600 text-xs">
-                                {currentDamageAnalysis.confidence_assessment.quote_confidence}/5
-                              </Badge>
-                            </div>
-                            <p className="text-slate-400 text-xs">Suitability</p>
-                            <p className="text-white text-sm">
-                              {currentDamageAnalysis.confidence_assessment.repair_suitability || 'N/A'}
-                            </p>
-                            {currentDamageAnalysis.confidence_assessment.additional_notes && (
-                              <div className="mt-2">
-                                <p className="text-slate-400 text-xs">Notes</p>
-                                <p className="text-white text-xs">
-                                  {currentDamageAnalysis.confidence_assessment.additional_notes}
-                                </p>
+
+                          {/* Photo Observation */}
+                          {photoObs && (
+                            <div className="p-3 bg-slate-800 rounded-lg flex items-start gap-2">
+                              <Eye className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-slate-400 text-xs mb-1">Photo Observation</p>
+                                <p className="text-white text-xs">{photoObs}</p>
                               </div>
-                            )}
-                          </div>
-                        )}
-                      </>
-                    ) : (
+                            </div>
+                          )}
+                        </>
+                      );
+                    })() : (
                       <p className="text-slate-400 text-xs">No analysis available</p>
                     )}
                   </TabsContent>
