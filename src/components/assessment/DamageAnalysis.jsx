@@ -313,7 +313,7 @@ OUTPUT: JSON only. No other text.`;
 
   const ui = analysis._ui || {};
   const riskFlags = ui.riskFlags || [];
-  const suitability = ui.suitability || analysis.confidence_assessment?.repair_suitability;
+  const score = ui.confidenceScore ?? analysis.confidence_assessment?.quote_confidence ?? 4;
 
   return (
     <div className="space-y-3">
@@ -328,26 +328,26 @@ OUTPUT: JSON only. No other text.`;
         </div>
       </div>
 
-      {/* 1. CONFIDENCE CHECK */}
+      {/* 1. ASSESSMENT CONFIDENCE (combined score + label) */}
+      <div className={`p-4 rounded-lg border ${confidenceBadgeClass(score)}`}>
+        <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">Assessment Confidence</p>
+        <div className="flex items-baseline gap-2 mb-1">
+          <span className={`text-3xl font-bold ${confidenceTextClass(score)}`}>{score}</span>
+          <span className="text-slate-500 text-sm">/5</span>
+        </div>
+        <p className={`text-sm font-medium ${confidenceTextClass(score)}`}>{confidenceLabel(score)}</p>
+      </div>
+
+      {/* 2. CONFIDENCE CHECK (photo vs inputs) */}
       <Card className="bg-slate-900 border-slate-800">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <ShieldCheck className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Confidence Check</p>
+              <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Photo vs Inputs</p>
               <p className="text-white text-sm">{ui.confidence_check}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* 2. PDR SUITABILITY */}
-      <Card className="bg-slate-900 border-slate-800">
-        <CardContent className="p-4">
-          <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">PDR Suitability</p>
-          <Badge className={`text-sm px-3 py-1 ${suitabilityBadgeClass(suitability)}`}>
-            {suitability}
-          </Badge>
         </CardContent>
       </Card>
 
@@ -368,7 +368,7 @@ OUTPUT: JSON only. No other text.`;
         )}
       </div>
 
-      {/* 4. ANALYSIS NOTES (AI photo observation) */}
+      {/* 4. PHOTO OBSERVATION */}
       <Card className="bg-slate-900 border-slate-800">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
