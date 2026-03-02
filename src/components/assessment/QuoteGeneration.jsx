@@ -732,11 +732,21 @@ OUTPUT: Plain text only. No bullet points, no headings, no JSON.`;
           let generatedNotes = typeof notesResponse === 'string' ? notesResponse.trim() : notesResponse;
           
           if (generatedNotes && generatedNotes.length > 10 && generatedNotes.length < 800) {
-            // Programmatically enforce glue pull liability notice at the end
-            const liabilityNotice = 'Please note: glue pulling carries a small risk of paint lift. While rare, by proceeding with this repair the vehicle owner acknowledges and accepts this risk.';
-            if (hasGluePull && !generatedNotes.includes('paint lift')) {
-              generatedNotes = generatedNotes.replace(/\.?\s*$/, '') + ' ' + liabilityNotice;
+            // Strip any sentence beginning with "Thank you"
+            generatedNotes = generatedNotes
+              .split(/(?<=[.!?])\s+/)
+              .filter(sentence => !/^thank you/i.test(sentence.trim()))
+              .join(' ')
+              .trim();
+
+            // Programmatically enforce glue pull liability notice at the end — no exceptions
+            if (hasGluePull) {
+              const liabilityNotice = 'PLEASE NOTE: Glue pulling carries a small risk of paint lift. While rare, by proceeding with this repair the vehicle owner acknowledges and accepts this risk.';
+              // Remove any existing (possibly incomplete) version the LLM may have added
+              generatedNotes = generatedNotes.replace(/please note[^.]*paint lift[^.]*\./gi, '').trim();
+              generatedNotes = generatedNotes.replace(/\.?\s*$/, '') + '\n\n' + liabilityNotice;
             }
+
             assessmentNotes = generatedNotes;
           }
         } catch (notesError) {

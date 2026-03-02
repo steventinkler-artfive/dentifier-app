@@ -73,24 +73,47 @@ function computeRiskFlags(damageItems) {
   return flags;
 }
 
-// ─── Depth-driven suitability ────────────────────────────────────────────────
-function computeSuitability(damageItems) {
+// ─── Depth-driven confidence score ───────────────────────────────────────────
+function computeConfidenceScore(damageItems) {
   const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
   const hasBodyLine = damageItems.some(i => i.affects_body_line);
   const hasNoAccess = damageItems.some(i => i.repair_method === 'Strip & Re-fit');
   const hasDeep = damageItems.some(i => i.depth === 'Deep/Sharp');
   const hasShallow = damageItems.every(i => i.depth === 'Shallow' || !i.depth);
-  const hasMedium = !hasDeep && !hasShallow;
 
-  if (hasNoAccess) return 'Not suitable for PDR';
-  if (hasDeep) {
-    return (hasBodyLine || hasStretchedMetal) ? 'Difficult - High risk' : 'Moderate - May require additional work';
+  if (hasNoAccess) return 1;
+  if (hasDeep && (hasBodyLine || hasStretchedMetal)) return 2;
+  if (hasDeep) return 3;
+  if (hasBodyLine || hasStretchedMetal) return 3;
+  if (hasShallow) return 5;
+  return 4;
+}
+
+function confidenceLabel(score) {
+  switch (score) {
+    case 5: return 'Excellent — repair is well suited to PDR';
+    case 4: return 'Good — no significant concerns identified';
+    case 3: return 'Moderate — repair complexity is higher than standard, proceed with care';
+    case 2: return 'Difficult — this job has significant complexity, assess carefully before proceeding';
+    case 1: return 'High risk — consider whether PDR is appropriate for this damage';
+    default: return 'Unable to determine';
   }
-  if (hasMedium) {
-    return (hasBodyLine || hasStretchedMetal) ? 'Moderate - May require additional work' : 'Good for PDR';
-  }
-  // Shallow
-  return (hasBodyLine && hasStretchedMetal) ? 'Good for PDR' : 'Excellent for PDR';
+}
+
+function confidenceBadgeClass(score) {
+  if (score >= 5) return 'bg-green-900/40 border-green-700';
+  if (score === 4) return 'bg-blue-900/40 border-blue-700';
+  if (score === 3) return 'bg-yellow-900/40 border-yellow-700';
+  if (score === 2) return 'bg-orange-900/40 border-orange-700';
+  return 'bg-red-900/40 border-red-700';
+}
+
+function confidenceTextClass(score) {
+  if (score >= 5) return 'text-green-300';
+  if (score === 4) return 'text-blue-300';
+  if (score === 3) return 'text-yellow-300';
+  if (score === 2) return 'text-orange-300';
+  return 'text-red-300';
 }
 
 export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysisComplete, onGoBack }) {
