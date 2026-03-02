@@ -212,8 +212,8 @@ OUTPUT: JSON only. No other text.`;
         }
       });
 
-      // Compute suitability and risk flags programmatically
-      const suitability = computeSuitability(damageItems);
+      // Compute confidence score and risk flags programmatically
+      const confidenceScore = computeConfidenceScore(damageItems);
       const riskFlags = computeRiskFlags(damageItems);
 
       // Build the full analysis object (for downstream use)
@@ -221,28 +221,21 @@ OUTPUT: JSON only. No other text.`;
         damage_report: {
           vehicle_panel: damageItems.map(i => i.panel).join(', '),
           dent_count: totalDentsFromData,
-          dent_summary: damageDescription
         },
         confidence_assessment: {
-          quote_confidence: 4,
-          repair_suitability: suitability,
-          additional_notes: damageItems.map((item, idx) =>
-            `${idx + 1}. ${item.panel} — ${item.depth || ''} ${item.damage_type}${item.repair_method ? `, ${item.repair_method === 'Glue Pull Only' ? 'glue pull repair method selected' : item.repair_method}` : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}${item.affects_body_line ? ', affects body line' : ''}${item.material === 'Aluminum' ? ', aluminium panel' : ''}`
-          ).join('. ')
+          quote_confidence: confidenceScore,
+          repair_suitability: confidenceLabel(confidenceScore),
         },
         risk_assessment: {
           technical_risks: riskFlags.length > 0
             ? riskFlags.map(f => f.text)
             : ['Standard repair within your capabilities. No unusual risks identified.'],
-          estimated_difficulty: ['Excellent for PDR', 'Good for PDR'].includes(suitability) ? 'Easy'
-            : suitability.includes('Moderate') ? 'Moderate'
-            : suitability.includes('Difficult') ? 'Difficult' : 'Very Difficult'
         },
         // UI-specific fields
         _ui: {
           confidence_check: response?.confidence_check || 'No photos provided — analysis based on manual inputs only.',
           photo_observation: response?.photo_observation || 'No additional observations from photo analysis.',
-          suitability,
+          confidenceScore,
           riskFlags
         }
       };
