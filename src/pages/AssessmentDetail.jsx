@@ -39,7 +39,8 @@ import {
   Calculator,
   Save,
   Edit2,
-  CreditCard
+  CreditCard,
+  Eye
 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import ReactDOM from "react-dom/client";
