@@ -275,15 +275,7 @@ OUTPUT: JSON only. No other text.`;
     if (analysis) onAnalysisComplete(analysis);
   };
 
-  const suitabilityBadgeClass = (s) => {
-    if (!s) return 'bg-slate-700 text-slate-300';
-    if (s.includes('Excellent')) return 'bg-green-700 text-green-200';
-    if (s.includes('Good')) return 'bg-blue-700 text-blue-200';
-    if (s.includes('Moderate')) return 'bg-yellow-700 text-yellow-200';
-    if (s.includes('Difficult')) return 'bg-orange-700 text-orange-200';
-    if (s.includes('Not suitable')) return 'bg-red-700 text-red-200';
-    return 'bg-slate-700 text-slate-300';
-  };
+
 
   if (analyzing) {
     return (
