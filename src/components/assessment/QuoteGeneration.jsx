@@ -416,6 +416,7 @@ export default function QuoteGeneration({
   analysis,
   photos,
   damageItems = [],
+  additionalLineItems = [],
   onAddAnotherVehicle,
   onFinalSave,
   isPerPanelPricing = false,
