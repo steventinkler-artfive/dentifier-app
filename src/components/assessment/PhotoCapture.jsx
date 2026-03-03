@@ -43,7 +43,7 @@ const REPAIR_METHODS = [
   "Good Tool Access",
   "Limited Tool Access",
   "Glue Pull Only",
-  "Strip & Re-fit",
+  "Glue Pull + Rod Finish",
   "Unsure"
 ];
 
@@ -521,8 +521,8 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                   </div>
                 </div>
 
-                {/* Warning for Glue Pull Only on complex damage */}
-                {item.repair_method === "Glue Pull Only" && (item.depth === "Deep/Sharp" || item.affects_body_line || item.has_stretched_metal) && (
+                {/* Warning for Glue Pull methods on complex damage */}
+                {(item.repair_method === "Glue Pull Only" || item.repair_method === "Glue Pull + Rod Finish") && (item.depth === "Deep/Sharp" || item.affects_body_line || item.has_stretched_metal) && (
                   <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
                     <p className="text-yellow-300 text-xs">
