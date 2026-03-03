@@ -25,6 +25,12 @@ export default function Subscription() {
   const handleSubscribe = async (plan) => {
     setLoading({ ...loading, [plan]: true });
     try {
+      const isAuthenticated = await base44.auth.isAuthenticated();
+      if (!isAuthenticated) {
+        base44.auth.redirectToLogin(createPageUrl('SubscriptionSuccess'));
+        return;
+      }
+
       const response = await createStripeCheckoutSession({ tier: plan });
       
       if (response.data.checkout_url) {
