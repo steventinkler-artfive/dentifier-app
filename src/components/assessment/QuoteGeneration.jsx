@@ -716,7 +716,7 @@ TASK: Write the customer-facing assessment notes for the following job.
 DAMAGE BEING REPAIRED:
 ${damageContext}
 
-OUTPUT: Plain text only. 1–3 sentences. No bullet points, no headings, no JSON. Do not include any disclaimer — the system adds that separately.`;
+OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1–3 sentences of plain text. No bullet points, no headings. Do not include any disclaimer — the system adds that separately.`;
 
           const notesResponse = await base44.integrations.Core.InvokeLLM({
             prompt: notesPrompt,
