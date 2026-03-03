@@ -701,108 +701,40 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
         return 'PLEASE NOTE: Paintless dent repair is a non-invasive process, however there is an inherent risk that pre-existing paint or panel conditions may become apparent during repair, including paint cracking. By proceeding, the vehicle owner acknowledges these risks and accepts that the technician cannot be held liable for pre-existing conditions revealed during the repair process.';
       };
 
-      // Phrases that must be stripped from AI-generated notes
-      const PROHIBITED_PHRASES = [
-        'acknowledges and accepts this risk',
-        'risk of paint lift',
-        'glue pulling carries',
-        'while rare',
-        'committed to delivering',
-        'exceed your expectations',
-        'exceed expectations',
-        'thank you',
-        'pre-existing',
-        'trusting us',
-        'choosing us',
-        'we are committed',
-        'delivering results',
-      ];
-
-      // Strip prohibited sentences from AI notes, then enforce closing sentence
-      const sanitiseNotes = (raw) => {
-        // Split into sentences
-        let sentences = raw
-          .replace(/\n+/g, ' ')
-          .split(/(?<=[.!?])\s+/)
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        // Remove any sentence containing a prohibited phrase or starting with "Thank you"
-        sentences = sentences.filter(sentence => {
-          const lower = sentence.toLowerCase();
-          if (/^thank you/i.test(sentence)) return false;
-          return !PROHIBITED_PHRASES.some(phrase => lower.includes(phrase.toLowerCase()));
-        });
-
-        const REQUIRED_CLOSING = 'Our goal is to make the damage less noticeable and enhance the overall look of your vehicle.';
-
-        // Remove any existing version of the closing sentence to avoid duplication
-        sentences = sentences.filter(s => !s.toLowerCase().includes('our goal is to make the damage less noticeable'));
-
-        // Also remove the final sentence if it doesn't match (replaced below)
-        // Then append the required closing
-        sentences.push(REQUIRED_CLOSING);
-
-        return sentences.join(' ').trim();
-      };
-
       if (globalSettings?.llm_quote_instructions) {
         try {
-          let openingSentenceInstruction = '';
-          if (hasGluePull) {
-            openingSentenceInstruction = 'OPENING SENTENCE (mandatory): "This is a glue pull only repair due to the location and access of the dent."';
-          } else if (hasLimitedAccess) {
-            openingSentenceInstruction = 'OPENING SENTENCE (mandatory): Write one sentence acknowledging that access to this area is restricted, but that the repair will be carried out to the highest standard.';
-          } else {
-            openingSentenceInstruction = 'OPENING SENTENCE: Do NOT mention access or repair method. Go straight to the positive outcome statement about the expected improvement.';
-          }
+          const damageContext = damageItems.map((item, idx) =>
+            `${idx + 1}. Panel: ${item.panel} | Type: ${item.damage_type}${item.size_range ? ` | Size: ${item.size_range}` : ''}${item.depth ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
+          ).join('\n');
 
-          const sentenceCount = hasStretchedMetal ? 4 : 3;
+          const notesPrompt = `${globalSettings.llm_quote_instructions}
 
-          const notesPrompt = `You are writing customer-facing notes for a professional dent repair quote. These notes appear on the customer's quote document. Write in first person as the business — use "we" not "your technician".
+---
 
-STRUCTURE — follow this exact order, one sentence per point:
-1. ${openingSentenceInstruction}
-2. A positive statement about the expected improvement to the appearance of the specific panel(s) after the repair.
-${hasStretchedMetal ? '3. Use this exact wording: "While we will work to restore it as much as possible, please keep in mind that due to the condition of the metal, a complete 100% restoration may not be achievable."' : ''}
-
-STRICT RULES:
-- Write "we" not "your technician". Professional and confident. Never apologetic.
-- Do NOT use: "We are confident", "We appreciate your understanding", "we hope", "unfortunately", "we apologise", "advise you of the outcome on completion", "discuss with you before work begins", "making it look much better than it currently does"
-- No jargon: no "PDR", "tool access", "repair method", "matrix"
-- Do NOT include any disclaimer, liability notice, or "Our goal is to make the damage less noticeable" sentence — these are added separately by the system.
-- Reference the specific panel(s) and damage type — not generic
-- Maximum ${sentenceCount} sentences total
+TASK: Write the customer-facing assessment notes for the following job.
 
 DAMAGE BEING REPAIRED:
-${damageItems.map((item, idx) => `${idx + 1}. ${item.panel} — ${item.damage_type}${item.size_range ? ` (${item.size_range})` : ''}${item.depth ? `, ${item.depth} depth` : ''}${item.affects_body_line ? ', crosses body line' : ''}${item.has_stretched_metal ? ', stretched metal present' : ''}${item.repair_method ? `, method: ${item.repair_method}` : ''}`).join('\n')}
+${damageContext}
 
-OUTPUT: Plain text only. No bullet points, no headings, no JSON.`;
+OUTPUT: Plain text only. 1–3 sentences. No bullet points, no headings, no JSON. Do not include any disclaimer — the system adds that separately.`;
 
           const notesResponse = await base44.integrations.Core.InvokeLLM({
             prompt: notesPrompt
           });
 
-          let generatedNotes = typeof notesResponse === 'string' ? notesResponse.trim() : String(notesResponse || '').trim();
+          const generatedNotes = typeof notesResponse === 'string' ? notesResponse.trim() : String(notesResponse || '').trim();
 
           if (generatedNotes && generatedNotes.length > 10) {
-            // STEP 1: Strip prohibited phrases
-            // STEP 2: Enforce required closing sentence
-            generatedNotes = sanitiseNotes(generatedNotes);
-            // STEP 3: Append correct disclaimer after blank line (always, exactly once)
             assessmentNotes = generatedNotes + '\n\n' + buildDisclaimer();
           } else {
-            // LLM returned nothing useful — use just the disclaimer
-            assessmentNotes = 'Our goal is to make the damage less noticeable and enhance the overall look of your vehicle.\n\n' + buildDisclaimer();
+            assessmentNotes = buildDisclaimer();
           }
         } catch (notesError) {
           console.error('Failed to generate AI assessment notes:', notesError);
-          // Fallback: just the closing sentence + disclaimer
-          assessmentNotes = 'Our goal is to make the damage less noticeable and enhance the overall look of your vehicle.\n\n' + buildDisclaimer();
+          assessmentNotes = buildDisclaimer();
         }
       } else {
-        // No global settings — still always append the disclaimer
-        assessmentNotes = 'Our goal is to make the damage less noticeable and enhance the overall look of your vehicle.\n\n' + buildDisclaimer();
+        assessmentNotes = buildDisclaimer();
       }
       
       setNotes(assessmentNotes);
