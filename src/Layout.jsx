@@ -60,6 +60,13 @@ export default function Layout({ children, currentPageName }) {
     }
 
     // Check if user has access (admins always have access)
+    const justSubscribed = localStorage.getItem('just_subscribed');
+    if (justSubscribed) {
+      localStorage.removeItem('just_subscribed');
+      setCheckingAccess(false);
+      return;
+    }
+
     const hasAccess = 
       currentUser.role === 'admin' ||
       currentUser.subscription_status === 'trialing' ||
