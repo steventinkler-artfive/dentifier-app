@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
                 quantity: 1,
             }],
             success_url: 'https://app.dentifierpro.com/SubscriptionSuccess?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url: 'https://app.dentifierpro.com/subscription-cancelled',
+            cancel_url: 'https://app.dentifierpro.com/Subscription',
             customer_email: user.email,
             subscription_data: {
                 metadata: {
