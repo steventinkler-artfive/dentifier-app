@@ -27,8 +27,8 @@ export default function Subscription() {
     try {
       const response = await createStripeCheckoutSession({ tier: plan });
       
-      if (response.data.url) {
-        window.location.href = response.data.url;
+      if (response.data.checkout_url) {
+        window.location.href = response.data.checkout_url;
       } else {
         alert('Failed to create checkout session');
         setLoading({ ...loading, [plan]: false });
