@@ -583,6 +583,86 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
               </div>
             ))}
 
+            {/* Add Line Item inline form */}
+            {showAddLineItemForm && (
+              <div className="bg-slate-800 border border-slate-600 rounded-lg p-4 space-y-3">
+                <p className="text-white text-sm font-medium">Add Line Item</p>
+                <Input
+                  value={newLineItemDescription}
+                  onChange={(e) => setNewLineItemDescription(e.target.value)}
+                  placeholder="e.g. Strip & Re-fit, Paint correction, Headlamp restoration"
+                  className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                />
+                <Input
+                  type="number"
+                  value={newLineItemPrice}
+                  onChange={(e) => setNewLineItemPrice(e.target.value)}
+                  placeholder="Price (GBP)"
+                  className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      const price = parseFloat(newLineItemPrice) || 0;
+                      if (!newLineItemDescription.trim() || price <= 0) return;
+                      setAdditionalLineItems(prev => [...prev, {
+                        description: newLineItemDescription.trim(),
+                        quantity: 1,
+                        unit_price: price,
+                        total_price: price
+                      }]);
+                      setNewLineItemDescription('');
+                      setNewLineItemPrice('');
+                      setShowAddLineItemForm(false);
+                    }}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm"
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setShowAddLineItemForm(false); setNewLineItemDescription(''); setNewLineItemPrice(''); }}
+                    className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-sm"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Show added line items */}
+            {additionalLineItems.length > 0 && (
+              <div className="space-y-2">
+                {additionalLineItems.map((li, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-800 border border-slate-600 rounded-lg">
+                    <div>
+                      <p className="text-white text-sm">{li.description}</p>
+                      <p className="text-slate-400 text-xs">£{li.total_price.toFixed(2)}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setAdditionalLineItems(prev => prev.filter((_, i) => i !== idx))}
+                      className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {damageItems.length > 0 && !showAddLineItemForm && (
+              <Button
+                onClick={() => setShowAddLineItemForm(true)}
+                variant="outline"
+                className="w-full bg-transparent border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white text-sm"
+              >
+                <Receipt className="w-4 h-4 mr-2" />
+                + Add Line Item
+              </Button>
+            )}
+
             {damageItems.length > 0 && (
               <Button
                 onClick={handleAddDamageItem}
