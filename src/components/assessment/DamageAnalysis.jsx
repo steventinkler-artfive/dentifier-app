@@ -23,6 +23,7 @@ const DentifierIcon = ({ className = "" }) => (
 function computeRiskFlags(damageItems) {
   const flags = [];
   const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only' || i.repair_method === 'Glue Pull + Rod Finish');
+
   const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
   const hasBodyLine = damageItems.some(i => i.affects_body_line);
   const hasLimitedAccess = damageItems.some(i => i.repair_method === 'Limited Tool Access');
