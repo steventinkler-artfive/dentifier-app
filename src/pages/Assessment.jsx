@@ -50,7 +50,7 @@ export default function AssessmentPage() {
     customer: null,
     completedVehicles: [], // Array to store completed vehicles with their data
     currentVehicle: null,   // The vehicle currently being assessed
-    currentPhotos: { photos: [], damageItems: [], chargePerPanel: false }, // Updated for structured damage items
+    currentPhotos: { photos: [], damageItems: [], chargePerPanel: false, additionalLineItems: [] }, // Updated for structured damage items
     currentAnalysis: null,
     currentQuote: null
   });
@@ -156,7 +156,7 @@ export default function AssessmentPage() {
       completedVehicles: [...prev.completedVehicles, vehicleData],
       // Reset current vehicle data
       currentVehicle: null,
-      currentPhotos: { photos: [], damageItems: [], chargePerPanel: false }, // Reset damage items
+      currentPhotos: { photos: [], damageItems: [], chargePerPanel: false, additionalLineItems: [] }, // Reset damage items
       currentAnalysis: null,
       currentQuote: null
     }));
@@ -280,18 +280,20 @@ export default function AssessmentPage() {
     if (typeof assessmentData.currentPhotos === 'object' && 'photos' in assessmentData.currentPhotos) {
       return {
         photos: assessmentData.currentPhotos.photos || [],
-        damageItems: assessmentData.currentPhotos.damageItems || [], // Updated to damageItems
-        chargePerPanel: assessmentData.currentPhotos.chargePerPanel || false
+        damageItems: assessmentData.currentPhotos.damageItems || [],
+        chargePerPanel: assessmentData.currentPhotos.chargePerPanel || false,
+        additionalLineItems: assessmentData.currentPhotos.additionalLineItems || []
       };
     }
     return {
       photos: Array.isArray(assessmentData.currentPhotos) ? assessmentData.currentPhotos : [],
-      damageItems: [], // Default to empty array for damageItems
-      chargePerPanel: false
+      damageItems: [],
+      chargePerPanel: false,
+      additionalLineItems: []
     };
   };
 
-  const { photos, damageItems, chargePerPanel } = getPhotosData(); // Updated destructuring
+  const { photos, damageItems, chargePerPanel, additionalLineItems } = getPhotosData(); // Updated destructuring
 
   // Auto-advance for per panel pricing
   useEffect(() => {
