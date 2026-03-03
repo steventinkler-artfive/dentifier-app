@@ -36,16 +36,19 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     if (loadingUser) return;
 
+    // If user just logged in and has a pending subscription, redirect to SubscriptionSuccess
+    if (currentUser && currentPageName !== 'SubscriptionSuccess') {
+      const pendingSubscription = localStorage.getItem('pending_subscription');
+      if (pendingSubscription) {
+        localStorage.removeItem('pending_subscription');
+        navigate(createPageUrl('SubscriptionSuccess'));
+        return;
+      }
+    }
+
     // Pages that don't require subscription check
     const publicPages = ['Subscription', 'SubscriptionSuccess', 'PublicPricing', 'QuotePDF'];
     if (publicPages.includes(currentPageName)) {
-      // If user is not logged in and landing on SubscriptionSuccess (e.g. returning from Stripe),
-      // redirect to login with SubscriptionSuccess as the next URL (preserving session_id)
-      if (currentPageName === 'SubscriptionSuccess' && !currentUser) {
-        const nextUrl = window.location.pathname + window.location.search;
-        base44.auth.redirectToLogin(nextUrl);
-        return;
-      }
       setCheckingAccess(false);
       return;
     }
