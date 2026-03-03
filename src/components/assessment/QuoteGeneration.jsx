@@ -41,13 +41,13 @@ function calculateRepairMethodMultiplier(damageItem) {
       return needsToolFinishing ? 1.35 : 1.1;
       
     case "Glue Pull Only":
-      return needsToolFinishing ? 1.6 : 1.0;
-      
-    case "Strip & Re-fit":
-      return 1.3;
+      return 1.0;
+
+    case "Glue Pull + Rod Finish":
+      return 1.0;
       
     case "Unsure":
-      return needsToolFinishing ? 1.25 : 1.15;
+      return 1.0;
       
     default:
       return 1.1;
@@ -681,9 +681,9 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       if (globalSettings?.llm_quote_instructions) {
         try {
           const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
-          const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only');
+          const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only' || i.repair_method === 'Glue Pull + Rod Finish');
           const hasLimitedAccess = damageItems.some(i => i.repair_method === 'Limited Tool Access');
-          const hasNoAccess = damageItems.some(i => i.repair_method === 'Strip & Re-fit' || i.repair_method === 'Unsure');
+          const hasNoAccess = false;
 
           let openingSentenceInstruction = '';
           if (hasGluePull) {
