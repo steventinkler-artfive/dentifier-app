@@ -35,6 +35,8 @@ export default function Subscription() {
       const response = await createStripeCheckoutSession({ tier: plan });
       
       if (response.data.checkout_url) {
+        // Store pending subscription so we can redirect to SubscriptionSuccess after login
+        localStorage.setItem('pending_subscription', plan);
         window.location.href = response.data.checkout_url;
       } else {
         alert('Failed to create checkout session');
