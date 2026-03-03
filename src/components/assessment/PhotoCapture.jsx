@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Camera, Upload, X, Loader2, Image as ImageIcon, CheckCircle, AlertTriangle, Plus } from "lucide-react";
+import { Camera, Upload, X, Loader2, Image as ImageIcon, CheckCircle, AlertTriangle, Plus, Receipt } from "lucide-react";
 import { compressMultipleImages } from "../utils/imageCompression";
 import { useAlert } from "@/components/ui/CustomAlert";
 
