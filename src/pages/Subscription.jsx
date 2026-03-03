@@ -25,7 +25,7 @@ export default function Subscription() {
   const handleSubscribe = async (plan) => {
     setLoading({ ...loading, [plan]: true });
     try {
-      const response = await createStripeCheckoutSession({ subscription_plan: plan });
+      const response = await createStripeCheckoutSession({ tier: plan });
       
       if (response.data.url) {
         window.location.href = response.data.url;
