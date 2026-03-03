@@ -87,7 +87,8 @@ export default function Dashboard() {
       const settings = settingsData.length > 0 ? settingsData[0] : null;
       setUserSettings(settings);
       
-      if (settings && !settings.onboarding_completed) {
+      // Show onboarding if no settings record yet (brand new user) OR onboarding not completed
+      if (!settings || !settings.onboarding_completed) {
         setShowOnboarding(true);
       }
       setLoadingUserSettings(false);
