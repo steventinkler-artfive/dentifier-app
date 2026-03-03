@@ -122,7 +122,10 @@ export default function SubscriptionSuccess() {
             </div>
 
             <Button
-              onClick={() => navigate(createPageUrl("Dashboard"))}
+              onClick={() => {
+                localStorage.setItem('just_subscribed', 'true');
+                navigate(createPageUrl("Dashboard"));
+              }}
               className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-6 text-lg"
             >
               Get Started
