@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
                 price: priceId,
                 quantity: 1,
             }],
-            success_url: 'https://app.dentifierpro.com/subscription-success?session_id={CHECKOUT_SESSION_ID}',
+            success_url: 'https://app.dentifierpro.com/SubscriptionSuccess?session_id={CHECKOUT_SESSION_ID}',
             cancel_url: 'https://app.dentifierpro.com/subscription-cancelled',
             customer_email: user.email,
             subscription_data: {
