@@ -462,6 +462,7 @@ export default function AssessmentPage() {
             analysis={assessmentData.currentAnalysis}
             photos={photos}
             damageItems={damageItems}
+            additionalLineItems={additionalLineItems}
             onAddAnotherVehicle={handleAddAnotherVehicle}
             onFinalSave={handleFinalSave}
             isPerPanelPricing={chargePerPanel}
