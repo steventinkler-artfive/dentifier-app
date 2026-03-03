@@ -77,7 +77,7 @@ function computeRiskFlags(damageItems) {
 function computeConfidenceScore(damageItems) {
   const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
   const hasBodyLine = damageItems.some(i => i.affects_body_line);
-  const hasNoAccess = damageItems.some(i => i.repair_method === 'Strip & Re-fit');
+  const hasNoAccess = false;
   const hasDeep = damageItems.some(i => i.depth === 'Deep/Sharp');
   const hasShallow = damageItems.every(i => i.depth === 'Shallow' || !i.depth);
 
