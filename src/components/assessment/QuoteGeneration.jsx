@@ -516,6 +516,10 @@ export default function QuoteGeneration({
           });
         }
 
+        if (additionalLineItems && additionalLineItems.length > 0) {
+          additionalLineItems.forEach(li => simpleLineItems.push(li));
+        }
+
         setLineItems(simpleLineItems);
         setCalculationBreakdown([]);
         setEstimatedTime(damageItems.length * 2);
