@@ -672,6 +672,11 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
         });
       }
 
+      // Append any additional line items added on the damage form
+      if (additionalLineItems && additionalLineItems.length > 0) {
+        additionalLineItems.forEach(li => calculatedLineItems.push(li));
+      }
+
       setLineItems(calculatedLineItems);
       setCalculationBreakdown(breakdownDetails);
       setEstimatedTime(totalEstimatedHours);
