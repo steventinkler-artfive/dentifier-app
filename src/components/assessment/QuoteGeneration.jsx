@@ -696,9 +696,9 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       // Helper: build the correct disclaimer based on repair method
       const buildDisclaimer = () => {
         if (hasGluePull) {
-          return 'PLEASE NOTE: Glue pulling carries a small risk of paint lift. Additionally, there is an inherent risk that pre-existing paint or panel conditions may become apparent during repair, including paint cracking. By proceeding, the vehicle owner acknowledges these risks and accepts that the technician cannot be held liable for pre-existing conditions revealed during the repair process.';
+          return 'PLEASE NOTE: This repair utilises glue pulling techniques. Whilst every care is taken, there is a small risk of minor paint surface marks or texture changes. By proceeding, the vehicle owner accepts that the technician cannot be held liable for any such issues arising from the repair process.';
         }
-        return 'PLEASE NOTE: Paintless dent repair is a non-invasive process, however there is an inherent risk that pre-existing paint or panel conditions may become apparent during repair, including paint cracking. By proceeding, the vehicle owner acknowledges these risks and accepts that the technician cannot be held liable for pre-existing conditions revealed during the repair process.';
+        return 'PLEASE NOTE: PDR is a non-destructive process, however pre-existing paint or panel conditions may become apparent during repair. By proceeding, the vehicle owner accepts that the technician cannot be held liable for any such pre-existing conditions.';
       };
 
       if (globalSettings?.llm_quote_instructions) {
