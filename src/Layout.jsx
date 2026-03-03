@@ -39,6 +39,13 @@ export default function Layout({ children, currentPageName }) {
     // Pages that don't require subscription check
     const publicPages = ['Subscription', 'SubscriptionSuccess', 'PublicPricing', 'QuotePDF'];
     if (publicPages.includes(currentPageName)) {
+      // If user is not logged in and landing on SubscriptionSuccess (e.g. returning from Stripe),
+      // redirect to login with SubscriptionSuccess as the next URL (preserving session_id)
+      if (currentPageName === 'SubscriptionSuccess' && !currentUser) {
+        const nextUrl = window.location.pathname + window.location.search;
+        base44.auth.redirectToLogin(nextUrl);
+        return;
+      }
       setCheckingAccess(false);
       return;
     }
