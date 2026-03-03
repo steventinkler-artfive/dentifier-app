@@ -238,7 +238,8 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
     onPhotosCapture({
       photos: uploadedPhotos,
       damageItems: damageItems,
-      chargePerPanel: chargePerPanel
+      chargePerPanel: chargePerPanel,
+      additionalLineItems: additionalLineItems
     });
   };
 
