@@ -58,6 +58,10 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   const [damageTypes, setDamageTypes] = useState(BASE_DAMAGE_TYPES);
   const [sizeRanges, setSizeRanges] = useState(DEFAULT_SIZE_RANGES);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [additionalLineItems, setAdditionalLineItems] = useState([]);
+  const [showAddLineItemForm, setShowAddLineItemForm] = useState(false);
+  const [newLineItemDescription, setNewLineItemDescription] = useState('');
+  const [newLineItemPrice, setNewLineItemPrice] = useState('');
   const { showAlert } = useAlert();
 
   // Load damage types and size ranges from user's pricing matrix
