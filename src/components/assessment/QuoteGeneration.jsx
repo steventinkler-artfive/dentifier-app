@@ -719,10 +719,17 @@ ${damageContext}
 OUTPUT: Plain text only. 1–3 sentences. No bullet points, no headings, no JSON. Do not include any disclaimer — the system adds that separately.`;
 
           const notesResponse = await base44.integrations.Core.InvokeLLM({
-            prompt: notesPrompt
+            prompt: notesPrompt,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                assessment_notes: { type: "string" }
+              },
+              required: ["assessment_notes"]
+            }
           });
 
-          const generatedNotes = typeof notesResponse === 'string' ? notesResponse.trim() : String(notesResponse || '').trim();
+          const generatedNotes = notesResponse?.assessment_notes?.trim() || '';
 
           if (generatedNotes && generatedNotes.length > 10) {
             assessmentNotes = generatedNotes + '\n\n' + buildDisclaimer();
