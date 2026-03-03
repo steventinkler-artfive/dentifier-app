@@ -26,7 +26,7 @@ function computeRiskFlags(damageItems) {
   const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
   const hasBodyLine = damageItems.some(i => i.affects_body_line);
   const hasLimitedAccess = damageItems.some(i => i.repair_method === 'Limited Tool Access');
-  const hasNoAccess = damageItems.some(i => i.repair_method === 'Strip & Re-fit' || i.repair_method === 'Unsure');
+  const hasNoAccess = false;
   const hasAluminium = damageItems.some(i => i.material === 'Aluminum');
   const hasDeep = damageItems.some(i => i.depth === 'Deep/Sharp');
 
