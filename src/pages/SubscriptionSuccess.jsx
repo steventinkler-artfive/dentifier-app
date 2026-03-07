@@ -14,6 +14,9 @@ export default function SubscriptionSuccess() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Clear the pending_subscription flag immediately so Layout doesn't redirect again
+    localStorage.removeItem('pending_subscription');
+
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();

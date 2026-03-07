@@ -62,9 +62,9 @@ import Quotes from './pages/Quotes';
 import Reports from './pages/Reports';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
-import Subscription from './pages/Subscription';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import Upgrade from './pages/Upgrade';
+import Subscription from './pages/Subscription';
 import __Layout from './Layout.jsx';
 
 
@@ -84,9 +84,9 @@ export const PAGES = {
     "Reports": Reports,
     "ResetPassword": ResetPassword,
     "Settings": Settings,
-    "Subscription": Subscription,
     "SubscriptionSuccess": SubscriptionSuccess,
     "Upgrade": Upgrade,
+    "Subscription": Subscription,
 }
 
 export const pagesConfig = {
