@@ -37,6 +37,8 @@ export default function Subscription() {
       if (response.data.checkout_url) {
         // Store pending subscription so we can redirect to SubscriptionSuccess after login
         localStorage.setItem('pending_subscription', plan);
+        // Also store selected tier so success page can display it correctly before webhook fires
+        localStorage.setItem('selected_plan_tier', plan);
         window.location.href = response.data.checkout_url;
       } else {
         alert('Failed to create checkout session');
