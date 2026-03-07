@@ -114,6 +114,7 @@ export default function OnboardingWizard({ user, onComplete }) {
 
   const handleContinue = async () => {
     const step = STEPS[currentStep];
+    document.querySelector('[role="dialog"]')?.scrollTo({ top: 0, behavior: 'smooth' });
     
     if (step.section) {
       const isComplete = validateSection(step.section);
