@@ -128,8 +128,8 @@ export default function SubscriptionSuccess() {
 
             <Button
               onClick={() => {
+                localStorage.removeItem('selected_plan_tier');
                 localStorage.setItem('just_subscribed', 'true');
-                // Small delay to ensure localStorage is set before navigation triggers Layout re-check
                 setTimeout(() => navigate(createPageUrl("Dashboard")), 50);
               }}
               className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-6 text-lg"
