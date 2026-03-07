@@ -61,7 +61,8 @@ export default function Layout({ children, currentPageName }) {
 
     // Check if user has access (admins always have access)
     const justSubscribed = localStorage.getItem('just_subscribed');
-    if (justSubscribed) {
+    const selectedPlanTier = localStorage.getItem('selected_plan_tier');
+    if (justSubscribed || selectedPlanTier) {
       localStorage.removeItem('just_subscribed');
       setCheckingAccess(false);
       return;
