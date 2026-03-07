@@ -24,7 +24,7 @@ export default function Subscription() {
   }, []);
 
   const handleSubscribe = async (plan) => {
-    setLoading({ ...loading, [plan]: true });
+    setLoading(prev => ({ ...prev, [plan]: true }));
     try {
       const isAuthenticated = await base44.auth.isAuthenticated();
       if (!isAuthenticated) {
@@ -32,20 +32,24 @@ export default function Subscription() {
         return;
       }
 
+      console.log(`[Subscription] Calling createStripeCheckoutSession for plan: ${plan}`);
       const response = await createStripeCheckoutSession({ tier: plan });
-      
-      if (response.data.checkout_url) {
-        // Store pending subscription so we can redirect to SubscriptionSuccess after login
+      console.log('[Subscription] Response received:', response);
+      console.log('[Subscription] Response data:', response?.data);
+
+      const checkoutUrl = response?.data?.checkout_url;
+      if (checkoutUrl) {
         localStorage.setItem('pending_subscription', plan);
-        window.location.href = response.data.checkout_url;
+        window.location.href = checkoutUrl;
       } else {
-        alert('Failed to create checkout session');
-        setLoading({ ...loading, [plan]: false });
+        console.error('[Subscription] No checkout_url in response:', response);
+        alert('Failed to create checkout session. Please try again.');
+        setLoading(prev => ({ ...prev, [plan]: false }));
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      console.error('[Subscription] Error creating checkout:', error);
       alert('Failed to start checkout. Please try again.');
-      setLoading({ ...loading, [plan]: false });
+      setLoading(prev => ({ ...prev, [plan]: false }));
     }
   };
 
