@@ -56,7 +56,9 @@ export default function SubscriptionSuccess() {
     );
   }
 
-  const planName = user?.subscription_plan === 'professional' ? 'Professional' : 'Starter';
+  // Use stored tier from checkout (webhook may not have fired yet to update user.subscription_plan)
+  const storedTier = localStorage.getItem('selected_plan_tier');
+  const planName = (user?.subscription_plan === 'professional' || storedTier === 'professional') ? 'Professional' : 'Starter';
   const trialDays = getTrialDaysRemaining();
 
   return (
