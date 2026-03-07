@@ -282,7 +282,8 @@ export default function OnboardingWizard({ user, onComplete }) {
         );
 
       case 5:
-        const isProfessional = ['professional', 'founder', 'early_bird'].includes(user?.subscription_plan) || user?.subscription_status === 'trialing';
+        const storedTier = localStorage.getItem('selected_plan_tier');
+        const isProfessional = ['professional', 'founder', 'early_bird'].includes(user?.subscription_plan) || storedTier === 'professional';
         return (
           <div className="space-y-6 text-center">
             {isProfessional ? (
