@@ -58,6 +58,12 @@ export default function Layout({ children, currentPageName }) {
     }
   }
 
+  // Clean up just_subscribed flag once subscription is confirmed active
+  if (localStorage.getItem('just_subscribed') && 
+      (currentUser.subscription_status === 'trialing' || currentUser.subscription_status === 'active')) {
+    localStorage.removeItem('just_subscribed');
+  }
+
   // Check if user has access (admins always have access)
   // Also allow access if user recently subscribed (webhook may not have fired yet)
   const recentlySubscribed = !!localStorage.getItem('selected_plan_tier') || !!localStorage.getItem('just_subscribed');
