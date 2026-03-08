@@ -154,7 +154,6 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
     try {
       if (!damageItems || damageItems.length === 0) throw new Error('No damage items provided for analysis');
       const analysisInstructions = globalSettings?.llm_analysis_instructions || '';
-      if (!analysisInstructions) throw new Error('Analysis instructions not configured. Please contact your administrator.');
 
       const vehicleInfo = vehicle
         ? `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.color ? ` (${vehicle.color})` : ''}`
