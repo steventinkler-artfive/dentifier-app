@@ -322,7 +322,7 @@ export default function Settings() {
                 // Check if pricing matrix needs update
                 let needsUpdate = false;
                 // If pricing matrix was empty or uses old structure and now has defaults, mark for update
-                if (loadedSettings.pricing_matrix === null || loadedSettings.pricing_matrix.length === 0 || !loadedSettings.pricing_matrix[0]?.hasOwnProperty('base_price')) {
+                if (loadedSettings.pricing_matrix === null || loadedSettings.pricing_matrix.length === 0 || !loadedSettings.pricing_matrix[0]?.hasOwnProperty('base_price') || loadedSettings.pricing_matrix.length < 17) {
                     needsUpdate = true;
                 }
                 
