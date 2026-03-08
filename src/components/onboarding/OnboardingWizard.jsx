@@ -33,6 +33,12 @@ export default function OnboardingWizard({ user, onComplete }) {
   const dialogScrollRef = React.useRef(null);
 
   useEffect(() => {
+    if (dialogScrollRef.current) {
+      dialogScrollRef.current.scrollTop = 0;
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
     loadSettings();
   }, []);
 
