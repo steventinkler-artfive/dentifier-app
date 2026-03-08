@@ -135,7 +135,7 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
       else { setError('User settings not found. Please configure your settings first.'); return; }
       const globalSettingsData = await GlobalSetting.filter({ setting_key: 'main' });
       if (globalSettingsData.length > 0) setGlobalSettings(globalSettingsData[0]);
-      else { setError('Global AI settings not configured. Please contact your administrator.'); return; }
+      else setGlobalSettings({}); // Fall back to defaults — analysis instructions handled in performAnalysis
     } catch (err) {
       console.error('Error loading settings:', err);
       setError('Failed to load settings. Please check your settings page.');
