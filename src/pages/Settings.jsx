@@ -579,22 +579,32 @@ export default function Settings() {
                     </TabsTrigger>
                 </TabsList>
                 
-                <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-4">
-                    <TabsTrigger value="technician" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
-                        Technician details
-                    </TabsTrigger>
-                    {user?.role === 'admin' && (
-                        <TabsTrigger value="admin" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
-                            Admin
+                {user?.role === 'admin' ? (
+                    <>
+                        <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-4">
+                            <TabsTrigger value="technician" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                                Technician details
+                            </TabsTrigger>
+                            <TabsTrigger value="admin" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                                Admin
+                            </TabsTrigger>
+                        </TabsList>
+                        <TabsList className="grid w-full grid-cols-1 bg-slate-900 mb-6">
+                            <TabsTrigger value="subscription" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                                My Subscription
+                            </TabsTrigger>
+                        </TabsList>
+                    </>
+                ) : (
+                    <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-6">
+                        <TabsTrigger value="technician" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                            Technician details
                         </TabsTrigger>
-                    )}
-                </TabsList>
-
-                <TabsList className="grid w-full grid-cols-1 bg-slate-900 mb-6">
-                    <TabsTrigger value="subscription" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
-                        My Subscription
-                    </TabsTrigger>
-                </TabsList>
+                        <TabsTrigger value="subscription" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                            My Subscription
+                        </TabsTrigger>
+                    </TabsList>
+                )}
 
                 {/* Tab 1: Company Info */}
                 <TabsContent value="company" className="space-y-6">
