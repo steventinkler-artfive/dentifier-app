@@ -96,7 +96,9 @@ async function handleSubscriptionUpdate(base44, subscription) {
     subscription_status: subscriptionStatus,
     subscription_tier: subscriptionTier,
     subscription_plan: subscriptionTier,
-    subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString(),
+    subscription_end_date: subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000).toISOString()
+      : null,
   };
 
   // Add trial end date if in trial
