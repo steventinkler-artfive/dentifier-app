@@ -406,7 +406,7 @@ export default function OnboardingWizard({ user, onComplete }) {
   return (
     <>
       <Dialog open={true}>
-        <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent ref={dialogScrollRef} className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="space-y-6">
             {currentStep > 0 && currentStep < 6 && (
               <div>
