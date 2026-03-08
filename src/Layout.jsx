@@ -59,12 +59,15 @@ export default function Layout({ children, currentPageName }) {
   }
 
   // Check if user has access (admins always have access)
+  // Also allow access if user recently subscribed (webhook may not have fired yet)
+  const recentlySubscribed = !!localStorage.getItem('selected_plan_tier') || !!localStorage.getItem('just_subscribed');
+
   const hasAccess = 
     currentUser.role === 'admin' ||
     currentUser.subscription_status === 'trialing' ||
     currentUser.subscription_status === 'active' ||
     currentUser.is_beta_tester === true ||
-    !!localStorage.getItem('selected_plan_tier'); // User just came from Stripe checkout
+    recentlySubscribed;
 
   if (!hasAccess) {
     navigate(createPageUrl('Subscription'));
