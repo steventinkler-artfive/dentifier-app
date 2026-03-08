@@ -34,51 +34,53 @@ export default function Layout({ children, currentPageName }) {
 
   // Check subscription access
   useEffect(() => {
-    if (loadingUser) return;
+  if (loadingUser) return;
 
-    // If user just logged in and has a pending subscription, redirect to SubscriptionSuccess
-    if (currentUser && currentPageName !== 'SubscriptionSuccess') {
-      const pendingSubscription = localStorage.getItem('pending_subscription');
-      if (pendingSubscription) {
-        localStorage.removeItem('pending_subscription');
-        navigate(createPageUrl('SubscriptionSuccess'));
-        return;
-      }
-    }
-
-    // Pages that don't require subscription check
-    const publicPages = ['Subscription', 'SubscriptionSuccess', 'PublicPricing', 'QuotePDF'];
-    if (publicPages.includes(currentPageName)) {
-      setCheckingAccess(false);
-      return;
-    }
-
-    // If no user, they'll be redirected to login by Base44
-    if (!currentUser) {
-      return;
-    }
-
-    // Check if user has access (admins always have access)
-    const justSubscribed = localStorage.getItem('just_subscribed');
-    const selectedPlanTier = localStorage.getItem('selected_plan_tier');
-    if (justSubscribed || selectedPlanTier) {
-      localStorage.removeItem('just_subscribed');
-      setCheckingAccess(false);
-      return;
-    }
-
-    const hasAccess = 
-      currentUser.role === 'admin' ||
-      currentUser.subscription_status === 'trialing' ||
-      currentUser.subscription_status === 'active' ||
-      currentUser.is_beta_tester === true;
-
-    if (!hasAccess) {
-      navigate(createPageUrl('Subscription'));
-      return;
-    }
-
+  // Pages that don't require subscription check
+  const publicPages = ['Subscription', 'SubscriptionSuccess', 'PublicPricing', 'QuotePDF'];
+  if (publicPages.includes(currentPageName)) {
     setCheckingAccess(false);
+    return;
+  }
+
+  // If no user, they'll be redirected to login by Base44
+  if (!currentUser) {
+    return;
+  }
+
+  // If user just logged in and has a pending subscription, redirect to SubscriptionSuccess
+  if (currentPageName !== 'SubscriptionSuccess') {
+    const pendingSubscription = localStorage.getItem('pending_subscription');
+    if (pendingSubscription) {
+      localStorage.removeItem('pending_subscription');
+      navigate(createPageUrl('SubscriptionSuccess'));
+      return;
+    }
+  }
+
+  // Check if user has access (admins always have access)
+  const justSubscribed = localStorage.getItem('just_subscribed');
+  const selectedPlanTier = localStorage.getItem('selected_plan_tier');
+  if (justSubscribed || selectedPlanTier) {
+    localStorage.removeItem('just_subscribed');
+    setCheckingAccess(false);
+    return;
+  }
+
+  const hasAccess = 
+    currentUser.role === 'admin' ||
+    currentUser.subscription_status === 'trialing' ||
+    currentUser.subscription_status === 'active' ||
+    currentUser.is_beta_tester === true;
+
+  // Only redirect to Subscription if we're NOT already on a settings-related page
+  // and the user genuinely has no access
+  if (!hasAccess && currentPageName !== 'Settings') {
+    navigate(createPageUrl('Subscription'));
+    return;
+  }
+
+  setCheckingAccess(false);
   }, [currentUser, loadingUser, currentPageName, navigate]);
 
   // Scroll to top whenever location changes
