@@ -87,8 +87,14 @@ export default function Dashboard() {
       const settings = settingsData.length > 0 ? settingsData[0] : null;
       setUserSettings(settings);
       
-      // Show onboarding if no settings record yet (brand new user) OR onboarding not completed
-      if (!settings || !settings.onboarding_completed) {
+      // Only show onboarding if user has an active subscription/trial
+      const hasAccess = 
+        user.role === 'admin' ||
+        user.subscription_status === 'trialing' ||
+        user.subscription_status === 'active' ||
+        user.is_beta_tester === true;
+
+      if (hasAccess && (!settings || !settings.onboarding_completed)) {
         setShowOnboarding(true);
       }
       setLoadingUserSettings(false);
