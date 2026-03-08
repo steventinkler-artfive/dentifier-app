@@ -66,7 +66,8 @@ export default function Layout({ children, currentPageName }) {
 
   // Check if user has access (admins always have access)
   // Also allow access if user recently subscribed (webhook may not have fired yet)
-  const recentlySubscribed = !!localStorage.getItem('selected_plan_tier') || !!localStorage.getItem('just_subscribed');
+  // Only use just_subscribed as a temporary bypass (set only after real checkout success)
+  const recentlySubscribed = !!localStorage.getItem('just_subscribed');
 
   const hasAccess = 
     currentUser.role === 'admin' ||
