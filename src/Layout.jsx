@@ -55,8 +55,14 @@ export default function Layout({ children, currentPageName }) {
       localStorage.removeItem('just_subscribed');
     }
 
-    // just_subscribed is a short-lived bypass set only after real Stripe checkout
-    const recentlySubscribed = !!localStorage.getItem('just_subscribed');
+    // just_subscribed is a short-lived bypass set only after real Stripe checkout (expires after 10 min)
+    const justSubscribedAt = localStorage.getItem('just_subscribed');
+    const recentlySubscribed = justSubscribedAt && (Date.now() - parseInt(justSubscribedAt)) < 10 * 60 * 1000;
+
+    // If expired, clean it up
+    if (justSubscribedAt && !recentlySubscribed) {
+      localStorage.removeItem('just_subscribed');
+    }
 
     const hasAccess =
       currentUser.role === 'admin' ||
@@ -64,6 +70,14 @@ export default function Layout({ children, currentPageName }) {
       currentUser.subscription_status === 'active' ||
       currentUser.is_beta_tester === true ||
       recentlySubscribed;
+
+    console.log('[Access Check]', {
+      role: currentUser.role,
+      subscription_status: currentUser.subscription_status,
+      is_beta_tester: currentUser.is_beta_tester,
+      recentlySubscribed,
+      hasAccess
+    });
 
     if (!hasAccess) {
       navigate(createPageUrl('Subscription'), { replace: true });
