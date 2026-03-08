@@ -1145,6 +1145,11 @@ export default function Settings() {
                     </Card>
                 </TabsContent>
 
+                {/* Tab 5: My Subscription (all users) */}
+                <TabsContent value="subscription">
+                    <MySubscriptionTab user={user} />
+                </TabsContent>
+
                 {/* Tab 4: Admin (Only for admin users) */}
                 {user?.role === 'admin' && (
                     <TabsContent value="admin" className="space-y-6">
