@@ -205,10 +205,6 @@ export default function Subscription() {
         <div className="mt-12 text-center space-y-2">
           <p className="text-slate-400">
             <Check className="w-4 h-4 inline text-green-400 mr-2" />
-            No credit card required for trial
-          </p>
-          <p className="text-slate-400">
-            <Check className="w-4 h-4 inline text-green-400 mr-2" />
             Cancel anytime, no questions asked
           </p>
           <p className="text-slate-400">
