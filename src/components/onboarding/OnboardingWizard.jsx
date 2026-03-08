@@ -132,7 +132,7 @@ export default function OnboardingWizard({ user, onComplete }) {
 
   const handleSkip = async () => {
     const step = STEPS[currentStep];
-    document.querySelector('[role="dialog"]')?.scrollTo({ top: 0, behavior: 'smooth' });
+    dialogScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     if (step.section) {
       await saveProgress(step.section, false);
     }
