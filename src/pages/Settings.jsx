@@ -250,9 +250,9 @@ export default function Settings() {
                 loadedSettings = existingSettings[0];
                 setSettings(loadedSettings);
 
-                // Initialize pricing matrix with NEW simplified defaults if empty or old structure
+                // Initialize pricing matrix with full defaults if empty, old structure, or incomplete (< 17 entries)
                 let pricingMatrix = loadedSettings.pricing_matrix || [];
-                if (pricingMatrix.length === 0 || !pricingMatrix[0].hasOwnProperty('base_price')) {
+                if (pricingMatrix.length === 0 || !pricingMatrix[0].hasOwnProperty('base_price') || pricingMatrix.length < 17) {
                     // Use new simplified structure
                     pricingMatrix = [
                         // Standard Dent - All 10 size ranges
