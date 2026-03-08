@@ -55,7 +55,6 @@ export default function Layout({ children, currentPageName }) {
 
     // If no user, they'll be redirected to login by Base44
     if (!currentUser) {
-      setCheckingAccess(false);
       return;
     }
 
