@@ -129,7 +129,8 @@ export default function SubscriptionSuccess() {
             <Button
               onClick={() => {
                 localStorage.removeItem('selected_plan_tier');
-                localStorage.setItem('just_subscribed', 'true');
+                // Store with expiry timestamp - only valid for 10 minutes to allow webhook to fire
+                localStorage.setItem('just_subscribed', String(Date.now()));
                 setTimeout(() => navigate(createPageUrl("Dashboard")), 50);
               }}
               className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-6 text-lg"
