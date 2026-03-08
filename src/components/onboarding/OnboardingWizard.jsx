@@ -30,6 +30,7 @@ export default function OnboardingWizard({ user, onComplete }) {
   const [saving, setSaving] = useState(false);
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   const { showAlert } = useAlert();
+  const dialogScrollRef = React.useRef(null);
 
   useEffect(() => {
     loadSettings();
