@@ -557,7 +557,7 @@ export default function Settings() {
     // so rendering is safe if loading is false.
 
     return (
-        <div className="p-4 max-w-md mx-auto space-y-6">
+        <div className="p-4 max-w-4xl mx-auto space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-white">Settings</h1>
                 <p className="text-slate-400 text-sm">Customise your business profile and preferences.</p>
