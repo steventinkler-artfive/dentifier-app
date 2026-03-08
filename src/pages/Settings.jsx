@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Users, Mail } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
+import MySubscriptionTab from "../components/settings/MySubscriptionTab";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
