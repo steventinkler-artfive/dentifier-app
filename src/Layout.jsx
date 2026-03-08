@@ -73,9 +73,7 @@ export default function Layout({ children, currentPageName }) {
     currentUser.subscription_status === 'active' ||
     currentUser.is_beta_tester === true;
 
-  // Only redirect to Subscription if we're NOT already on a settings-related page
-  // and the user genuinely has no access
-  if (!hasAccess && currentPageName !== 'Settings') {
+  if (!hasAccess) {
     navigate(createPageUrl('Subscription'));
     return;
   }
