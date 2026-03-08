@@ -128,7 +128,9 @@ async function handleSubscriptionDeleted(base44, subscription) {
 
   const updateData = {
     subscription_status: 'cancelled',
-    subscription_end_date: new Date(subscription.ended_at * 1000).toISOString(),
+    subscription_end_date: subscription.ended_at
+      ? new Date(subscription.ended_at * 1000).toISOString()
+      : null,
   };
 
   // Find and update user
