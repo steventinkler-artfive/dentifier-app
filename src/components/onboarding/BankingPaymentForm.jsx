@@ -91,6 +91,8 @@ export default function BankingPaymentForm({ formData, onChange }) {
               <SelectContent className="bg-slate-800 border-slate-700">
                 <SelectItem value="None" className="text-white">None</SelectItem>
                 <SelectItem value="Stripe" className="text-white">Stripe</SelectItem>
+                <SelectItem value="Square" className="text-white">Square</SelectItem>
+                <SelectItem value="PayPal" className="text-white">PayPal</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -106,6 +108,46 @@ export default function BankingPaymentForm({ formData, onChange }) {
                 className="bg-slate-800 border-slate-700 text-white"
               />
               <p className="text-slate-400 text-xs">Get from Stripe Dashboard → Developers → API keys</p>
+            </div>
+          )}
+
+          {formData.payment_provider === 'Square' && (
+            <div className="space-y-2">
+              <Label className="text-white">Square Access Token</Label>
+              <Input
+                type="password"
+                value={formData.square_access_token || ''}
+                onChange={e => onChange('square_access_token', e.target.value)}
+                placeholder="EAAAl..."
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+              <p className="text-slate-400 text-xs">Get from Square Developer Dashboard → Applications → Access Token</p>
+            </div>
+          )}
+
+          {formData.payment_provider === 'PayPal' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-white">PayPal Client ID</Label>
+                <Input
+                  type="password"
+                  value={formData.paypal_client_id || ''}
+                  onChange={e => onChange('paypal_client_id', e.target.value)}
+                  placeholder="AZ..."
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-white">PayPal Client Secret</Label>
+                <Input
+                  type="password"
+                  value={formData.paypal_client_secret || ''}
+                  onChange={e => onChange('paypal_client_secret', e.target.value)}
+                  placeholder="EG..."
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <p className="text-slate-400 text-xs">Get from PayPal Developer Dashboard → My Apps & Credentials</p>
             </div>
           )}
         </div>
