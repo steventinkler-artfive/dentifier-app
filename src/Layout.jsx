@@ -34,54 +34,43 @@ export default function Layout({ children, currentPageName }) {
 
   // Check subscription access
   useEffect(() => {
-  if (loadingUser) return;
+    if (loadingUser) return;
 
-  // Pages that don't require subscription check
-  const publicPages = ['Subscription', 'SubscriptionSuccess', 'PublicPricing', 'QuotePDF'];
-  if (publicPages.includes(currentPageName)) {
-    setCheckingAccess(false);
-    return;
-  }
-
-  // If no user, they'll be redirected to login by Base44
-  if (!currentUser) {
-    return;
-  }
-
-  // If user just logged in and has a pending subscription, redirect to SubscriptionSuccess
-  if (currentPageName !== 'SubscriptionSuccess') {
-    const pendingSubscription = localStorage.getItem('pending_subscription');
-    if (pendingSubscription) {
-      localStorage.removeItem('pending_subscription');
-      navigate(createPageUrl('SubscriptionSuccess'));
+    // Pages that don't require subscription check
+    const publicPages = ['Subscription', 'SubscriptionSuccess', 'PublicPricing', 'QuotePDF'];
+    if (publicPages.includes(currentPageName)) {
+      setCheckingAccess(false);
       return;
     }
-  }
 
-  // Clean up just_subscribed flag once subscription is confirmed active
-  if (localStorage.getItem('just_subscribed') && 
-      (currentUser.subscription_status === 'trialing' || currentUser.subscription_status === 'active')) {
-    localStorage.removeItem('just_subscribed');
-  }
+    // If no user, let Base44 handle login redirect
+    if (!currentUser) {
+      setCheckingAccess(false);
+      return;
+    }
 
-  // Check if user has access (admins always have access)
-  // Also allow access if user recently subscribed (webhook may not have fired yet)
-  // Only use just_subscribed as a temporary bypass (set only after real checkout success)
-  const recentlySubscribed = !!localStorage.getItem('just_subscribed');
+    // Clean up just_subscribed flag once subscription is confirmed
+    if (localStorage.getItem('just_subscribed') &&
+        (currentUser.subscription_status === 'trialing' || currentUser.subscription_status === 'active')) {
+      localStorage.removeItem('just_subscribed');
+    }
 
-  const hasAccess = 
-    currentUser.role === 'admin' ||
-    currentUser.subscription_status === 'trialing' ||
-    currentUser.subscription_status === 'active' ||
-    currentUser.is_beta_tester === true ||
-    recentlySubscribed;
+    // just_subscribed is a short-lived bypass set only after real Stripe checkout
+    const recentlySubscribed = !!localStorage.getItem('just_subscribed');
 
-  if (!hasAccess) {
-    navigate(createPageUrl('Subscription'));
-    return;
-  }
+    const hasAccess =
+      currentUser.role === 'admin' ||
+      currentUser.subscription_status === 'trialing' ||
+      currentUser.subscription_status === 'active' ||
+      currentUser.is_beta_tester === true ||
+      recentlySubscribed;
 
-  setCheckingAccess(false);
+    if (!hasAccess) {
+      navigate(createPageUrl('Subscription'), { replace: true });
+      return;
+    }
+
+    setCheckingAccess(false);
   }, [currentUser, loadingUser, currentPageName, navigate]);
 
   // Scroll to top whenever location changes
