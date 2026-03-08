@@ -16,6 +16,16 @@ export default function Layout({ children, currentPageName }) {
 
   // Load current user
   useEffect(() => {
+    // Clean up any stale/expired just_subscribed bypass on every load
+    const justSubscribedAt = localStorage.getItem('just_subscribed');
+    if (justSubscribedAt && (Date.now() - parseInt(justSubscribedAt)) > 10 * 60 * 1000) {
+      localStorage.removeItem('just_subscribed');
+    }
+    // If it's the old non-timestamp boolean value, remove it too
+    if (justSubscribedAt === 'true') {
+      localStorage.removeItem('just_subscribed');
+    }
+
     const loadUser = async () => {
       try {
         const isAuthenticated = await base44.auth.isAuthenticated();
