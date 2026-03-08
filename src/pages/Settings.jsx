@@ -579,7 +579,7 @@ export default function Settings() {
                     </TabsTrigger>
                 </TabsList>
                 
-                <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-6">
+                <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-4">
                     <TabsTrigger value="technician" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
                         Technician details
                     </TabsTrigger>
@@ -588,6 +588,12 @@ export default function Settings() {
                             Admin
                         </TabsTrigger>
                     )}
+                </TabsList>
+
+                <TabsList className="grid w-full grid-cols-1 bg-slate-900 mb-6">
+                    <TabsTrigger value="subscription" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
+                        My Subscription
+                    </TabsTrigger>
                 </TabsList>
 
                 {/* Tab 1: Company Info */}
