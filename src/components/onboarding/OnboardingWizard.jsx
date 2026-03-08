@@ -410,8 +410,8 @@ export default function OnboardingWizard({ user, onComplete }) {
   return (
     <>
       <Dialog open={true}>
-        <DialogContent ref={dialogScrollRef} className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="space-y-6">
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          <div ref={dialogScrollRef} className="space-y-6 overflow-y-auto max-h-[90vh] p-6">
             {currentStep > 0 && currentStep < 6 && (
               <div>
                 <div className="flex justify-between items-center mb-2">
