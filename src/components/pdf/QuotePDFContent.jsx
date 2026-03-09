@@ -217,37 +217,7 @@ export default function QuotePDFContent({
           </div>
         )}
 
-        {isMultiVehicle && (
-          <div style={{ marginTop: "16px" }}>
-            <h3
-              style={{
-                fontWeight: "600",
-                color: "#6b7280",
-                borderBottom: "1px solid #e5e7eb",
-                paddingBottom: "8px",
-                marginBottom: "8px",
-                fontSize: "14px",
-              }}
-            >
-              VEHICLES
-            </h3>
-            <p style={{ color: "#4b5563" }}>
-              {assessment.vehicles.length} Vehicle{assessment.vehicles.length !== 1 ? "s" : ""}
-            </p>
-            <div style={{ marginTop: "8px" }}>
-              {assessment.vehicles.map((vData, idx) => {
-                const vehDetails = vehicles[vData.vehicle_id];
-                if (!vehDetails) return null;
-                return (
-                  <p key={idx} style={{ color: "#374151", fontSize: "14px" }}>
-                    • {vehDetails.year} {vehDetails.make} {vehDetails.model}
-                    {vehDetails.license_plate && ` (${vehDetails.license_plate})`}
-                  </p>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Multi-vehicle: no separate VEHICLES header — breakdown is in QUOTE DETAILS below */}
       </div>
 
       {/* Line Items */}
