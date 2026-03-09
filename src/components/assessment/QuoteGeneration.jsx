@@ -410,6 +410,8 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
 // REACT COMPONENT
 // ============================================================================
 
+const PER_PANEL_DISCLAIMER = `Repair carried out using standard PDR tooling and/or glue pulling techniques as appropriate to the damage. Final result dependent on paint condition and damage characteristics assessed on the day.\n\nPLEASE NOTE: PDR is a non-destructive process, however pre-existing paint or panel conditions may become apparent during repair. By proceeding, the vehicle owner accepts that the technician cannot be held liable for any such pre-existing conditions.`;
+
 export default function QuoteGeneration({
   customer,
   vehicle,
@@ -417,6 +419,7 @@ export default function QuoteGeneration({
   photos,
   damageItems = [],
   additionalLineItems = [],
+  vehicleCards = [],
   onAddAnotherVehicle,
   onFinalSave,
   isPerPanelPricing = false,
@@ -436,6 +439,7 @@ export default function QuoteGeneration({
   const [error, setError] = useState(null);
   const [quoteGenerated, setQuoteGenerated] = useState(false);
   const [autoSaveTriggered, setAutoSaveTriggered] = useState(false);
+  const [vehicleSections, setVehicleSections] = useState([]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -499,7 +503,30 @@ export default function QuoteGeneration({
       if (isPerPanelPricing) {
         const defaultPanelPrice = userSettings.default_panel_price || 120;
         const baseCost = userSettings.base_cost || 0;
-        
+
+        // Multi-vehicle per-panel mode (new flow)
+        if (vehicleCards && vehicleCards.length > 0) {
+          const sections = vehicleCards.map((card, idx) => {
+            const label = card.registration
+              ? [card.registration, card.colour, card.notes].filter(Boolean).join(' — ')
+              : `Vehicle ${idx + 1}`;
+            const items = (card.panels || []).filter(p => p.panel).map(p => ({
+              description: `PDR Labour - ${p.panel}${p.notes ? `: ${p.notes}` : ''}`,
+              quantity: 1,
+              unit_price: defaultPanelPrice,
+              total_price: defaultPanelPrice
+            }));
+            const subtotal = items.reduce((s, i) => s + i.total_price, 0);
+            return { label, items, subtotal };
+          });
+          setVehicleSections(sections);
+          setNotes(PER_PANEL_DISCLAIMER);
+          setQuoteGenerated(true);
+          setGenerating(false);
+          return;
+        }
+
+        // Single-vehicle per-panel (legacy photos flow)
         const simpleLineItems = damageItems.map((item, index) => ({
           description: `PDR Labour - ${item.panel}${item.notes ? `: ${item.notes}` : ''}`,
           quantity: 1,
@@ -523,7 +550,7 @@ export default function QuoteGeneration({
         setLineItems(simpleLineItems);
         setCalculationBreakdown([]);
         setEstimatedTime(damageItems.length * 2);
-        setNotes('Per panel pricing applied.');
+        setNotes(PER_PANEL_DISCLAIMER);
         setQuoteGenerated(true);
         setGenerating(false);
         return;
@@ -799,6 +826,20 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
     }
   };
 
+  const updateSectionItem = (sectionIdx, itemIdx, newPrice) => {
+    setVehicleSections(prev => {
+      const updated = [...prev];
+      const newItems = [...updated[sectionIdx].items];
+      newItems[itemIdx] = { ...newItems[itemIdx], total_price: newPrice, unit_price: newPrice };
+      updated[sectionIdx] = {
+        ...updated[sectionIdx],
+        items: newItems,
+        subtotal: newItems.reduce((s, i) => s + (i.total_price || 0), 0)
+      };
+      return updated;
+    });
+  };
+
   const addLineItem = () => {
     const defaultHourlyRate = userSettings?.hourly_rate || 70;
     setLineItems([...lineItems, {
@@ -850,7 +891,17 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
   const handleFinalSave = async () => {
     setSending(true);
     try {
-      const quoteData = {
+      const isPerPanelMultiVehicle = isPerPanelPricing && vehicleSections.length > 0;
+      const grandTotal = vehicleSections.reduce((s, sec) => s + sec.subtotal, 0);
+      const quoteData = isPerPanelMultiVehicle ? {
+        lineItems: vehicleSections.flatMap(s => s.items),
+        quoteAmount: grandTotal,
+        currency,
+        notes,
+        estimatedTime: 0,
+        calculationBreakdown: [],
+        vehicleSections
+      } : {
         lineItems: lineItems.filter(item => item.description.trim() !== ''),
         quoteAmount,
         currency,
@@ -949,6 +1000,44 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
             </Select>
           </div>
 
+          {isPerPanelPricing && vehicleSections.length > 0 ? (
+            <div className="space-y-6">
+              {vehicleSections.map((section, sectionIdx) => (
+                <div key={sectionIdx} className="space-y-3">
+                  <h3 className="text-white font-semibold text-base border-b border-slate-600 pb-2">{section.label}</h3>
+                  {section.items.map((item, itemIdx) => (
+                    <div key={itemIdx} className="p-3 bg-slate-700 rounded-lg space-y-2">
+                      <p className="text-white text-sm">{item.description}</p>
+                      <div>
+                        <Label className="text-slate-400 text-xs">Price ({currency})</Label>
+                        <Input
+                          type="number"
+                          step="5"
+                          value={item.total_price === 0 ? '' : item.total_price}
+                          onChange={(e) => updateSectionItem(sectionIdx, itemIdx, parseFloat(e.target.value) || 0)}
+                          className="bg-slate-600 border-slate-500 text-white font-semibold"
+                        />
+                        <p className="text-xs text-slate-400 mt-1">Edit to override</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center p-3 bg-slate-700 rounded-lg">
+                    <span className="text-slate-300 text-sm font-medium">Subtotal</span>
+                    <span className="text-white font-semibold">{getCurrencySymbol()}{section.subtotal.toFixed(2)}</span>
+                  </div>
+                </div>
+              ))}
+              <div className="p-4 bg-slate-700 rounded-lg border border-slate-500">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">Total Amount</span>
+                  <span className="text-2xl font-bold text-green-400">
+                    {getCurrencySymbol()}{vehicleSections.reduce((s, sec) => s + sec.subtotal, 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-white">Line Items</Label>
@@ -1021,6 +1110,8 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
               </span>
             </div>
           </div>
+          </>
+          )}
 
           {!isPerPanelPricing && calculationBreakdown.length > 0 && (
           <div className="space-y-3 border-t border-slate-600 pt-4">
@@ -1067,7 +1158,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
             />
           </div>
 
-          {isMultiVehicleMode ? (
+          {isMultiVehicleMode && !(isPerPanelPricing && vehicleSections.length > 0) ? (
             <div className="space-y-3 pt-4 border-t border-slate-600">
               <Button
                 onClick={handleAddAnotherVehicle}

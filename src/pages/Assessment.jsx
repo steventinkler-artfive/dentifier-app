@@ -6,10 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, ArrowLeft, ArrowRight, CheckCircle, Loader2, DollarSign, Users, Car, Calculator, Plus, Save } from "lucide-react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useAlert } from "@/components/ui/CustomAlert";
 
 import CustomerSelection from "../components/assessment/CustomerSelection";
 import VehicleForm from "../components/assessment/VehicleForm";
+import VehicleFormMultiPanel from "../components/assessment/VehicleFormMultiPanel";
 import PhotoCapture from "../components/assessment/PhotoCapture";
 import DamageAnalysis from "../components/assessment/DamageAnalysis";
 import QuoteGeneration from "../components/assessment/QuoteGeneration";
@@ -32,11 +35,17 @@ const DentifierIcon = ({ className = "" }) => (
   </svg>
 );
 
-const STEPS = [
+const RETAIL_STEPS = [
   { id: 'customer', title: 'Customer', icon: Users },
   { id: 'vehicle', title: 'Vehicle', icon: Car },
   { id: 'photos', title: 'Photos', icon: Camera },
   { id: 'analysis', title: 'Dentify', icon: DentifierIcon },
+  { id: 'quote', title: 'Quote', icon: Calculator }
+];
+
+const PER_PANEL_STEPS = [
+  { id: 'customer', title: 'Customer', icon: Users },
+  { id: 'vehicle', title: 'Vehicles', icon: Car },
   { id: 'quote', title: 'Quote', icon: Calculator }
 ];
 
@@ -58,6 +67,10 @@ export default function AssessmentPage() {
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [userSettings, setUserSettings] = useState(null);
   const [loadingUserSettings, setLoadingUserSettings] = useState(true);
+  const [chargePerPanel, setChargePerPanel] = useState(false);
+  const [perPanelVehicleCards, setPerPanelVehicleCards] = useState([]);
+
+  const STEPS = chargePerPanel ? PER_PANEL_STEPS : RETAIL_STEPS;
 
   useEffect(() => {
     checkAccess();
@@ -167,6 +180,49 @@ export default function AssessmentPage() {
 
   const handleFinalSave = async (quoteData) => {
     try {
+      // Per-panel multi-vehicle mode (new flow)
+      if (chargePerPanel && perPanelVehicleCards.length > 0) {
+        const vehicleSections = quoteData.vehicleSections || [];
+        const vehicles = perPanelVehicleCards.map((card, idx) => ({
+          registration: card.registration || '',
+          colour: card.colour || '',
+          notes: card.notes || '',
+          panels: card.panels || [],
+          photo_urls: card.photo_urls || [],
+          line_items: vehicleSections[idx]?.items || [],
+          quote_amount: vehicleSections[idx]?.subtotal || 0
+        }));
+        const totalAmount = vehicles.reduce((s, v) => s + (v.quote_amount || 0), 0);
+
+        const currentUserData = await User.me();
+        const userSettingsList = await UserSetting.filter({ user_email: currentUserData.email });
+        const userSettingsData = userSettingsList.length > 0 ? userSettingsList[0] : null;
+        let formattedQuoteNumber = 'Q-0001';
+        if (userSettingsData) {
+          const nextNum = parseInt(userSettingsData.next_quote_number) > 0 ? parseInt(userSettingsData.next_quote_number) : 1;
+          formattedQuoteNumber = `${userSettingsData.quote_prefix || 'Q-'}${String(nextNum).padStart(4, '0')}`;
+          await UserSetting.update(userSettingsData.id, { next_quote_number: nextNum + 1 });
+        }
+
+        const assessmentPayload = {
+          customer_id: assessmentData.customer?.id,
+          is_multi_vehicle: perPanelVehicleCards.length > 1,
+          vehicles,
+          quote_amount: totalAmount,
+          total_amount: totalAmount,
+          currency: quoteData.currency || 'GBP',
+          status: assessmentData.customer ? 'quoted' : 'draft',
+          notes: quoteData.notes || '',
+          include_notes_in_quote: true,
+          estimated_time_hours: 0,
+          quote_number: formattedQuoteNumber
+        };
+
+        const savedAssessment = await Assessment.create(assessmentPayload);
+        navigate(createPageUrl(`AssessmentDetail?id=${savedAssessment.id}`));
+        return;
+      }
+
       const isMultiVehicle = assessmentData.completedVehicles.length > 0;
       
       let assessmentPayload;
@@ -276,6 +332,19 @@ export default function AssessmentPage() {
     }
   };
 
+  const handleChargePerPanelToggle = (value) => {
+    if (!value && chargePerPanel && perPanelVehicleCards.length > 0) {
+      if (!window.confirm("Switching mode will clear vehicle data. Continue?")) return;
+    }
+    setChargePerPanel(value);
+    setPerPanelVehicleCards([]);
+  };
+
+  const handlePerPanelComplete = (vehicleCards) => {
+    setPerPanelVehicleCards(vehicleCards);
+    setCurrentStep('quote');
+  };
+
   const getPhotosData = () => {
     if (typeof assessmentData.currentPhotos === 'object' && 'photos' in assessmentData.currentPhotos) {
       return {
@@ -293,11 +362,11 @@ export default function AssessmentPage() {
     };
   };
 
-  const { photos, damageItems, chargePerPanel, additionalLineItems } = getPhotosData(); // Updated destructuring
+  const { photos, damageItems, chargePerPanel: photosChargePerPanel, additionalLineItems } = getPhotosData();
 
   // Auto-advance for per panel pricing
   useEffect(() => {
-    if (currentStep === 'analysis' && chargePerPanel && !assessmentData.currentAnalysis) {
+    if (currentStep === 'analysis' && photosChargePerPanel && !assessmentData.currentAnalysis) {
       const mockAnalysis = {
         damage_report: {
           vehicle_panel: "Multiple Panels (Per Panel Pricing)",
@@ -313,7 +382,7 @@ export default function AssessmentPage() {
       setAssessmentData(prev => ({ ...prev, currentAnalysis: mockAnalysis }));
       setCurrentStep('quote');
     }
-  }, [currentStep, chargePerPanel, damageItems, assessmentData.currentAnalysis]); // Added damageItems to dependencies
+  }, [currentStep, photosChargePerPanel, damageItems, assessmentData.currentAnalysis]);
 
   if (checkingAccess) {
     return (
@@ -345,9 +414,11 @@ export default function AssessmentPage() {
           </h1>
           <p className="text-slate-400">
             {currentStep === 'customer' && 'Select or create a customer'}
-            {currentStep === 'vehicle' && (assessmentData.completedVehicles.length > 0 ? 
-              `Adding vehicle ${assessmentData.completedVehicles.length + 1}` : 
-              'Enter vehicle details')}
+            {currentStep === 'vehicle' && (chargePerPanel
+              ? 'Add vehicles and select damaged panels'
+              : assessmentData.completedVehicles.length > 0
+                ? `Adding vehicle ${assessmentData.completedVehicles.length + 1}`
+                : 'Enter vehicle details')}
             {currentStep === 'photos' && 'Be specific about damage characteristics - this helps Dentifier provide accurate analysis.'}
             {currentStep === 'analysis' && 'Dentifier analysis in progress'}
             {currentStep === 'quote' && 'Review and save assessment'}
@@ -415,11 +486,36 @@ export default function AssessmentPage() {
         )}
 
         {currentStep === 'vehicle' && (
-          <VehicleForm
-            customer={assessmentData.customer}
-            initialVehicle={assessmentData.currentVehicle}
-            onVehicleSubmit={handleVehicleComplete}
-          />
+          <>
+            <Card className="bg-slate-800 border-slate-700">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-white font-medium">Charge Per Panel</Label>
+                    <p className="text-slate-400 text-xs mt-1">Use simplified pricing instead of detailed analysis</p>
+                  </div>
+                  <Switch
+                    checked={chargePerPanel}
+                    onCheckedChange={handleChargePerPanelToggle}
+                    className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-600"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {chargePerPanel ? (
+              <VehicleFormMultiPanel
+                customer={assessmentData.customer}
+                onComplete={handlePerPanelComplete}
+              />
+            ) : (
+              <VehicleForm
+                customer={assessmentData.customer}
+                initialVehicle={assessmentData.currentVehicle}
+                onVehicleSubmit={handleVehicleComplete}
+              />
+            )}
+          </>
         )}
 
         {currentStep === 'photos' && (
@@ -434,7 +530,7 @@ export default function AssessmentPage() {
 
 
         {currentStep === 'analysis' && (
-          (chargePerPanel && !assessmentData.currentAnalysis) ? (
+          (photosChargePerPanel && !assessmentData.currentAnalysis) ? (
             <Card className="bg-slate-800 border-slate-700">
               <CardContent className="p-6 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -463,11 +559,12 @@ export default function AssessmentPage() {
             photos={photos}
             damageItems={damageItems}
             additionalLineItems={additionalLineItems}
+            vehicleCards={chargePerPanel ? perPanelVehicleCards : []}
             onAddAnotherVehicle={handleAddAnotherVehicle}
             onFinalSave={handleFinalSave}
-            isPerPanelPricing={chargePerPanel}
+            isPerPanelPricing={chargePerPanel || photosChargePerPanel}
             isMultiVehicleMode={assessmentData.completedVehicles.length > 0}
-            autoSave={!chargePerPanel && assessmentData.completedVehicles.length === 0}
+            autoSave={!chargePerPanel && !photosChargePerPanel && assessmentData.completedVehicles.length === 0}
           />
         )}
       </div>
