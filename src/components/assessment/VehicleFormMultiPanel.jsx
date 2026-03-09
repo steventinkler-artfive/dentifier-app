@@ -112,6 +112,24 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
 
   return (
     <div className="space-y-4">
+      {/* Job-level price override */}
+      <Card className="bg-slate-800 border-slate-700">
+        <CardContent className="p-4 space-y-1.5">
+          <Label className="text-white text-sm font-medium">Panel Price for this job</Label>
+          <div className="flex items-center gap-2">
+            <span className="text-white text-sm">£</span>
+            <Input
+              type="number"
+              step="5"
+              value={jobPanelPrice}
+              onChange={e => setJobPanelPrice(parseFloat(e.target.value) || 0)}
+              className="bg-slate-700 border-slate-600 text-white w-32"
+            />
+          </div>
+          <p className="text-slate-400 text-xs">Applies to all panels in this job. You can adjust individual panels on the quote if needed.</p>
+        </CardContent>
+      </Card>
+
       {vehicleCards.map((card, cardIdx) => (
         <Card key={cardIdx} className="bg-slate-800 border-slate-700">
           <CardContent className="p-4 space-y-4">
