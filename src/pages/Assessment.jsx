@@ -69,6 +69,7 @@ export default function AssessmentPage() {
   const [loadingUserSettings, setLoadingUserSettings] = useState(true);
   const [chargePerPanel, setChargePerPanel] = useState(false);
   const [perPanelVehicleCards, setPerPanelVehicleCards] = useState([]);
+  const [jobPanelPrice, setJobPanelPrice] = useState(null);
 
   const STEPS = chargePerPanel ? PER_PANEL_STEPS : RETAIL_STEPS;
 
