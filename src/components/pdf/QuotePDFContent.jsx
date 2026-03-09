@@ -59,15 +59,31 @@ export default function QuotePDFContent({
   const shouldIncludeNotes = includeNotes || assessment.include_notes_in_quote;
   const notesForCustomer = shouldIncludeNotes ? assessment.notes || "" : "";
 
+  // Helper: build vehicle label for per-panel multi-vehicle
+  const getVehicleLabel = (vData, idx) => {
+    if (!vData.registration && !vData.colour) return `Vehicle ${idx + 1}`;
+    let label = [vData.registration, vData.colour].filter(Boolean).join(" · ");
+    if (vData.notes) label += ` — ${vData.notes}`;
+    return label;
+  };
+
+  // Assessment-level line items (not tied to a vehicle)
+  const assessmentLineItems = assessment.line_items || [];
+  const assessmentLineItemsTotal = assessmentLineItems.reduce(
+    (sum, item) => sum + ((item.quantity || 1) * (item.unit_price || 0)),
+    0
+  );
+
   let subtotal = 0;
   let discountAmount = 0;
   let grandTotal = 0;
 
   if (isMultiVehicle) {
-    subtotal = assessment.vehicles.reduce(
+    const vehiclesTotal = assessment.vehicles.reduce(
       (sum, v) => sum + (v.quote_amount || 0),
       0
     );
+    subtotal = vehiclesTotal + assessmentLineItemsTotal;
     discountAmount =
       (subtotal * (assessment.discount_percentage || 0)) / 100;
     grandTotal = subtotal - discountAmount;
