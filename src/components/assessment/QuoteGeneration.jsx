@@ -1200,7 +1200,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
             <Button
               onClick={handleFinalSave}
               className="w-full pink-gradient text-white font-semibold"
-              disabled={sending || lineItems.length === 0}
+              disabled={sending || (lineItems.length === 0 && vehicleSections.length === 0)}
             >
               {sending ? (
                 <>
