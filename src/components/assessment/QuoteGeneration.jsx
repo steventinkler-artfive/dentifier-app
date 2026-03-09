@@ -507,7 +507,7 @@ export default function QuoteGeneration({
 
     try {
       if (isPerPanelPricing) {
-        const defaultPanelPrice = userSettings.default_panel_price || 120;
+        const defaultPanelPrice = jobPanelPrice || userSettings.default_panel_price || 120;
         const baseCost = userSettings.base_cost || 0;
 
         // Multi-vehicle per-panel mode (new flow)
