@@ -18,8 +18,9 @@ const CAR_PANELS = [
 const createEmptyPanel = () => ({ panel: '', notes: '' });
 const createEmptyCard = () => ({ registration: '', colour: '', notes: '', panels: [createEmptyPanel()], photo_urls: [] });
 
-export default function VehicleFormMultiPanel({ customer, onComplete }) {
+export default function VehicleFormMultiPanel({ customer, onComplete, defaultPanelPrice = 60 }) {
   const [vehicleCards, setVehicleCards] = useState([createEmptyCard()]);
+  const [jobPanelPrice, setJobPanelPrice] = useState(defaultPanelPrice);
   const [uploadingIdx, setUploadingIdx] = useState(null);
   const [error, setError] = useState('');
 
