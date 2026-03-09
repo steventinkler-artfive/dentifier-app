@@ -509,6 +509,7 @@ export default function AssessmentPage() {
               <VehicleFormMultiPanel
                 customer={assessmentData.customer}
                 onComplete={handlePerPanelComplete}
+                defaultPanelPrice={userSettings?.default_panel_price || 60}
               />
             ) : (
               <VehicleForm
