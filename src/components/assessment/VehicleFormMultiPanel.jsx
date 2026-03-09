@@ -101,10 +101,13 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
         return;
       }
     }
-    onComplete(vehicleCards.map(card => ({
-      ...card,
-      panels: card.panels.filter(p => p.panel)
-    })));
+    onComplete(
+      vehicleCards.map(card => ({
+        ...card,
+        panels: card.panels.filter(p => p.panel)
+      })),
+      jobPanelPrice
+    );
   };
 
   return (
