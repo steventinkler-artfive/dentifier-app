@@ -341,8 +341,9 @@ export default function AssessmentPage() {
     setPerPanelVehicleCards([]);
   };
 
-  const handlePerPanelComplete = (vehicleCards) => {
+  const handlePerPanelComplete = (vehicleCards, jobPrice) => {
     setPerPanelVehicleCards(vehicleCards);
+    setJobPanelPrice(jobPrice);
     setCurrentStep('quote');
   };
 
