@@ -1954,7 +1954,7 @@ export default function AssessmentDetail() {
           </div>
         </TabsContent>
       </Tabs>
-      )} {/* end per-panel / retail conditional */}
+      )}
 
       {/* Email Modal */}
       <EmailModal
