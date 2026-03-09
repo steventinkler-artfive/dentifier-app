@@ -420,6 +420,7 @@ export default function QuoteGeneration({
   damageItems = [],
   additionalLineItems = [],
   vehicleCards = [],
+  jobPanelPrice = null,
   onAddAnotherVehicle,
   onFinalSave,
   isPerPanelPricing = false,
