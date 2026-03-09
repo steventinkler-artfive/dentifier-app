@@ -672,18 +672,32 @@ export default function AssessmentDetail() {
       shareText += `\n*Vehicles & Line Items:*\n\n`;
       assessment.vehicles.forEach((v, idx) => {
         const vInfo = vehicles[v.vehicle_id];
-        if (vInfo) {
-          shareText += `*${vInfo.year} ${vInfo.make} ${vInfo.model}*\n`;
-          if (v.line_items && v.line_items.length > 0) {
-            v.line_items.forEach(item => {
-              shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}\n`;
-            });
-          } else {
-            shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n`;
-          }
-          shareText += `Subtotal: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n\n`;
+        let vehicleLabel;
+        if (v.registration || v.colour) {
+          vehicleLabel = [v.registration, v.colour].filter(Boolean).join(' · ');
+          if (v.notes) vehicleLabel += ` — ${v.notes}`;
+        } else if (vInfo) {
+          vehicleLabel = `${vInfo.year} ${vInfo.make} ${vInfo.model}${vInfo.license_plate ? ` (${vInfo.license_plate})` : ''}`;
+        } else {
+          vehicleLabel = `Vehicle ${idx + 1}`;
         }
+        shareText += `*${vehicleLabel}*\n`;
+        if (v.line_items && v.line_items.length > 0) {
+          v.line_items.forEach(item => {
+            shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}\n`;
+          });
+        } else {
+          shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n`;
+        }
+        shareText += `Subtotal: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n\n`;
       });
+      const assessmentLevelItems = assessment.line_items || [];
+      if (assessmentLevelItems.length > 0) {
+        assessmentLevelItems.forEach(item => {
+          shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}\n`;
+        });
+        shareText += '\n';
+      }
     } else {
       if (vehicle) {
         shareText += `*Vehicle:* ${vehicle.year} ${vehicle.make} ${vehicle.model}\n`;
