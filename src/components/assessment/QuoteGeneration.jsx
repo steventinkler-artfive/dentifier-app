@@ -927,8 +927,8 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
     return symbols[curr] || '£';
   };
 
-  // In auto-save mode, always show a loading screen — never show the review UI
-  if (autoSave) {
+  // In auto-save mode or per-panel pricing, always show a loading screen — never show the review UI
+  if (autoSave || isPerPanelPricing) {
     return (
       <Card className="bg-slate-800 border-slate-700">
         <CardContent className="p-8 text-center">
