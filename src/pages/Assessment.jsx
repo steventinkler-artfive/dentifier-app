@@ -562,6 +562,7 @@ export default function AssessmentPage() {
             damageItems={damageItems}
             additionalLineItems={additionalLineItems}
             vehicleCards={chargePerPanel ? perPanelVehicleCards : []}
+            jobPanelPrice={jobPanelPrice}
             onAddAnotherVehicle={handleAddAnotherVehicle}
             onFinalSave={handleFinalSave}
             isPerPanelPricing={chargePerPanel || photosChargePerPanel}
