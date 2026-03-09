@@ -476,13 +476,18 @@ export default function QuoteGeneration({
     }
   }, [userSettings, generating, quoteGenerated]);
 
-  // Auto-save once quote is generated (single-vehicle flow from analysis screen)
+  // Auto-save once quote is generated (single-vehicle flow from analysis screen, or per-panel multi-vehicle)
   useEffect(() => {
-    if (autoSave && quoteGenerated && !generating && !autoSaveTriggered && lineItems.length > 0) {
-      setAutoSaveTriggered(true);
-      handleFinalSave();
+    if (quoteGenerated && !generating && !autoSaveTriggered) {
+      if (autoSave && lineItems.length > 0) {
+        setAutoSaveTriggered(true);
+        handleFinalSave();
+      } else if (isPerPanelPricing && vehicleSections.length > 0) {
+        setAutoSaveTriggered(true);
+        handleFinalSave();
+      }
     }
-  }, [autoSave, quoteGenerated, generating, lineItems]);
+  }, [autoSave, quoteGenerated, generating, lineItems, isPerPanelPricing, vehicleSections]);
 
   useEffect(() => {
     const total = lineItems.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
