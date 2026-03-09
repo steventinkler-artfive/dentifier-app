@@ -216,7 +216,8 @@ export default function AssessmentPage() {
           notes: quoteData.notes || '',
           include_notes_in_quote: true,
           estimated_time_hours: 0,
-          quote_number: formattedQuoteNumber
+          quote_number: formattedQuoteNumber,
+          job_panel_price: jobPanelPrice || userSettings?.default_panel_price || 60
         };
 
         const savedAssessment = await Assessment.create(assessmentPayload);
