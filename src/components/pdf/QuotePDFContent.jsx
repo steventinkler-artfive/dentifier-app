@@ -237,57 +237,67 @@ export default function QuotePDFContent({
       {isMultiVehicle ? (
         <div style={{ marginBottom: "24px" }}>
           {assessment.vehicles.map((vData, vIdx) => {
-            const vehDetails = vehicles[vData.vehicle_id];
-            if (!vehDetails) return null;
-            const vehicleNotes = vData.include_notes_in_quote ? vData.notes || "" : "";
+            const vehicleLabel = getVehicleLabel(vData, vIdx);
+            const lineItems = vData.line_items && vData.line_items.length > 0
+              ? vData.line_items
+              : [];
+            const vehSubtotal = vData.quote_amount ||
+              lineItems.reduce((s, i) => s + ((i.quantity || 1) * (i.unit_price || 0)), 0);
+
             return (
               <div key={vIdx} style={{ marginBottom: "24px" }}>
-                <h4 style={{ fontWeight: "600", color: "#374151", marginBottom: "8px" }}>
-                  {vehDetails.year} {vehDetails.make} {vehDetails.model}
-                  {vehDetails.license_plate && ` - ${vehDetails.license_plate}`}
-                </h4>
-                <table style={{ width: "100%", marginBottom: "8px", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-                      <th style={{ textAlign: "left", fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Description</th>
-                      <th style={{ textAlign: "right", fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vData.line_items && vData.line_items.length > 0 ? (
-                      vData.line_items.map((item, iIdx) => (
-                        <tr key={iIdx} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                          <td style={{ padding: "12px 0", color: "#374151", fontWeight: "500" }}>{item.description}</td>
-                          <td style={{ textAlign: "right", padding: "12px 0", fontWeight: "500", color: "#1f2937" }}>
+                {/* Vehicle heading */}
+                <p style={{ fontWeight: "700", color: "#1f2937", fontSize: "14px", marginBottom: "6px" }}>
+                  {vehicleLabel}
+                </p>
+                <div style={{ borderBottom: "1px solid #d1d5db", marginBottom: "8px" }} />
+
+                {/* Line items */}
+                {lineItems.length > 0 ? (
+                  <table style={{ width: "100%", marginBottom: "8px", borderCollapse: "collapse" }}>
+                    <tbody>
+                      {lineItems.map((item, iIdx) => (
+                        <tr key={iIdx} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                          <td style={{ padding: "8px 0", color: "#374151", fontSize: "13px" }}>{item.description}</td>
+                          <td style={{ textAlign: "right", padding: "8px 0", fontWeight: "500", color: "#1f2937", fontSize: "13px", whiteSpace: "nowrap" }}>
                             {currencySymbol}{((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-                        <td style={{ padding: "12px 0", color: "#374151", fontWeight: "500" }}>Paintless Dent Repair Service</td>
-                        <td style={{ textAlign: "right", padding: "12px 0", fontWeight: "500", color: "#1f2937" }}>
-                          {currencySymbol}{(vData.quote_amount || 0).toFixed(2)}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-                {vehicleNotes && (
-                  <div style={{ marginBottom: "12px", padding: "12px", background: "#f9fafb", borderRadius: "8px" }}>
-                    <p style={{ fontSize: "12px", fontWeight: "600", color: "#6b7280", marginBottom: "4px" }}>Vehicle Notes:</p>
-                    <p style={{ fontSize: "14px", color: "#4b5563", whiteSpace: "pre-wrap" }}>{vehicleNotes}</p>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p style={{ color: "#6b7280", fontSize: "13px", marginBottom: "8px" }}>Paintless Dent Repair Service</p>
                 )}
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <span style={{ fontSize: "14px", color: "#4b5563" }}>Vehicle Subtotal: </span>
-                  <span style={{ fontWeight: "600", color: "#1f2937", marginLeft: "8px" }}>
-                    {currencySymbol}{(vData.quote_amount || 0).toFixed(2)}
+
+                {/* Vehicle subtotal */}
+                <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "6px" }}>
+                  <span style={{ fontSize: "13px", color: "#4b5563" }}>Subtotal </span>
+                  <span style={{ fontWeight: "600", color: "#1f2937", marginLeft: "16px", fontSize: "13px" }}>
+                    {currencySymbol}{vehSubtotal.toFixed(2)}
                   </span>
                 </div>
               </div>
             );
           })}
+
+          {/* Assessment-level line items */}
+          {assessmentLineItems.length > 0 && (
+            <div style={{ marginBottom: "16px", borderTop: "1px solid #e5e7eb", paddingTop: "16px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <tbody>
+                  {assessmentLineItems.map((item, idx) => (
+                    <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <td style={{ padding: "8px 0", color: "#374151", fontSize: "13px" }}>{item.description}</td>
+                      <td style={{ textAlign: "right", padding: "8px 0", fontWeight: "500", color: "#1f2937", fontSize: "13px", whiteSpace: "nowrap" }}>
+                        {currencySymbol}{((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       ) : (
         <table style={{ width: "100%", marginBottom: "24px", borderCollapse: "collapse" }}>
