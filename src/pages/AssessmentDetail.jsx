@@ -974,7 +974,194 @@ export default function AssessmentDetail() {
         </CardContent>
       </Card>
 
-      {/* Tabs */}
+      {/* Per-panel multi-vehicle: flat single-scroll view */}
+      {assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0 && !assessment.vehicle_id ? (
+        <div className="space-y-4">
+          {/* Customer */}
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-white text-base">
+                  <UserIcon className="w-4 h-4 text-blue-400" />
+                  Customer
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    const user = await base44.auth.me();
+                    const customers = await base44.entities.Customer.filter({ created_by: user.email });
+                    setCustomerList(customers);
+                    setIsAssigningCustomer(true);
+                  }}
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 text-xs h-auto py-1"
+                >
+                  <UserPlus className="w-3 h-3 mr-1" />
+                  {customer ? 'Change' : 'Assign'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="text-sm">
+              {customer ? (
+                <div className="space-y-2">
+                  {customer.business_name && (
+                    <div className="flex items-start gap-2">
+                      <Briefcase className="w-4 h-4 text-slate-400 mt-0.5" />
+                      <div>
+                        <p className="text-white font-medium">{customer.business_name}</p>
+                        <p className="text-slate-400 text-xs">Contact: {customer.name}</p>
+                      </div>
+                    </div>
+                  )}
+                  {!customer.business_name && (
+                    <div className="flex items-center gap-2">
+                      <UserIcon className="w-4 h-4 text-slate-400" />
+                      <span className="text-white">{customer.name}</span>
+                    </div>
+                  )}
+                  {customer.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-slate-400" />
+                      <a href={`mailto:${customer.email}`} className="text-blue-400 hover:text-blue-300 text-xs">
+                        {customer.email}
+                      </a>
+                    </div>
+                  )}
+                  {customer.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-slate-400" />
+                      <a href={`tel:${customer.phone}`} className="text-blue-400 hover:text-blue-300 text-xs">
+                        {customer.phone}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ) : !isAssigningCustomer ? (
+                <p className="text-slate-400 text-xs">No customer assigned</p>
+              ) : null}
+              {isAssigningCustomer && (
+                showAddCustomerForm ? (
+                  <div className="space-y-4">
+                    <CustomerForm
+                      onSave={handleCreateAndAssignCustomer}
+                      onCancel={() => {
+                        setShowAddCustomerForm(false);
+                        setIsAssigningCustomer(false);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder="Search customers..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 bg-slate-800 border-slate-700 text-white text-sm"
+                      />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {customerList
+                        .filter(c =>
+                          c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          c.business_name?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => handleAssignCustomer(c.id)}
+                            className="w-full p-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-left transition-colors"
+                          >
+                            <p className="text-white font-medium text-sm">
+                              {c.business_name || c.name}
+                            </p>
+                            {c.business_name && (
+                              <p className="text-slate-400 text-xs">Contact: {c.name}</p>
+                            )}
+                            {c.email && (
+                              <p className="text-slate-500 text-xs">{c.email}</p>
+                            )}
+                          </button>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setShowAddCustomerForm(true)}
+                        className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        New Customer
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => { setIsAssigningCustomer(false); setSearchTerm(""); }}
+                        className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 text-sm"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )
+              )}
+            </CardContent>
+          </Card>
+
+          <PerPanelQuoteView
+            assessment={assessment}
+            onAssessmentUpdate={loadAssessmentDetails}
+            formatCurrency={formatCurrency}
+            getCurrencySymbol={getCurrencySymbol}
+            editedNotes={editedNotes}
+            setEditedNotes={setEditedNotes}
+            editingNotes={editingNotes}
+            setEditingNotes={setEditingNotes}
+            handleSaveNotes={handleSaveNotes}
+            handleToggleNotesInQuote={handleToggleNotesInQuote}
+            includeNotesInQuote={includeNotesInQuote}
+            isUpdating={isUpdating}
+          />
+
+          {/* Action buttons */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={handleViewPDF} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                <FileText className="w-4 h-4 mr-2" />
+                {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
+              </Button>
+              <Button onClick={handleShare} className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
+                <Share2 className="w-4 h-4 mr-2" />
+                {copied ? 'Copied!' : 'Share'}
+              </Button>
+            </div>
+            {customer?.email && (
+              <Button onClick={handleEmail} disabled={isSendingEmail} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                {isSendingEmail ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : <><Mail className="w-4 h-4 mr-2" />Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}</>}
+              </Button>
+            )}
+            {assessment.status === 'quoted' && (
+              <Button onClick={() => handleStatusChange('approved')} disabled={isUpdating} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                Mark as Approved
+              </Button>
+            )}
+            {(assessment.status === 'approved' || assessment.status === 'quoted') && (
+              <Button onClick={() => handleStatusChange('completed')} disabled={isUpdating} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold">
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                Mark as Completed
+              </Button>
+            )}
+            {assessment.status === 'completed' && assessment.payment_link_url && assessment.payment_status !== 'paid' && (
+              <Button onClick={handleCheckPaymentStatus} disabled={checkingPayment} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                {checkingPayment ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking...</> : <><CreditCard className="w-4 h-4 mr-2" />Check Payment</>}
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+
+      /* Retail / single-vehicle: tabbed layout (unchanged) */
       <Tabs defaultValue="quote" className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-4">
           <TabsTrigger value="quote" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
