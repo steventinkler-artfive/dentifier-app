@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import CustomerForm from "../components/customers/CustomerForm";
 import CalculationBreakdown from "../components/assessment/CalculationBreakdown";
 import ImageViewer from '../components/ui/ImageViewer';
+import PerPanelQuoteView from "../components/assessment/PerPanelQuoteView";
 import { useAlert } from "@/components/ui/CustomAlert";
 import {
   ArrowLeft,
