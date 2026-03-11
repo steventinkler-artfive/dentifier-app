@@ -346,28 +346,30 @@ export default function QuotePDFContent({
       {/* Totals */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "32px" }}>
         <div style={{ width: "50%" }}>
-          {!isMultiVehicle && (
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
+            <span style={{ fontWeight: "500", color: "#4b5563" }}>Subtotal</span>
+            <span style={{ fontWeight: "500", color: "#1f2937" }}>{currencySymbol}{subtotal.toFixed(2)}</span>
+          </div>
+          {discountPct > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
-              <span style={{ fontWeight: "500", color: "#4b5563" }}>Subtotal</span>
-              <span style={{ fontWeight: "500", color: "#1f2937" }}>{currencySymbol}{subtotal.toFixed(2)}</span>
-            </div>
-          )}
-          {isMultiVehicle && assessment.discount_percentage > 0 && (
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
-              <span style={{ fontWeight: "500", color: "#4b5563" }}>Discount ({assessment.discount_percentage}%)</span>
+              <span style={{ fontWeight: "500", color: "#4b5563" }}>Discount ({discountPct}%)</span>
               <span style={{ fontWeight: "500", color: "#dc2626" }}>-{currencySymbol}{discountAmount.toFixed(2)}</span>
             </div>
           )}
-          {!isMultiVehicle && (
+          {discountPct > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
-              <span style={{ fontWeight: "500", color: "#4b5563" }}>VAT (0%)</span>
-              <span style={{ fontWeight: "500", color: "#1f2937" }}>{currencySymbol}0.00</span>
+              <span style={{ fontWeight: "500", color: "#4b5563" }}>Net Total</span>
+              <span style={{ fontWeight: "500", color: "#1f2937" }}>{currencySymbol}{netTotal.toFixed(2)}</span>
+            </div>
+          )}
+          {isVatRegistered && (
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
+              <span style={{ fontWeight: "500", color: "#4b5563" }}>VAT ({vatRate}%)</span>
+              <span style={{ fontWeight: "500", color: "#1f2937" }}>{currencySymbol}{vatAmount.toFixed(2)}</span>
             </div>
           )}
           <div style={{ display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "2px solid #d1d5db", marginTop: "8px" }}>
-            <span style={{ fontWeight: "bold", fontSize: "20px", color: "#1f2937" }}>
-              {isMultiVehicle ? "Grand Total" : "Total"}
-            </span>
+            <span style={{ fontWeight: "bold", fontSize: "20px", color: "#1f2937" }}>Total</span>
             <span style={{ fontWeight: "bold", fontSize: "20px", color: "#1f2937" }}>
               {currencySymbol}{grandTotal.toFixed(2)} {assessment.currency || "GBP"}
             </span>
