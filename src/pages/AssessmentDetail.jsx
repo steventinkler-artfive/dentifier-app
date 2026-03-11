@@ -385,38 +385,7 @@ export default function AssessmentDetail() {
     }
   };
 
-  const handleGeneratePaymentLink = async () => {
-    if (!assessment || !userSettings) return;
-    setIsGeneratingPaymentLink(true);
 
-    try {
-      const response = await base44.functions.invoke('generatePaymentLink', {
-        assessment_id: assessment.id
-      });
-
-      if (response.data.success && response.data.payment_link) {
-        const paymentLink = response.data.payment_link;
-        
-        // Reload assessment to get the saved payment link
-        await loadAssessmentDetails();
-        
-        // Copy to clipboard
-        await navigator.clipboard.writeText(paymentLink);
-        
-        // Show success message with option to open link
-        if (window.confirm(`Payment link generated and copied to clipboard!\n\nProvider: ${response.data.provider}\n\nWould you like to open the link?`)) {
-          window.open(paymentLink, '_blank');
-        }
-      } else {
-        alert('Failed to generate payment link. Please check your payment provider settings.');
-      }
-    } catch (error) {
-      console.error('Error generating payment link:', error);
-      alert(`Failed to generate payment link: ${error.message || 'Please check your payment provider settings and try again.'}`);
-    } finally {
-      setIsGeneratingPaymentLink(false);
-    }
-  };
 
   const handleViewPDF = async () => {
     if (!assessment) return;
