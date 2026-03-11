@@ -433,6 +433,7 @@ export default function QuoteGeneration({
   const [lineItems, setLineItems] = useState([]);
   const [calculationBreakdown, setCalculationBreakdown] = useState([]);
   const [quoteAmount, setQuoteAmount] = useState(0);
+  const [discountPercentage, setDiscountPercentage] = useState(0);
   const [currency, setCurrency] = useState('GBP');
   const [notes, setNotes] = useState('');
   const [estimatedTime, setEstimatedTime] = useState(0);
