@@ -43,6 +43,7 @@ import {
   CreditCard,
   Eye
 } from "lucide-react";
+// Note: Share2, Mail, Phone, UserPlus, Briefcase, Save, CreditCard, CheckCircle, CheckCircle2, Search, Plus also used in QuoteTab
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import QuoteTab from "@/components/assessment/QuoteTab";
 import ReactDOM from "react-dom/client";
