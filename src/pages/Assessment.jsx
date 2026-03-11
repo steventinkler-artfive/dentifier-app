@@ -269,6 +269,7 @@ export default function AssessmentPage() {
           line_items: quoteData.lineItems || [],
           calculation_breakdown: quoteData.calculationBreakdown || [], // NEW: Include breakdown
           quote_amount: quoteData.quoteAmount || 0,
+          discount_percentage: quoteData.discountPercentage || 0,
           currency: quoteData.currency || 'GBP',
           status: assessmentData.customer ? 'quoted' : 'draft',
           notes: quoteData.notes || '',
