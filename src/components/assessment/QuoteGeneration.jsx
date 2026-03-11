@@ -1109,12 +1109,37 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
             )}
           </div>
 
-          <div className="p-4 bg-slate-700 rounded-lg">
-            <div className="flex justify-between items-center">
-              <span className="text-white font-medium">Total Amount</span>
-              <span className="text-2xl font-bold text-green-400">
-                {getCurrencySymbol()}{quoteAmount.toFixed(2)}
-              </span>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center p-3 bg-slate-700 rounded-lg">
+              <span className="text-slate-300 text-sm">Subtotal</span>
+              <span className="text-white font-medium">{getCurrencySymbol()}{quoteAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg">
+              <span className="text-slate-300 text-sm flex-1">Discount (%)</span>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={discountPercentage === 0 ? '' : discountPercentage}
+                onChange={(e) => setDiscountPercentage(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                placeholder="0"
+                className="bg-slate-600 border-slate-500 text-white w-24 text-right"
+              />
+            </div>
+            {discountPercentage > 0 && (
+              <div className="flex justify-between items-center p-3 bg-slate-700 rounded-lg">
+                <span className="text-slate-300 text-sm">Discount ({discountPercentage}%)</span>
+                <span className="text-red-400 font-medium">-{getCurrencySymbol()}{(quoteAmount * discountPercentage / 100).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="p-4 bg-slate-700 rounded-lg border border-slate-500">
+              <div className="flex justify-between items-center">
+                <span className="text-white font-medium">Total Amount</span>
+                <span className="text-2xl font-bold text-green-400">
+                  {getCurrencySymbol()}{(quoteAmount * (1 - discountPercentage / 100)).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
           </>
