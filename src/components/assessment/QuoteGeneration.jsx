@@ -881,6 +881,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
       const quoteData = {
         lineItems: lineItems.filter(item => item.description.trim() !== ''),
         quoteAmount,
+        discountPercentage,
         currency,
         notes,
         estimatedTime: parseFloat(estimatedTime) || 0,
