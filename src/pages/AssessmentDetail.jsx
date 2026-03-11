@@ -97,7 +97,6 @@ export default function AssessmentDetail() {
   const [editedAssessmentName, setEditedAssessmentName] = useState("");
   const [editedDiscount, setEditedDiscount] = useState(0);
   const [detailsTab, setDetailsTab] = useState("analysis");
-  const [isGeneratingPaymentLink, setIsGeneratingPaymentLink] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
