@@ -44,6 +44,7 @@ import {
   Eye
 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
+import QuoteTab from "@/components/assessment/QuoteTab";
 import ReactDOM from "react-dom/client";
 import EmailModal from "@/components/EmailModal";
 import html2canvas from "html2canvas";
