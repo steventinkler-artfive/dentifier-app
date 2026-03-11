@@ -712,7 +712,13 @@ export default function AssessmentDetail() {
       }
     }
 
-    shareText += `\n*Total Amount:* ${currencySymbol}${(assessment.quote_amount || 0).toFixed(2)}\n`;
+    const _dp = assessment.discount_percentage || 0, _iv = userSettings?.is_vat_registered, _vr = userSettings?.tax_rate || 0;
+    const _sub = assessment.is_multi_vehicle && assessment.vehicles?.length ? assessment.vehicles.reduce((s,v)=>s+(v.quote_amount||0),0)+(assessment.line_items||[]).reduce((s,i)=>s+((i.quantity||1)*(i.unit_price||0)),0) : (assessment.quote_amount||0);
+    const _disc=_sub*_dp/100, _net=_sub-_disc, _vat=_iv?_net*_vr/100:0;
+    shareText += `\n*Subtotal:* ${currencySymbol}${_sub.toFixed(2)}\n`;
+    if (_dp>0){shareText+=`*Discount (${_dp}%):* -${currencySymbol}${_disc.toFixed(2)}\n*Net Total:* ${currencySymbol}${_net.toFixed(2)}\n`;}
+    if (_iv){shareText+=`*VAT (${_vr}%):* ${currencySymbol}${_vat.toFixed(2)}\n`;}
+    shareText += `*Total:* ${currencySymbol}${(_net+_vat).toFixed(2)}\n`;
 
     if (assessment.notes && includeNotesInQuote) {
       shareText += `\n*Notes:* ${assessment.notes}\n`;
