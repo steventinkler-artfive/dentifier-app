@@ -240,51 +240,6 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
 
       <CardContent className="space-y-6">
 
-        {/* ── Global Photo Upload ── */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label className="text-white">Damage Photos</Label>
-            <span className="text-slate-400 text-sm">{uploadedPhotos.length} photo{uploadedPhotos.length !== 1 ? 's' : ''}</span>
-          </div>
-
-          {uploadedPhotos.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              {uploadedPhotos.map((url, index) => (
-                <div key={index} className="relative group">
-                  <img src={url} alt={`Damage ${index + 1}`} className="w-full aspect-square object-cover rounded-lg" />
-                  <button
-                    onClick={() => handleRemovePhoto(index)}
-                    className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <label className="block">
-              <input type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" disabled={uploading} />
-              <Button type="button" className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold h-12" disabled={uploading}
-                onClick={(e) => e.currentTarget.previousElementSibling.click()}>
-                {uploading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Uploading...</> : <><Camera className="w-5 h-5 mr-2" />Take Photo</>}
-              </Button>
-            </label>
-            <label className="block">
-              <input type="file" accept="image/*" multiple onChange={handleFileSelect} className="hidden" disabled={uploading} />
-              <Button type="button" variant="outline" className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700 h-12" disabled={uploading}
-                onClick={(e) => e.currentTarget.previousElementSibling.click()}>
-                <Upload className="w-5 h-5 mr-2" />Upload from Gallery
-              </Button>
-            </label>
-          </div>
-
-          {chargePerPanel && (
-            <p className="text-slate-400 text-xs text-center">Photos optional on per panel quoting</p>
-          )}
-        </div>
-
         {/* ── Detailed Damage Items ── */}
         {!chargePerPanel && (
           <div className="space-y-3">
