@@ -74,23 +74,22 @@ export default function QuotePDFContent({
     0
   );
 
-  let subtotal = 0;
-  let discountAmount = 0;
-  let grandTotal = 0;
+  const discountPct = assessment.discount_percentage || 0;
+  const isVatRegistered = userSettings?.is_vat_registered || false;
+  const vatRate = userSettings?.tax_rate || 0;
 
+  let subtotal = 0;
   if (isMultiVehicle) {
-    const vehiclesTotal = assessment.vehicles.reduce(
-      (sum, v) => sum + (v.quote_amount || 0),
-      0
-    );
+    const vehiclesTotal = assessment.vehicles.reduce((sum, v) => sum + (v.quote_amount || 0), 0);
     subtotal = vehiclesTotal + assessmentLineItemsTotal;
-    discountAmount =
-      (subtotal * (assessment.discount_percentage || 0)) / 100;
-    grandTotal = subtotal - discountAmount;
   } else {
     subtotal = assessment.quote_amount || 0;
-    grandTotal = subtotal;
   }
+
+  const discountAmount = (subtotal * discountPct) / 100;
+  const netTotal = subtotal - discountAmount;
+  const vatAmount = isVatRegistered ? (netTotal * vatRate) / 100 : 0;
+  const grandTotal = netTotal + vatAmount;
 
   return (
     <div
