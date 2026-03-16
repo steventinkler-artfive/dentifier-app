@@ -460,6 +460,22 @@ export default function QuoteTab({
           </Button>
         )}
 
+        {assessment.status === "completed" && assessment.payment_link_url && (
+          <div className="p-3 bg-slate-800 border border-green-700 rounded-lg space-y-2">
+            <p className="text-green-400 text-xs font-semibold uppercase tracking-wide">Payment Link</p>
+            <p className="text-slate-300 text-xs break-all">{assessment.payment_link_url}</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { navigator.clipboard.writeText(assessment.payment_link_url); }}
+              className="w-full bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-xs"
+            >
+              <CreditCard className="w-3 h-3 mr-1" />
+              Copy Link
+            </Button>
+          </div>
+        )}
+
         {assessment.status === "completed" && assessment.payment_link_url && assessment.payment_status !== "paid" && (
           <Button
             onClick={handleCheckPaymentStatus}
@@ -484,7 +500,6 @@ export default function QuoteTab({
         {assessment.status === "completed" &&
           userSettings?.payment_provider &&
           userSettings.payment_provider !== "None" &&
-          userSettings.payment_method_preference === "Bank Transfer Only" &&
           !assessment.payment_link_url && (
             <Button
               onClick={handleGeneratePaymentLink}
