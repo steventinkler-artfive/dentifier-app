@@ -460,34 +460,27 @@ export default function QuoteTab({
           </Button>
         )}
 
-        {assessment.status === "completed" && assessment.payment_link_url && (
-          <div className="p-3 bg-slate-800 border border-green-700 rounded-lg space-y-2">
-            <p className="text-green-400 text-xs font-semibold uppercase tracking-wide">Payment Link</p>
-            <p className="text-slate-300 text-xs break-all">{assessment.payment_link_url}</p>
+        {assessment.status === "completed" && assessment.payment_link_url && assessment.payment_status !== "paid" && (
+          <div className="grid grid-cols-2 gap-3">
             <Button
-              size="sm"
-              variant="outline"
-              onClick={() => { navigator.clipboard.writeText(assessment.payment_link_url); }}
-              className="w-full bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-xs"
+              onClick={handleCheckPaymentStatus}
+              disabled={checkingPayment}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
             >
-              <CreditCard className="w-3 h-3 mr-1" />
+              {checkingPayment ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking...</>
+              ) : (
+                <><CreditCard className="w-4 h-4 mr-2" />Check Payment</>
+              )}
+            </Button>
+            <Button
+              onClick={() => navigator.clipboard.writeText(assessment.payment_link_url)}
+              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
               Copy Link
             </Button>
           </div>
-        )}
-
-        {assessment.status === "completed" && assessment.payment_link_url && assessment.payment_status !== "paid" && (
-          <Button
-            onClick={handleCheckPaymentStatus}
-            disabled={checkingPayment}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
-          >
-            {checkingPayment ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking...</>
-            ) : (
-              <><CreditCard className="w-4 h-4 mr-2" />Check Payment</>
-            )}
-          </Button>
         )}
 
         {assessment.status === "completed" && assessment.payment_status === "paid" && (
