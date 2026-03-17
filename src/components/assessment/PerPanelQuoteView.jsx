@@ -226,7 +226,14 @@ export default function PerPanelQuoteView({
 
   const vehicleTotal = vehicles.reduce((s, v) => s + (v.quote_amount || 0), 0);
   const assessmentLevelTotal = assessmentItems.reduce((s, i) => s + (i.total_price || 0), 0);
-  const grandTotal = vehicleTotal + assessmentLevelTotal;
+  const subtotal = vehicleTotal + assessmentLevelTotal;
+  const discountPct = assessment.discount_percentage || 0;
+  const discountAmt = (subtotal * discountPct) / 100;
+  const netTotal = subtotal - discountAmt;
+  const isVat = userSettings?.is_vat_registered;
+  const vatRate = userSettings?.tax_rate || 0;
+  const vatAmt = isVat ? (netTotal * vatRate) / 100 : 0;
+  const grandTotal = netTotal + vatAmt;
 
   return (
     <div className="space-y-4">
