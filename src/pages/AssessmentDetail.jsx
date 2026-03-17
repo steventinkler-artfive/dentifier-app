@@ -1116,6 +1116,7 @@ export default function AssessmentDetail() {
             handleToggleNotesInQuote={handleToggleNotesInQuote}
             includeNotesInQuote={includeNotesInQuote}
             isUpdating={isUpdating}
+            userSettings={userSettings}
           />
 
           {/* Action buttons */}
