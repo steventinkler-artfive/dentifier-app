@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Edit2, Save, Trash2, Plus, Loader2, Check, X } from "lucide-react";
 
+
 const CAR_PANELS = [
   "Bonnet/Hood", "Front Wing/Fender (Left)", "Front Wing/Fender (Right)",
   "Front Door (Left)", "Front Door (Right)", "Rear Door (Left)", "Rear Door (Right)",
