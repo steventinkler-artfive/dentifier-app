@@ -597,15 +597,57 @@ export default function PerPanelQuoteView({
         </Button>
       )}
 
-      {/* Grand Total */}
-      <div className="p-4 bg-slate-800 rounded-xl border border-slate-600">
-        <div className="flex justify-between items-center">
-          <span className="text-white font-semibold">Grand Total</span>
-          <span className="text-2xl font-bold text-green-400">
-            {formatCurrency(grandTotal, currency)}
-          </span>
-        </div>
-      </div>
+      {/* Totals Card */}
+      <Card className="bg-slate-900 border-slate-800">
+        <CardContent className="p-4 space-y-3">
+          {/* Discount input */}
+          <div className="flex items-center gap-3">
+            <Label className="text-slate-400 text-sm w-28 shrink-0">Discount (%)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={discountInput}
+                onChange={(e) => setDiscountInput(e.target.value)}
+                onBlur={(e) => handleSaveDiscount(e.target.value)}
+                placeholder="0"
+                className="w-24 bg-slate-800 border-slate-700 text-white text-sm"
+              />
+              {isSavingDiscount && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+            </div>
+          </div>
+          {/* Breakdown */}
+          <div className="border-t border-slate-700 pt-3 space-y-1.5 text-sm">
+            <div className="flex justify-between text-slate-400">
+              <span>Subtotal</span>
+              <span>{sym}{subtotal.toFixed(2)}</span>
+            </div>
+            {discountPct > 0 && (
+              <>
+                <div className="flex justify-between text-green-400">
+                  <span>Discount ({discountPct}%)</span>
+                  <span>-{sym}{discountAmt.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Net Total</span>
+                  <span>{sym}{netTotal.toFixed(2)}</span>
+                </div>
+              </>
+            )}
+            {isVat && (
+              <div className="flex justify-between text-slate-400">
+                <span>VAT ({vatRate}%)</span>
+                <span>{sym}{vatAmt.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-white font-semibold pt-1.5 border-t border-slate-700">
+              <span>Total</span>
+              <span className="text-green-400 text-xl font-bold">{formatCurrency(grandTotal, currency)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Assessment Notes */}
       <Card className="bg-slate-900 border-slate-800">
