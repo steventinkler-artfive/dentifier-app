@@ -30,10 +30,32 @@ export default function PerPanelQuoteView({
   handleToggleNotesInQuote,
   includeNotesInQuote,
   isUpdating,
+  userSettings,
 }) {
   const [vehicles, setVehicles] = useState([]);
   const [assessmentItems, setAssessmentItems] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [discountInput, setDiscountInput] = useState(
+    assessment.discount_percentage > 0 ? String(assessment.discount_percentage) : ""
+  );
+  const [isSavingDiscount, setIsSavingDiscount] = useState(false);
+
+  useEffect(() => {
+    setDiscountInput(assessment.discount_percentage > 0 ? String(assessment.discount_percentage) : "");
+  }, [assessment.discount_percentage]);
+
+  const handleSaveDiscount = async (value) => {
+    const pct = Math.min(100, Math.max(0, parseFloat(value) || 0));
+    setIsSavingDiscount(true);
+    try {
+      await base44.entities.Assessment.update(assessment.id, {
+        discount_percentage: pct,
+      });
+      await onAssessmentUpdate();
+    } finally {
+      setIsSavingDiscount(false);
+    }
+  };
 
   // editingItem: { type: 'vehicle', vehicleIdx, lineItemIdx } | { type: 'assessment', itemIdx } | null
   const [editingItem, setEditingItem] = useState(null);
