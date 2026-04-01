@@ -25,6 +25,7 @@ import {
   Save,
   Search,
   UserPlus,
+  X,
 } from "lucide-react";
 
 export default function QuoteTab({
@@ -425,28 +426,30 @@ export default function QuoteTab({
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            onClick={handleViewPDF}
-            disabled={isGeneratingPDF}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
-          >
-            {isGeneratingPDF ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
-            ) : (
-              <><FileText className="w-4 h-4 mr-2" />{assessment.status === "completed" ? "PDF Invoice" : "PDF Quote"}</>
-            )}
-          </Button>
-          <Button
-            onClick={handleShare}
-            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            {copied ? "Copied!" : "Share"}
-          </Button>
-        </div>
+        {assessment.status !== "declined" && (
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={handleViewPDF}
+              disabled={isGeneratingPDF}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+            >
+              {isGeneratingPDF ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+              ) : (
+                <><FileText className="w-4 h-4 mr-2" />{assessment.status === "completed" ? "PDF Invoice" : "PDF Quote"}</>
+              )}
+            </Button>
+            <Button
+              onClick={handleShare}
+              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              {copied ? "Copied!" : "Share"}
+            </Button>
+          </div>
+        )}
 
-        {customer?.email && (
+        {customer?.email && ["ready", "sent", "completed"].includes(assessment.status) && (
           <Button
             onClick={handleEmail}
             disabled={isSendingEmail}
@@ -457,6 +460,38 @@ export default function QuoteTab({
             ) : (
               <><Mail className="w-4 h-4 mr-2" />Email {assessment.status === "completed" ? "Invoice" : "Quote"}</>
             )}
+          </Button>
+        )}
+
+        {assessment.status === "sent" && (
+          <>
+            <Button
+              onClick={() => handleStatusChange("approved")}
+              disabled={isUpdating}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+            >
+              {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+              Mark as Approved
+            </Button>
+            <Button
+              onClick={() => handleStatusChange("declined")}
+              disabled={isUpdating}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
+            >
+              {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+              Mark as Declined
+            </Button>
+          </>
+        )}
+
+        {assessment.status === "approved" && (
+          <Button
+            onClick={() => handleStatusChange("completed")}
+            disabled={isUpdating}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+          >
+            {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+            Mark as Completed
           </Button>
         )}
 
@@ -499,16 +534,12 @@ export default function QuoteTab({
               disabled={isGeneratingPaymentLink}
               className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold"
             >
-              {isGeneratingPaymentLink ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <CreditCard className="w-4 h-4 mr-2" />
-              )}
+              {isGeneratingPaymentLink ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
               Generate Payment Link
             </Button>
           )}
 
-        {assessment.status === "draft" && currentLineItems.length === 0 && (
+        {(assessment.status === "draft" || assessment.status === "ready") && currentLineItems.length === 0 && (
           <Link
             to={createPageUrl(
               `EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ""}`
@@ -519,36 +550,6 @@ export default function QuoteTab({
               Add Quote Details
             </Button>
           </Link>
-        )}
-
-        {assessment.status === "quoted" && (
-          <Button
-            onClick={() => handleStatusChange("approved")}
-            disabled={isUpdating}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
-          >
-            {isUpdating ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-            )}
-            Mark as Approved
-          </Button>
-        )}
-
-        {(assessment.status === "approved" || assessment.status === "quoted") && (
-          <Button
-            onClick={() => handleStatusChange("completed")}
-            disabled={isUpdating}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
-          >
-            {isUpdating ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <CheckCircle className="w-4 h-4 mr-2" />
-            )}
-            Mark as Completed
-          </Button>
         )}
       </div>
     </>

@@ -1,0 +1,254 @@
+{
+  "name": "Assessment",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "Reference to customer (optional for drafts)"
+    },
+    "assessment_name": {
+      "type": "string",
+      "description": "Optional name for multi-vehicle assessments"
+    },
+    "is_multi_vehicle": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if this assessment contains multiple vehicles"
+    },
+    "vehicle_id": {
+      "type": "string",
+      "description": "Reference to vehicle (for single-vehicle assessments)"
+    },
+    "job_panel_price": {
+      "type": "number",
+      "description": "Job-level panel price override for per-panel mode. Overrides UserSetting.default_panel_price for this specific job."
+    },
+    "damage_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of damage photos (for single-vehicle assessments)"
+    },
+    "damage_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "panel": {
+            "type": "string"
+          },
+          "damage_type": {
+            "type": "string"
+          },
+          "has_stretched_metal": {
+            "type": "boolean",
+            "default": false
+          },
+          "affects_body_line": {
+            "type": "boolean",
+            "default": false
+          },
+          "size_range": {
+            "type": "string"
+          },
+          "dent_count": {
+            "type": "integer",
+            "default": 1
+          },
+          "material": {
+            "type": "string"
+          },
+          "repair_method": {
+            "type": "string",
+            "enum": [
+              "Good Tool Access",
+              "Limited Tool Access",
+              "Glue Pull Only",
+              "Strip & Re-fit",
+              "Unsure"
+            ]
+          },
+          "depth": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "associated_photos_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "damage_analysis": {
+      "type": "object"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 1
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "total_price": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Assessment-level line items (not tied to any specific vehicle, e.g. call-out fee, travel)"
+    },
+    "calculation_breakdown": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Detailed programmatic calculation breakdown for tech verification"
+    },
+    "vehicles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "vehicle_id": {
+            "type": "string"
+          },
+          "registration": {
+            "type": "string"
+          },
+          "colour": {
+            "type": "string"
+          },
+          "damage_photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "damage_items": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "damage_analysis": {
+            "type": "object"
+          },
+          "line_items": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "calculation_breakdown": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "quote_amount": {
+            "type": "number"
+          },
+          "estimated_time_hours": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "include_notes_in_quote": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "quote_amount": {
+      "type": "number"
+    },
+    "total_amount": {
+      "type": "number"
+    },
+    "discount_percentage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "enum": [
+        "GBP",
+        "USD",
+        "EUR",
+        "CAD",
+        "AUD"
+      ],
+      "default": "GBP"
+    },
+    "quote_pdf_url": {
+      "type": "string"
+    },
+    "quote_pdf_with_notes_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "sent",
+        "approved",
+        "completed",
+        "declined"
+      ],
+      "default": "draft"
+    },
+    "sent_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the quote was sent to the customer"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "include_notes_in_quote": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to include assessment notes in the quote/invoice PDF"
+    },
+    "estimated_time_hours": {
+      "type": "number"
+    },
+    "quote_number": {
+      "type": "string"
+    },
+    "invoice_number": {
+      "type": "string"
+    },
+    "payment_link_url": {
+      "type": "string",
+      "description": "Generated payment link for this assessment/invoice"
+    }
+  },
+  "required": [],
+  "rls": {}
+}

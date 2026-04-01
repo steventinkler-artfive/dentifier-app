@@ -41,7 +41,8 @@ import {
   Save,
   Edit2,
   CreditCard,
-  Eye
+  Eye,
+  X
 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import QuoteTab from "@/components/assessment/QuoteTab";
@@ -235,6 +236,11 @@ export default function AssessmentDetail() {
     setIsUpdating(true);
     try {
       let updateData = { status: newStatus };
+
+      // Record sent_date when status moves to 'sent'
+      if (newStatus === 'sent' && !assessment.sent_date) {
+        updateData.sent_date = new Date().toISOString();
+      }
       
       if (newStatus === 'completed' && !assessment.invoice_number && userSettings) {
         const nextInvoiceNumber = userSettings.next_invoice_number || 1;
@@ -311,7 +317,12 @@ export default function AssessmentDetail() {
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await base44.entities.Assessment.update(assessment.id, { customer_id: customerId });
+      const updateData = { customer_id: customerId };
+      // Auto-advance draft → ready when customer is assigned
+      if (assessment.status === 'draft') {
+        updateData.status = 'ready';
+      }
+      await base44.entities.Assessment.update(assessment.id, updateData);
       await loadAssessmentDetails();
       setIsAssigningCustomer(false);
     } catch (error) {
@@ -572,6 +583,14 @@ export default function AssessmentDetail() {
 
       if (response.data?.success) {
         setEmailModalOpen(false);
+        // Auto-advance to 'sent' when a quote email is sent successfully
+        if (!isInvoice && assessment.status !== 'sent' && assessment.status !== 'approved' && assessment.status !== 'completed') {
+          await base44.entities.Assessment.update(assessment.id, {
+            status: 'sent',
+            sent_date: new Date().toISOString()
+          });
+          await loadAssessmentDetails();
+        }
         await showAlert(`${isInvoice ? 'Invoice' : 'Quote'} emailed successfully to ${to}`, 'Email Sent');
       } else {
         await showAlert(response.data?.error || 'Failed to send email. Please try again.', 'Error');
@@ -771,7 +790,8 @@ export default function AssessmentDetail() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'draft': return 'bg-slate-700 text-slate-300';
-      case 'quoted': return 'bg-blue-600 text-white';
+      case 'ready': return 'bg-blue-600 text-white';
+      case 'sent': return 'bg-cyan-600 text-white';
       case 'approved': return 'bg-green-600 text-white';
       case 'completed': return 'bg-purple-600 text-white';
       case 'declined': return 'bg-red-600 text-white';
@@ -878,6 +898,11 @@ export default function AssessmentDetail() {
               <p className="text-slate-500 text-xs mt-1">
                 Created {new Date(assessment.created_date).toLocaleDateString()}
               </p>
+              {assessment.sent_date && (
+                <p className="text-slate-500 text-xs">
+                  Sent {new Date(assessment.sent_date).toLocaleDateString()}
+                </p>
+              )}
             </div>
             <div className="flex flex-col items-end gap-2">
               {editingStatus ? (
@@ -891,7 +916,8 @@ export default function AssessmentDetail() {
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700">
                     <SelectItem value="draft" className="text-white">Draft</SelectItem>
-                    <SelectItem value="quoted" className="text-white">Quoted</SelectItem>
+                    <SelectItem value="ready" className="text-white">Ready</SelectItem>
+                    <SelectItem value="sent" className="text-white">Sent</SelectItem>
                     <SelectItem value="approved" className="text-white">Approved</SelectItem>
                     <SelectItem value="completed" className="text-white">Completed</SelectItem>
                     <SelectItem value="declined" className="text-white">Declined</SelectItem>
@@ -1121,28 +1147,36 @@ export default function AssessmentDetail() {
 
           {/* Action buttons */}
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={handleViewPDF} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                <FileText className="w-4 h-4 mr-2" />
-                {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
-              </Button>
-              <Button onClick={handleShare} className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
-                <Share2 className="w-4 h-4 mr-2" />
-                {copied ? 'Copied!' : 'Share'}
-              </Button>
-            </div>
-            {customer?.email && (
+            {assessment.status !== 'declined' && (
+              <div className="grid grid-cols-2 gap-3">
+                <Button onClick={handleViewPDF} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                  <FileText className="w-4 h-4 mr-2" />
+                  {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
+                </Button>
+                <Button onClick={handleShare} className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  {copied ? 'Copied!' : 'Share'}
+                </Button>
+              </div>
+            )}
+            {customer?.email && ['ready', 'sent', 'completed'].includes(assessment.status) && (
               <Button onClick={handleEmail} disabled={isSendingEmail} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
                 {isSendingEmail ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : <><Mail className="w-4 h-4 mr-2" />Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}</>}
               </Button>
             )}
-            {assessment.status === 'quoted' && (
-              <Button onClick={() => handleStatusChange('approved')} disabled={isUpdating} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                Mark as Approved
-              </Button>
+            {assessment.status === 'sent' && (
+              <>
+                <Button onClick={() => handleStatusChange('approved')} disabled={isUpdating} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                  Mark as Approved
+                </Button>
+                <Button onClick={() => handleStatusChange('declined')} disabled={isUpdating} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold">
+                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                  Mark as Declined
+                </Button>
+              </>
             )}
-            {(assessment.status === 'approved' || assessment.status === 'quoted') && (
+            {assessment.status === 'approved' && (
               <Button onClick={() => handleStatusChange('completed')} disabled={isUpdating} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold">
                 {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
                 Mark as Completed
@@ -1512,113 +1546,74 @@ export default function AssessmentDetail() {
 
           {/* Action Buttons - At Bottom of Details Tab */}
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                onClick={handleViewPDF}
-                disabled={isGeneratingPDF}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
-              >
-                {isGeneratingPDF ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-4 h-4 mr-2" />
-                    {assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={handleShare}
-                className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                {copied ? 'Copied!' : 'Share'}
-              </Button>
-            </div>
+            {assessment.status !== 'declined' && (
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={handleViewPDF}
+                  disabled={isGeneratingPDF}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+                >
+                  {isGeneratingPDF ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+                  ) : (
+                    <><FileText className="w-4 h-4 mr-2" />{assessment.status === 'completed' ? 'PDF Invoice' : 'PDF Quote'}</>
+                  )}
+                </Button>
+                <Button onClick={handleShare} className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  {copied ? 'Copied!' : 'Share'}
+                </Button>
+              </div>
+            )}
 
-            {customer?.email && (
-              <Button 
-                onClick={handleEmail}
-                disabled={isSendingEmail}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-              >
+            {customer?.email && ['ready', 'sent', 'completed'].includes(assessment.status) && (
+              <Button onClick={handleEmail} disabled={isSendingEmail} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
                 {isSendingEmail ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Sending...
-                  </>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</>
                 ) : (
-                  <>
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}
-                  </>
+                  <><Mail className="w-4 h-4 mr-2" />Email {assessment.status === 'completed' ? 'Invoice' : 'Quote'}</>
                 )}
+              </Button>
+            )}
+
+            {assessment.status === 'sent' && (
+              <>
+                <Button onClick={() => handleStatusChange('approved')} disabled={isUpdating} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                  Mark as Approved
+                </Button>
+                <Button onClick={() => handleStatusChange('declined')} disabled={isUpdating} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold">
+                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                  Mark as Declined
+                </Button>
+              </>
+            )}
+
+            {assessment.status === 'approved' && (
+              <Button onClick={() => handleStatusChange('completed')} disabled={isUpdating} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold">
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                Mark as Completed
               </Button>
             )}
 
             {assessment.status === 'completed' && assessment.payment_link_url && assessment.payment_status !== 'paid' && (
-              <Button 
-                onClick={handleCheckPaymentStatus}
-                disabled={checkingPayment}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
-              >
-                {checkingPayment ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Check Payment
-                  </>
-                )}
+              <Button onClick={handleCheckPaymentStatus} disabled={checkingPayment} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                {checkingPayment ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking...</> : <><CreditCard className="w-4 h-4 mr-2" />Check Payment</>}
               </Button>
             )}
 
             {assessment.status === 'completed' && assessment.payment_status === 'paid' && (
-              <Button 
-                disabled
-                className="w-full bg-green-600 text-white font-semibold opacity-70"
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                Paid ✓
+              <Button disabled className="w-full bg-green-600 text-white font-semibold opacity-70">
+                <CreditCard className="w-4 h-4 mr-2" />Paid ✓
               </Button>
             )}
 
-            {/* Status Change Buttons */}
-            {assessment.status === 'draft' && currentLineItems.length === 0 && (
+            {(assessment.status === 'draft' || assessment.status === 'ready') && currentLineItems.length === 0 && (
               <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
                 <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Quote Details
+                  <Plus className="w-4 h-4 mr-2" />Add Quote Details
                 </Button>
               </Link>
-            )}
-
-            {assessment.status === 'quoted' && (
-              <Button
-                onClick={() => handleStatusChange('approved')}
-                disabled={isUpdating}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
-              >
-                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                Mark as Approved
-              </Button>
-            )}
-
-            {(assessment.status === 'approved' || assessment.status === 'quoted') && (
-              <Button
-                onClick={() => handleStatusChange('completed')}
-                disabled={isUpdating}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
-              >
-                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-                Mark as Completed
-              </Button>
             )}
           </div>
         </TabsContent>

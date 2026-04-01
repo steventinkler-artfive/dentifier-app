@@ -60,7 +60,8 @@ export default function Quotes() {
   const filterOptions = [
     { value: 'all', label: 'All', count: assessments.length },
     { value: 'draft', label: 'Draft', count: assessments.filter(a => a.status === 'draft').length },
-    { value: 'quoted', label: 'Quoted', count: assessments.filter(a => a.status === 'quoted').length },
+    { value: 'ready', label: 'Ready', count: assessments.filter(a => a.status === 'ready').length },
+    { value: 'sent', label: 'Sent', count: assessments.filter(a => a.status === 'sent').length },
     { value: 'approved', label: 'Approved', count: assessments.filter(a => a.status === 'approved').length },
     { value: 'completed', label: 'Completed', count: assessments.filter(a => a.status === 'completed').length },
     { value: 'declined', label: 'Declined', count: assessments.filter(a => a.status === 'declined').length }
@@ -69,7 +70,8 @@ export default function Quotes() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'draft': return 'bg-slate-700 text-slate-300';
-      case 'quoted': return 'bg-blue-900 text-blue-300';
+      case 'ready': return 'bg-blue-900 text-blue-300';
+      case 'sent': return 'bg-cyan-900 text-cyan-300';
       case 'approved': return 'bg-green-900 text-green-300';
       case 'completed': return 'bg-purple-900 text-purple-300';
       case 'declined': return 'bg-red-900 text-red-300';
@@ -224,45 +226,46 @@ export default function Quotes() {
                     <div className="flex-1">
                       {/* Identifier and Status Badges */}
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-white font-semibold">{displayIdentifier}</h3>
-                        <Badge className={`text-xs ${getStatusColor(assessment.status)}`}>
-                          {assessment.status}
-                        </Badge>
-                        {assessment.is_multi_vehicle && (
-                          <Badge variant="outline" className="text-xs border-purple-800 text-purple-300">
-                            Multi-Vehicle
-                          </Badge>
-                        )}
+                       <h3 className="text-white font-semibold">{displayIdentifier}</h3>
+                       <Badge className={`text-xs ${getStatusColor(assessment.status)}`}>
+                         {assessment.status}
+                       </Badge>
                       </div>
 
                       {/* Customer Name and optional Contact */}
-                      <p className="text-slate-400 text-sm">{customerName}</p>
+                      <p className={`text-sm ${customer ? 'text-slate-400' : 'text-slate-600'}`}>{customerName}</p>
                       {customer?.business_name && (
-                        <p className="text-slate-500 text-xs">Contact: {customer.name}</p>
+                       <p className="text-slate-500 text-xs">Contact: {customer.name}</p>
                       )}
 
-                      {/* Vehicle Info */}
+                      {/* Vehicle Info — for multi-vehicle show count, otherwise show make/model */}
                       <p className="text-slate-500 text-xs">{vehicleInfo}</p>
 
                       {/* Date Info */}
                       <div className="flex items-center gap-2 text-sm mt-1">
-                        <Calendar className="w-3 h-3 text-slate-400" />
-                        <span className="text-slate-300">
-                          {new Date(assessment.created_date).toLocaleDateString()}
-                        </span>
+                       <Calendar className="w-3 h-3 text-slate-400" />
+                       <span className="text-slate-300">
+                         {new Date(assessment.created_date).toLocaleDateString()}
+                       </span>
                       </div>
-                    </div>
-
-                    <div className="text-right ml-4">
-                      {assessment.quote_amount && (
-                        <div className="flex items-center gap-1 text-green-400 font-semibold mb-1">
-                          <span className="text-sm">
-                            {formatCurrency(assessment.quote_amount, assessment.currency || 'GBP')}
-                          </span>
-                        </div>
+                      {['sent', 'approved', 'completed'].includes(assessment.status) && assessment.sent_date && (
+                       <div className="flex items-center gap-2 text-sm">
+                         <Calendar className="w-3 h-3 text-slate-500" />
+                         <span className="text-slate-500 text-xs">
+                           Sent {new Date(assessment.sent_date).toLocaleDateString()}
+                         </span>
+                       </div>
                       )}
-                      <ArrowRight className="w-4 h-4 text-slate-500" />
-                    </div>
+                      </div>
+
+                      <div className="text-right ml-4 flex flex-col items-end justify-between">
+                      {assessment.quote_amount && (
+                       <span className="text-green-400 font-bold text-lg leading-tight">
+                         {formatCurrency(assessment.quote_amount, assessment.currency || 'GBP')}
+                       </span>
+                      )}
+                      <ArrowRight className="w-4 h-4 text-slate-500 mt-1" />
+                      </div>
                   </div>
                 </CardContent>
               </Card>
