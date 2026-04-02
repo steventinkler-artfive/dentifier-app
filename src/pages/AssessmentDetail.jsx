@@ -965,9 +965,13 @@ export default function AssessmentDetail() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <Badge
-                      className={`${assessment.payment_status === 'paid' ? 'bg-green-600' : 'bg-yellow-600'} text-xs`}
+                      className={`text-xs px-2.5 py-0.5 rounded-full font-medium border bg-transparent ${
+                        assessment.payment_status === 'paid'
+                          ? 'border-green-500 text-green-500'
+                          : 'border-yellow-500 text-yellow-500'
+                      }`}
                     >
-                      {assessment.payment_status === 'paid' ? 'Paid' : 'Pending'}
+                      {assessment.payment_status === 'paid' ? 'Paid' : 'Pending Payment'}
                     </Badge>
                     <Button
                       variant="ghost"
