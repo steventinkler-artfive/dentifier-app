@@ -54,6 +54,7 @@ export default function Quotes() {
 
   const filteredAssessments = assessments.filter((assessment) => {
     if (filter === 'all') return true;
+    if (filter === 'paid') return assessment.payment_status === 'paid';
     return assessment.status === filter;
   });
 
@@ -64,7 +65,8 @@ export default function Quotes() {
     { value: 'sent', label: 'Sent', count: assessments.filter(a => a.status === 'sent').length },
     { value: 'approved', label: 'Approved', count: assessments.filter(a => a.status === 'approved').length },
     { value: 'completed', label: 'Completed', count: assessments.filter(a => a.status === 'completed').length },
-    { value: 'declined', label: 'Declined', count: assessments.filter(a => a.status === 'declined').length }
+    { value: 'declined', label: 'Declined', count: assessments.filter(a => a.status === 'declined').length },
+    { value: 'paid', label: 'Paid', count: assessments.filter(a => a.payment_status === 'paid').length }
   ];
 
   const getStatusColor = (status) => {
@@ -226,10 +228,14 @@ export default function Quotes() {
                     <div className="flex-1">
                       {/* Identifier and Status Badges */}
                       <div className="flex items-center gap-2 mb-1">
-                       <h3 className="text-white font-semibold">{displayIdentifier}</h3>
-                       <Badge className={`text-xs ${getStatusColor(assessment.status)}`}>
-                         {assessment.status}
-                       </Badge>
+                      <h3 className="text-white font-semibold">{displayIdentifier}</h3>
+                      {assessment.payment_status === 'paid' ? (
+                        <Badge className="text-xs bg-green-700 text-green-100">Paid</Badge>
+                      ) : (
+                        <Badge className={`text-xs ${getStatusColor(assessment.status)}`}>
+                          {assessment.status}
+                        </Badge>
+                      )}
                       </div>
 
                       {/* Customer Name and optional Contact */}
