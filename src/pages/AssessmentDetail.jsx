@@ -787,15 +787,18 @@ export default function AssessmentDetail() {
     return `${symbol}${amount?.toFixed(2) || '0.00'}`;
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'draft': return 'bg-slate-700 text-slate-300';
-      case 'ready': return 'bg-blue-600 text-white';
-      case 'sent': return 'bg-cyan-600 text-white';
-      case 'approved': return 'bg-green-600 text-white';
-      case 'completed': return 'bg-purple-600 text-white';
-      case 'declined': return 'bg-red-600 text-white';
-      default: return 'bg-gray-600 text-white';
+  const getStatusBadge = (assessment) => {
+    if (assessment.status === 'completed' && assessment.payment_status === 'paid') {
+      return { label: 'Paid', className: 'bg-green-600 text-white' };
+    }
+    switch (assessment.status) {
+      case 'draft':     return { label: 'Draft',     className: 'bg-slate-600 text-slate-200' };
+      case 'ready':     return { label: 'Ready',     className: 'bg-blue-600 text-white' };
+      case 'sent':      return { label: 'Sent',      className: 'bg-teal-600 text-white' };
+      case 'approved':  return { label: 'Approved',  className: 'bg-rose-600 text-white' };
+      case 'completed': return { label: 'Completed', className: 'bg-purple-600 text-white' };
+      case 'declined':  return { label: 'Declined',  className: 'bg-red-600 text-white' };
+      default:          return { label: assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1), className: 'bg-slate-600 text-white' };
     }
   };
 
@@ -925,11 +928,14 @@ export default function AssessmentDetail() {
                 </Select>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Badge
-                    className={`${getStatusColor(assessment.status)} text-xs`}
-                  >
-                    {assessment.status}
-                  </Badge>
+                  {(() => {
+                    const b = getStatusBadge(assessment);
+                    return (
+                      <Badge className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${b.className}`}>
+                        {b.label}
+                      </Badge>
+                    );
+                  })()}
                   <Button
                     variant="ghost"
                     size="icon"
