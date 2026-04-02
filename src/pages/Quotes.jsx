@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   Calendar,
-  User,
   Car,
   ArrowRight,
   Loader2
@@ -69,63 +68,70 @@ export default function Quotes() {
     { value: 'paid', label: 'Paid', count: assessments.filter(a => a.payment_status === 'paid').length }
   ];
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'draft': return 'bg-slate-700 text-slate-300';
-      case 'ready': return 'bg-blue-900 text-blue-300';
-      case 'sent': return 'bg-cyan-900 text-cyan-300';
-      case 'approved': return 'bg-green-900 text-green-300';
-      case 'completed': return 'bg-purple-900 text-purple-300';
-      case 'declined': return 'bg-red-900 text-red-300';
-      default: return 'bg-gray-700 text-gray-300';
-    }
-  };
-
   const getCurrencySymbol = (currency) => {
-    const symbols = {
-      'GBP': '£',
-      'USD': '$',
-      'EUR': '€',
-      'CAD': 'C$',
-      'AUD': 'A$'
-    };
+    const symbols = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$' };
     return symbols[currency] || '£';
   };
 
-  const formatCurrency = (amount, currency) => {
-    const symbol = getCurrencySymbol(currency);
-    return `${symbol}${Math.round(amount)}`;
+  // Scoped to list card only — does not affect detail screen, PDF, or calculations
+  const formatCardPrice = (amount, currency) => {
+    if (!amount) return null;
+    return `${getCurrencySymbol(currency)}${amount.toFixed(2)}`;
+  };
+
+  const getDisplayReference = (assessment) => {
+    if (assessment.status === 'completed') {
+      if (assessment.invoice_number) return { label: `Invoice: ${assessment.invoice_number}`, isInvoice: true };
+      if (assessment.quote_number) return { label: `Quote: ${assessment.quote_number}`, isInvoice: false };
+      return { label: `Ref: #${assessment.id.slice(-6)}`, isInvoice: false };
+    }
+    if (assessment.quote_number) return { label: `Quote: ${assessment.quote_number}`, isInvoice: false };
+    return { label: `Ref: #${assessment.id.slice(-6)}`, isInvoice: false };
+  };
+
+  const getBadge = (assessment) => {
+    if (assessment.status === 'completed' && assessment.payment_status === 'paid') {
+      return { label: 'Paid', className: 'bg-green-600 text-white' };
+    }
+    switch (assessment.status) {
+      case 'draft':     return { label: 'Draft',     className: 'bg-slate-600 text-slate-200' };
+      case 'ready':     return { label: 'Ready',     className: 'bg-blue-600 text-white' };
+      case 'sent':      return { label: 'Sent',      className: 'bg-teal-600 text-white' };
+      case 'approved':  return { label: 'Approved',  className: 'bg-green-600 text-white' };
+      case 'completed': return { label: 'Completed', className: 'bg-purple-600 text-white' };
+      case 'declined':  return { label: 'Declined',  className: 'bg-red-600 text-white' };
+      default:          return { label: assessment.status, className: 'bg-slate-600 text-slate-200' };
+    }
+  };
+
+  const getBottomLine = (assessment) => {
+    const { status, payment_status, sent_date } = assessment;
+    const { isInvoice } = getDisplayReference(assessment);
+    const docLabel = isInvoice ? 'INVOICE' : 'QUOTE';
+    const formatDate = (d) => new Date(d).toLocaleDateString('en-GB');
+
+    if (status === 'draft') return null;
+    if (status === 'ready') return 'Ready to send';
+    if (status === 'sent') {
+      return sent_date ? `${docLabel} sent ${formatDate(sent_date)}` : `${docLabel} sent`;
+    }
+    // approved, completed, paid
+    if (['approved', 'completed'].includes(status) || payment_status === 'paid') {
+      if (sent_date) return `${docLabel} sent ${formatDate(sent_date)}`;
+      return 'Not yet marked as sent';
+    }
+    return null;
   };
 
   const getVehicleDisplay = (assessment) => {
     if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
-      return `${assessment.vehicles.length} Vehicles`;
-    } else if (assessment.vehicle_id) {
-      const vehicle = vehicles[assessment.vehicle_id];
-      return vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'Vehicle details loading...';
+      return { isMulti: true, count: assessment.vehicles.length };
     }
-    return 'N/A';
-  };
-
-  // Get the display reference based on status - same logic as AssessmentDetail
-  const getDisplayReference = (assessment) => {
-    // If status is completed, show invoice number (if exists), otherwise show quote number
-    if (assessment.status === 'completed') {
-      if (assessment.invoice_number) {
-        return `Invoice: ${assessment.invoice_number}`;
-      } else if (assessment.quote_number) {
-        return `Quote: ${assessment.quote_number}`;
-      } else {
-        return `Ref: #${assessment.id.slice(-6)}`;
-      }
+    if (assessment.vehicle_id) {
+      const v = vehicles[assessment.vehicle_id];
+      return { isMulti: false, label: v ? `${v.year} ${v.make} ${v.model}` : null };
     }
-    
-    // For all other statuses, show quote number (even if invoice_number exists)
-    if (assessment.quote_number) {
-      return `Quote: ${assessment.quote_number}`;
-    }
-    
-    return `Ref: #${assessment.id.slice(-6)}`;
+    return { isMulti: false, label: null };
   };
 
   if (loading) {
@@ -202,77 +208,76 @@ export default function Quotes() {
           </Card>
         ) : (
           filteredAssessments.map((assessment) => {
+            if (!assessment.id || assessment.id === 'undefined') return null;
+
             const customer = customers[assessment.customer_id];
-
-            // Use the new display reference logic
-            const displayIdentifier = getDisplayReference(assessment);
-
-            // Determine customer display name
-            const customerName = customer ? (customer.business_name || customer.name) : 'No Customer';
-
-            // Get vehicle display information
+            const customerName = customer ? (customer.business_name || customer.name) : null;
+            const ref = getDisplayReference(assessment);
+            const badge = getBadge(assessment);
+            const bottomLine = getBottomLine(assessment);
             const vehicleInfo = getVehicleDisplay(assessment);
-
-            if (!assessment.id || assessment.id === 'undefined') {
-              return null;
-            }
+            const isPanelQuote = assessment.is_multi_vehicle && !assessment.vehicle_id;
+            const price = formatCardPrice(assessment.quote_amount, assessment.currency || 'GBP');
 
             return (
               <Card
                 key={assessment.id}
-                className="bg-slate-900 text-card-foreground my-4 rounded-lg border shadow-sm border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 cursor-pointer"
+                className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 cursor-pointer"
                 onClick={() => navigate(createPageUrl(`AssessmentDetail?id=${assessment.id}`))}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      {/* Identifier and Status Badges */}
-                      <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-white font-semibold">{displayIdentifier}</h3>
-                      {assessment.payment_status === 'paid' ? (
-                        <Badge className="text-xs bg-green-700 text-green-100">Paid</Badge>
-                      ) : (
-                        <Badge className={`text-xs ${getStatusColor(assessment.status)}`}>
-                          {assessment.status}
-                        </Badge>
-                      )}
-                      </div>
-
-                      {/* Customer Name and optional Contact */}
-                      <p className={`text-sm ${customer ? 'text-slate-400' : 'text-slate-600'}`}>{customerName}</p>
-                      {customer?.business_name && (
-                       <p className="text-slate-500 text-xs">Contact: {customer.name}</p>
-                      )}
-
-                      {/* Vehicle Info — for multi-vehicle show count, otherwise show make/model */}
-                      <p className="text-slate-500 text-xs">{vehicleInfo}</p>
-
-                      {/* Date Info */}
-                      <div className="flex items-center gap-2 text-sm mt-1">
-                       <Calendar className="w-3 h-3 text-slate-400" />
-                       <span className="text-slate-300">
-                         {new Date(assessment.created_date).toLocaleDateString()}
-                       </span>
-                      </div>
-                      {['sent', 'approved', 'completed'].includes(assessment.status) && assessment.sent_date && (
-                       <div className="flex items-center gap-2 text-sm">
-                         <Calendar className="w-3 h-3 text-slate-500" />
-                         <span className="text-slate-500 text-xs">
-                           Sent {new Date(assessment.sent_date).toLocaleDateString()}
-                         </span>
-                       </div>
-                      )}
-                      </div>
-
-                      <div className="text-right ml-4 flex flex-col items-end justify-between">
-                      {assessment.quote_amount && (
-                       <span className="text-green-400 font-bold text-lg leading-tight">
-                         {formatCurrency(assessment.quote_amount, assessment.currency || 'GBP')}
-                       </span>
-                      )}
-                      <ArrowRight className="w-4 h-4 text-slate-500 mt-1" />
-                      </div>
+                <CardContent className="p-4 space-y-2">
+                  {/* Line 1 — Reference + Badge */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-bold text-lg leading-tight">{ref.label}</span>
+                    <Badge className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${badge.className}`}>
+                      {badge.label}
+                    </Badge>
                   </div>
+
+                  {/* Line 2 — Customer + Price */}
+                  <div className="flex items-center justify-between">
+                    <span className={`text-base ${customerName ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {customerName || 'No Customer'}
+                    </span>
+                    {price && (
+                      <span className="text-green-400 font-bold text-2xl leading-tight">{price}</span>
+                    )}
+                  </div>
+
+                  {/* Line 3 — Vehicle */}
+                  <div className="flex items-center gap-2">
+                    <Car className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    {vehicleInfo.isMulti ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-bold text-sm">{vehicleInfo.count} Vehicles</span>
+                        {isPanelQuote && (
+                          <span className="text-xs border border-rose-500 text-rose-400 rounded-full px-2 py-0.5">
+                            Panel quote
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={`text-sm font-bold ${vehicleInfo.label ? 'text-white' : 'text-slate-600'}`}>
+                        {vehicleInfo.label || 'No vehicle'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Line 4 — Bottom line + Arrow */}
+                  {bottomLine && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                        <span className="text-slate-500 text-sm">{bottomLine}</span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-500" />
+                    </div>
+                  )}
+                  {!bottomLine && (
+                    <div className="flex justify-end">
+                      <ArrowRight className="w-4 h-4 text-slate-500" />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
