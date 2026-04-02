@@ -980,7 +980,7 @@ export default function AssessmentDetail() {
           {/* Total Amount */}
           <div className="pt-3 border-t border-slate-800">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-slate-400 text-sm">Total Quote Amount</span>
+              <span className="text-slate-400 text-sm">{assessment.status === 'completed' ? 'Total Invoice Amount' : 'Total Quote Amount'}</span>
               <span className="text-2xl font-bold text-green-400">
                 {(() => {
                   const sub = assessment.quote_amount || 0;
@@ -1195,7 +1195,7 @@ export default function AssessmentDetail() {
       <Tabs defaultValue="quote" className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-4">
           <TabsTrigger value="quote" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
-            Quote
+            {assessment.status === 'completed' ? 'Invoice' : 'Quote'}
           </TabsTrigger>
           <TabsTrigger value="details" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
             Details
