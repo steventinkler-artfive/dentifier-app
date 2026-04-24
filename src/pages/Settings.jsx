@@ -621,7 +621,7 @@ export default function Settings() {
 
                             <div className="space-y-2">
                                 <Label className="text-white">Business Logo</Label>
-                                {user?.subscription_plan === 'professional' || user?.subscription_plan === 'founder' || user?.subscription_plan === 'early_bird' || user?.subscription_status === 'active' || user?.subscription_status === 'trialing' || localStorage.getItem('selected_plan_tier') === 'professional' || localStorage.getItem('just_subscribed') ? (
+                                {user?.subscription_plan === 'professional' || user?.subscription_plan === 'founder' || user?.subscription_plan === 'early_bird' || user?.subscription_status === 'active' || user?.subscription_status === 'trialing' || localStorage.getItem('selected_plan_tier') === 'professional' || localStorage.getItem('just_subscribed') || user?.is_beta_tester === true || user?.data?.is_beta_tester === true ? (
                                     <div className="flex flex-col gap-3">
                                         {logoPreview && (
                                         <div className="relative w-48 h-24 bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
