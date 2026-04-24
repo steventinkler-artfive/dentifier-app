@@ -288,7 +288,7 @@ export default function OnboardingWizard({ user, onComplete }) {
           </div>
         );
 
-      case 5:
+      case 5: {
         const storedTier = localStorage.getItem('selected_plan_tier');
         const isProfessional = ['professional', 'founder', 'early_bird'].includes(user?.subscription_plan) || storedTier === 'professional' || user?.is_beta_tester === true;
         return (
@@ -346,8 +346,9 @@ export default function OnboardingWizard({ user, onComplete }) {
             )}
           </div>
         );
+      }
 
-      case 6:
+      case 6: {
         const sectionsCompleted = settings?.sections_completed || {};
         const completionItems = [
           { key: 'business', label: 'Business profile', isComplete: sectionsCompleted.business },
@@ -401,6 +402,7 @@ export default function OnboardingWizard({ user, onComplete }) {
             </div>
           </div>
         );
+      }
 
       default:
         return null;
