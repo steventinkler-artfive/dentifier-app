@@ -290,7 +290,7 @@ export default function OnboardingWizard({ user, onComplete }) {
 
       case 5:
         const storedTier = localStorage.getItem('selected_plan_tier');
-        const isProfessional = ['professional', 'founder', 'early_bird'].includes(user?.subscription_plan) || storedTier === 'professional';
+        const isProfessional = ['professional', 'founder', 'early_bird'].includes(user?.subscription_plan) || storedTier === 'professional' || user?.is_beta_tester === true;
         return (
           <div className="space-y-6 text-center">
             {isProfessional ? (
