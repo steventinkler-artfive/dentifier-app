@@ -92,7 +92,7 @@ export default function Dashboard() {
         user.role === 'admin' ||
         user.subscription_status === 'trialing' ||
         user.subscription_status === 'active' ||
-        user.is_beta_tester === true;
+        user.is_beta_tester === true || user.data?.is_beta_tester === true;
 
       if (hasAccess && (!settings || !settings.onboarding_completed)) {
         setShowOnboarding(true);

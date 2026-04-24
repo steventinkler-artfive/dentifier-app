@@ -78,7 +78,7 @@ export default function Layout({ children, currentPageName }) {
       currentUser.role === 'admin' ||
       currentUser.subscription_status === 'trialing' ||
       currentUser.subscription_status === 'active' ||
-      currentUser.is_beta_tester === true ||
+      (currentUser.is_beta_tester === true || currentUser.data?.is_beta_tester === true) ||
       recentlySubscribed;
 
     console.log('[Access Check]', {
@@ -113,7 +113,7 @@ export default function Layout({ children, currentPageName }) {
   const getSubscriptionDisplay = () => {
     if (!currentUser) return null;
 
-    if (currentUser.is_beta_tester) {
+    if (currentUser.is_beta_tester || currentUser.data?.is_beta_tester) {
       return { label: 'Beta Tester', icon: Zap, color: 'text-purple-400' };
     }
 
