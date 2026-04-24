@@ -1,0 +1,20 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "is_beta_tester": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if the user is a beta tester and bypasses subscription checks"
+    }
+  },
+  "required": []
+}
