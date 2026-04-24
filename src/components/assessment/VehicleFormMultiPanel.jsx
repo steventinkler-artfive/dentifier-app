@@ -277,7 +277,7 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="w-full bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                    className="w-full bg-green-600 border-green-600 text-white hover:bg-green-700"
                     disabled={uploadingIdx === cardIdx}
                     onClick={e => e.currentTarget.previousElementSibling.click()}
                   >
@@ -298,7 +298,7 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="w-full bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                    className="w-full bg-rose-600 border-rose-600 text-white hover:bg-rose-700"
                     disabled={uploadingIdx === cardIdx}
                     onClick={e => e.currentTarget.previousElementSibling.click()}
                   >
