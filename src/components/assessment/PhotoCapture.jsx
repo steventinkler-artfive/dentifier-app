@@ -306,7 +306,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                               onChange={(e) => handleItemFileSelect(e, itemIndex)}
                               className="hidden" disabled={uploadingItemIndex !== null} />
                             <Button type="button" variant="outline" size="sm"
-                              className="w-full bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-xs"
+                              className="w-full bg-green-600 border-green-600 text-white hover:bg-green-700 text-xs"
                               disabled={uploadingItemIndex !== null}
                               onClick={(e) => e.currentTarget.previousElementSibling.click()}>
                               {isItemUploading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Camera className="w-3 h-3 mr-1" />}
@@ -318,7 +318,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                               onChange={(e) => handleItemFileSelect(e, itemIndex)}
                               className="hidden" disabled={uploadingItemIndex !== null} />
                             <Button type="button" variant="outline" size="sm"
-                              className="w-full bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-xs"
+                              className="w-full bg-rose-600 border-rose-600 text-white hover:bg-rose-700 text-xs"
                               disabled={uploadingItemIndex !== null}
                               onClick={(e) => e.currentTarget.previousElementSibling.click()}>
                               <Upload className="w-3 h-3 mr-1" />
