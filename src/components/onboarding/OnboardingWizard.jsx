@@ -11,7 +11,6 @@ import BusinessProfileForm from "./BusinessProfileForm";
 import BankingPaymentForm from "./BankingPaymentForm";
 import PricingQuotingForm from "./PricingQuotingForm";
 import TechnicianDetailsForm from "./TechnicianDetailsForm";
-import LogoUploader from "./LogoUploader";
 
 const STEPS = [
   { id: 'welcome', title: 'Welcome', section: null },
@@ -19,7 +18,6 @@ const STEPS = [
   { id: 'banking', title: 'Banking & Payment', section: 'banking' },
   { id: 'pricing', title: 'Pricing Configuration', section: 'pricing' },
   { id: 'skills', title: 'Technician Profile', section: 'skills' },
-  { id: 'branding', title: 'Branding', section: 'branding' },
   { id: 'complete', title: 'Complete', section: null }
 ];
 
@@ -170,8 +168,6 @@ export default function OnboardingWizard({ user, onComplete }) {
       case 'skills':
         const configuredSkills = formData.specialized_damage_skills?.filter(s => s.level !== "Don't do this type") || [];
         return configuredSkills.length >= 3;
-      case 'branding':
-        return true;
       default:
         return false;
     }
@@ -184,8 +180,7 @@ export default function OnboardingWizard({ user, onComplete }) {
         business: validateSection('business'),
         banking: validateSection('banking'),
         pricing: validateSection('pricing'),
-        skills: validateSection('skills'),
-        branding: validateSection('branding')
+        skills: validateSection('skills')
       };
 
       const dataToSave = {
@@ -237,8 +232,7 @@ export default function OnboardingWizard({ user, onComplete }) {
                 'Business Profile',
                 'Banking & Payment',
                 'Pricing Configuration',
-                'Technician Profile',
-                'Branding'
+                'Technician Profile'
               ].map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg">
                   <Circle className="w-5 h-5 text-slate-500" />
@@ -277,7 +271,7 @@ export default function OnboardingWizard({ user, onComplete }) {
         return (
           <div className="space-y-4">
             <PricingQuotingForm formData={formData} onChange={handleChange} />
-            <p className="text-slate-400 text-sm">These prices will be used to generate automatic quotes</p>
+            <p className="text-slate-400 text-sm">Your pricing matrix comes pre-loaded with industry-standard UK rates and is ready to use straight away. You can fully customise it in Settings at any time.</p>
           </div>
         );
 
@@ -290,66 +284,12 @@ export default function OnboardingWizard({ user, onComplete }) {
         );
 
       case 5: {
-        const storedTier = localStorage.getItem('selected_plan_tier');
-        const isBetaTester = user?.is_beta_tester === true || user?.data?.is_beta_tester === true;
-        const isProfessional = ['professional', 'founder', 'early_bird'].includes(user?.subscription_plan) || storedTier === 'professional' || isBetaTester;
-        return (
-          <div className="space-y-6 text-center">
-            {isProfessional ? (
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-white">Add Your Business Logo</h3>
-                <p className="text-slate-400 text-sm">Your logo will appear on all quotes and invoices</p>
-                <LogoUploader
-                  logoUrl={formData.business_logo_url}
-                  onChange={(url) => handleChange('business_logo_url', url)}
-                />
-                {formData.business_logo_url && (
-                  <p className="text-green-400 text-sm">✓ Logo uploaded successfully</p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-white">Want to add your business logo?</h3>
-                <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-                  <Card className="bg-slate-800 border-slate-700">
-                    <CardContent className="p-4 text-center">
-                      <p className="text-slate-400 text-sm mb-2">Starter</p>
-                      <div className="w-full h-16 bg-slate-700 rounded flex items-center justify-center">
-                        <span className="text-slate-500 text-xs">Dentifier Logo</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-slate-800 border-rose-700">
-                    <CardContent className="p-4 text-center">
-                      <p className="text-rose-400 text-sm mb-2">Professional</p>
-                      <div className="w-full h-16 bg-slate-700 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">Your Logo</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                <Link to={createPageUrl('Upgrade')}>
-                  <Button className="bg-rose-600 hover:bg-rose-700 text-white">
-                    Upgrade to Professional
-                  </Button>
-                </Link>
-                <button onClick={handleContinue} className="block mx-auto text-slate-400 text-sm hover:text-white">
-                  Continue with Starter
-                </button>
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      case 6: {
         const sectionsCompleted = settings?.sections_completed || {};
         const completionItems = [
           { key: 'business', label: 'Business profile', isComplete: sectionsCompleted.business },
           { key: 'banking', label: 'Banking & payments', isComplete: sectionsCompleted.banking },
           { key: 'pricing', label: 'Pricing configured', isComplete: sectionsCompleted.pricing },
-          { key: 'skills', label: 'Technician skills', isComplete: sectionsCompleted.skills },
-          { key: 'branding', label: 'Branding', isComplete: sectionsCompleted.branding }
+          { key: 'skills', label: 'Technician skills', isComplete: sectionsCompleted.skills }
         ];
         const completedCount = completionItems.filter(i => i.isComplete).length;
         const completionPercent = Math.round((completedCount / completionItems.length) * 100);
@@ -408,16 +348,16 @@ export default function OnboardingWizard({ user, onComplete }) {
       <Dialog open={true}>
         <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-y-auto p-0">
           <div ref={dialogScrollRef} className="space-y-6 overflow-y-auto max-h-[90vh] p-6">
-            {currentStep > 0 && currentStep < 6 && (
+            {currentStep > 0 && currentStep < 5 && (
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-xl font-bold text-white">{STEPS[currentStep].title}</h3>
-                  <span className="text-slate-400 text-sm">Step {currentStep} of 5</span>
+                  <span className="text-slate-400 text-sm">Step {currentStep} of 4</span>
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-2">
                   <div
                     className="bg-rose-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(currentStep / 5) * 100}%` }}
+                    style={{ width: `${(currentStep / 4) * 100}%` }}
                   />
                 </div>
               </div>
@@ -425,7 +365,7 @@ export default function OnboardingWizard({ user, onComplete }) {
 
             {renderStepContent()}
 
-            {currentStep > 0 && currentStep < 6 && (
+            {currentStep > 0 && currentStep < 5 && (
               <div className="flex gap-3 pt-4 border-t border-slate-800">
                 <Button
                   onClick={handleContinue}
@@ -433,7 +373,7 @@ export default function OnboardingWizard({ user, onComplete }) {
                   className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  {currentStep === 5 ? 'Finish Setup' : 'Continue'}
+                  {currentStep === 4 ? 'Finish Setup' : 'Continue'}
                 </Button>
                 <Button
                   onClick={handleSkip}
