@@ -101,22 +101,11 @@ export default function AdminUsers() {
       // Send invitation
       await base44.users.inviteUser(newUser.email, newUser.role);
 
-      // Poll for the newly created user record (may not be immediately available)
-      let created = null;
-      for (let attempt = 0; attempt < 5; attempt++) {
-        await new Promise(res => setTimeout(res, 800));
-        const allUsers = await base44.entities.User.list();
-        created = allUsers.find(u => u.email === newUser.email);
-        if (created) break;
-      }
-
-      // Update subscription_tier and is_beta_tester regardless of beta flag
-      if (created) {
-        const updateData = {
-          subscription_tier: newUser.subscription_tier || 'starter',
-          is_beta_tester: newUser.is_beta_tester || false,
-        };
-        await base44.entities.User.update(created.id, updateData);
+      // If beta tester, use the backend function which uses service role (guaranteed to persist)
+      if (newUser.is_beta_tester) {
+        // Poll briefly to give the invite time to create the user record
+        await new Promise(res => setTimeout(res, 1500));
+        await base44.functions.invoke('setBetaTester', { userEmail: newUser.email });
       }
 
       // Send welcome email

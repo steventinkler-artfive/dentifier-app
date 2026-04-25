@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
         }
 
         await base44.asServiceRole.entities.User.update(targetUser.id, {
-            is_beta_tester: true
+            is_beta_tester: true,
+            subscription_tier: 'professional'
         });
 
         return Response.json({ success: true, message: `is_beta_tester set to true for ${userEmail}` });
