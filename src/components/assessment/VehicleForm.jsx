@@ -74,26 +74,8 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
   const [vehicleColors, setVehicleColors] = useState(VEHICLE_COLORS);
 
   useEffect(() => {
-    checkDvlaConfiguration();
+    setDvlaConfigured(true);
   }, []);
-
-  const checkDvlaConfiguration = async () => {
-    try {
-      // Check all UserSettings to see if DVLA is configured by any admin
-      const allSettings = await base44.entities.UserSetting.list();
-      
-      // Find any setting that has DVLA configured
-      const dvlaConfigured = allSettings.some(settings => {
-        const useTest = settings.dvla_use_test_environment ?? false;
-        const hasKey = useTest ? !!settings.dvla_test_api_key : !!settings.dvla_prod_api_key;
-        return hasKey;
-      });
-      
-      setDvlaConfigured(dvlaConfigured);
-    } catch (error) {
-      console.error('Error checking DVLA configuration:', error);
-    }
-  };
 
   const handleDvlaLookup = async () => {
     if (!formData.license_plate || formData.license_plate.length < 2) {
