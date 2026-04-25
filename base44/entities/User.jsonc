@@ -14,6 +14,49 @@
       "type": "boolean",
       "default": false,
       "description": "True if the user is a beta tester and bypasses subscription checks"
+    },
+    "subscription_tier": {
+      "type": "string",
+      "enum": [
+        "starter",
+        "professional",
+        "founder",
+        "early_bird"
+      ],
+      "default": "starter",
+      "description": "The user's subscription tier"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "trialing",
+        "active",
+        "past_due",
+        "cancelled"
+      ],
+      "description": "Current subscription status"
+    },
+    "subscription_plan": {
+      "type": "string",
+      "description": "Stripe subscription plan identifier"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID for this user"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "Stripe subscription ID for this user"
+    },
+    "subscription_end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date the current subscription period ends"
+    },
+    "trial_end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date the trial period ends"
     }
   },
   "required": []
