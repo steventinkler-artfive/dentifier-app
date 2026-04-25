@@ -100,16 +100,26 @@ export default function AdminUsers() {
     try {
       // Send invitation
       await base44.users.inviteUser(newUser.email, newUser.role);
-      if (newUser.is_beta_tester) {
-        // After invite, find and update the user to set beta tester fields
+
+      // Poll for the newly created user record (may not be immediately available)
+      let created = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        await new Promise(res => setTimeout(res, 800));
         const allUsers = await base44.entities.User.list();
-        const created = allUsers.find(u => u.email === newUser.email);
-        if (created) {
-          await base44.entities.User.update(created.id, { is_beta_tester: true, subscription_tier: 'professional' });
-        }
+        created = allUsers.find(u => u.email === newUser.email);
+        if (created) break;
       }
-      
-      // Send welcome email immediately after invitation
+
+      // Update subscription_tier and is_beta_tester regardless of beta flag
+      if (created) {
+        const updateData = {
+          subscription_tier: newUser.subscription_tier || 'starter',
+          is_beta_tester: newUser.is_beta_tester || false,
+        };
+        await base44.entities.User.update(created.id, updateData);
+      }
+
+      // Send welcome email
       try {
         await base44.functions.invoke('sendWelcomeEmail', {
           email: newUser.email,
@@ -118,7 +128,7 @@ export default function AdminUsers() {
       } catch (emailError) {
         console.error("Failed to send welcome email:", emailError);
       }
-      
+
       await loadUsers();
       setShowAddDialog(false);
       setNewUser({ full_name: "", email: "", role: "user", subscription_tier: "starter", is_beta_tester: false });
