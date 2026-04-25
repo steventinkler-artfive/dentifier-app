@@ -153,6 +153,8 @@ Deno.serve(async (req) => {
                 bank_sort_code: settings.bank_sort_code,
                 bank_account_number: settings.bank_account_number,
                 bank_iban: settings.bank_iban,
+                is_vat_registered: settings.is_vat_registered,
+                tax_rate: settings.tax_rate,
             } : null,
         });
     } catch (error) {
