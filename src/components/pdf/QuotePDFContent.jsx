@@ -114,20 +114,20 @@ export default function QuotePDFContent({
         }}
       >
         <div>
-          <img
-            src={logoDisplayUrl || DEFAULT_DENTIFIER_LOGO}
-            alt="Business Logo"
-            style={{ width: "192px", objectFit: "contain", marginBottom: "8px" }}
-            onError={(e) => {
-              e.target.src = DEFAULT_DENTIFIER_LOGO;
-            }}
-          />
-          {!userSettings?.business_logo_url && (
-            <h1 style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}>
-              {businessName}
-            </h1>
-          )}
-        </div>
+            <img
+              src={userSettings?.business_logo_url || logoDisplayUrl || DEFAULT_DENTIFIER_LOGO}
+              alt="Business Logo"
+              style={{ width: "192px", objectFit: "contain", marginBottom: "8px" }}
+              onError={(e) => {
+                e.target.src = DEFAULT_DENTIFIER_LOGO;
+              }}
+            />
+            {!userSettings?.business_logo_url && (
+              <h1 style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}>
+                {businessName}
+              </h1>
+            )}
+          </div>
         <div style={{ textAlign: "right" }}>
           <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#374151" }}>
             {isCompleted
