@@ -16,21 +16,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Registration number is required' }, { status: 400 });
     }
 
-    // Get ALL user settings to find DVLA configuration (any admin user)
-    const allSettings = await base44.asServiceRole.entities.UserSetting.list();
+    // Get the calling user's own UserSetting record
+    const userSettings = await base44.asServiceRole.entities.UserSetting.filter({ user_email: user.email });
     
-    // Find the first setting that has DVLA configured
     let apiKey = null;
-    let useTestEnvironment = false;
-    
-    for (const settings of allSettings) {
-      const useTest = settings.dvla_use_test_environment ?? false;
-      const key = useTest ? settings.dvla_test_api_key : settings.dvla_prod_api_key;
-      
-      if (key) {
-        apiKey = key;
-        useTestEnvironment = useTest;
-        break;
+
+    if (userSettings.length > 0) {
+      const s = userSettings[0];
+      const useTest = s.dvla_use_test_environment ?? false;
+      apiKey = useTest ? s.dvla_test_api_key : s.dvla_prod_api_key;
+    }
+
+    // If the user has no key, fall back to any admin-configured setting
+    if (!apiKey) {
+      const allSettings = await base44.asServiceRole.entities.UserSetting.list('-created_date', 50);
+      for (const s of allSettings) {
+        const useTest = s.dvla_use_test_environment ?? false;
+        const key = useTest ? s.dvla_test_api_key : s.dvla_prod_api_key;
+        if (key) {
+          apiKey = key;
+          break;
+        }
       }
     }
 
