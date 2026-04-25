@@ -79,15 +79,8 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
 
   const checkDvlaConfiguration = async () => {
     try {
-      // Call the backend which uses service role to scan all UserSettings for a DVLA key
-      const response = await base44.functions.invoke('dvlaLookup', {
-        registrationNumber: '_CHECK_ONLY_'
-      });
-      // If the response indicates missing API key, DVLA is not configured
-      // Any other response (including not_found, success) means it IS configured
-      const notConfigured = response.data?.error === 'DVLA API key not configured' ||
-        (response.data?.message || '').includes('administrator');
-      setDvlaConfigured(!notConfigured);
+      const response = await base44.functions.invoke('dvlaLookup', { checkOnly: true });
+      setDvlaConfigured(response.data?.configured === true);
     } catch (error) {
       console.error('Error checking DVLA configuration:', error);
       setDvlaConfigured(false);
