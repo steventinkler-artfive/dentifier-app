@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
+      console.log('[DVLA] Calling DVLA API for reg:', cleanedReg);
       const dvlaResponse = await fetch('https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles', {
         method: 'POST',
         headers: {
@@ -60,6 +61,7 @@ Deno.serve(async (req) => {
       });
 
       clearTimeout(timeoutId);
+      console.log('[DVLA] Response status:', dvlaResponse.status);
 
       const responseData = await dvlaResponse.json();
 
@@ -112,6 +114,7 @@ Deno.serve(async (req) => {
 
     } catch (fetchError) {
       clearTimeout(timeoutId);
+      console.log('[DVLA] Fetch error:', fetchError.name, fetchError.message);
       
       // Handle timeout
       if (fetchError.name === 'AbortError') {
@@ -127,7 +130,7 @@ Deno.serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('DVLA lookup error:', error);
+    console.log('[DVLA] Outer catch error:', error.name, error.message);
     return Response.json({
       success: false,
       error: 'server_error',
