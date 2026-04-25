@@ -117,7 +117,7 @@ export default function QuotePDFContent({
             <img
               src={userSettings?.business_logo_url || logoDisplayUrl || DEFAULT_DENTIFIER_LOGO}
               alt="Business Logo"
-              style={{ width: "192px", objectFit: "contain", marginBottom: "8px" }}
+              style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
               onError={(e) => {
                 e.target.src = DEFAULT_DENTIFIER_LOGO;
               }}
