@@ -249,7 +249,16 @@ export default function PerPanelQuoteView({
           ? [v.registration, v.colour].filter(Boolean).join(" · ")
           : `Vehicle ${vIdx + 1}`;
         const sublabel = v.notes;
-        const lineItems = v.line_items || [];
+        // Fall back to raw panels array if line_items weren't generated (e.g. new user with incomplete onboarding)
+        const lineItems = (v.line_items && v.line_items.length > 0)
+          ? v.line_items
+          : (v.panels || []).map(p => ({
+              description: `PDR Labour - ${p.panel || p}${p.notes ? `: ${p.notes}` : ''}`,
+              quantity: 1,
+              unit_price: assessment.job_panel_price || 60,
+              total_price: assessment.job_panel_price || 60,
+              _fromPanels: true
+            }));
 
         return (
           <Card key={vIdx} className="bg-slate-900 border-slate-800">

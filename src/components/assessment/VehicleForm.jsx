@@ -79,19 +79,18 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
 
   const checkDvlaConfiguration = async () => {
     try {
-      // Check all UserSettings to see if DVLA is configured by any admin
-      const allSettings = await base44.entities.UserSetting.list();
-      
-      // Find any setting that has DVLA configured
-      const dvlaConfigured = allSettings.some(settings => {
-        const useTest = settings.dvla_use_test_environment ?? false;
-        const hasKey = useTest ? !!settings.dvla_test_api_key : !!settings.dvla_prod_api_key;
-        return hasKey;
+      // Call the backend which uses service role to scan all UserSettings for a DVLA key
+      const response = await base44.functions.invoke('dvlaLookup', {
+        registrationNumber: '_CHECK_ONLY_'
       });
-      
-      setDvlaConfigured(dvlaConfigured);
+      // If the response indicates missing API key, DVLA is not configured
+      // Any other response (including not_found, success) means it IS configured
+      const notConfigured = response.data?.error === 'DVLA API key not configured' ||
+        (response.data?.message || '').includes('administrator');
+      setDvlaConfigured(!notConfigured);
     } catch (error) {
       console.error('Error checking DVLA configuration:', error);
+      setDvlaConfigured(false);
     }
   };
 
