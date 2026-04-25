@@ -234,7 +234,7 @@ export default function AdminUsers() {
   };
 
   const getAuthMethod = (user) => {
-    if (user.auth_provider === 'google') {
+    if (user.auth_provider === 'google' || (!user.auth_provider && !user.hashed_password)) {
       return { method: 'Google OAuth', color: 'bg-blue-600' };
     }
     return { method: 'Email/Password', color: 'bg-slate-600' };
@@ -462,6 +462,9 @@ export default function AdminUsers() {
                         <Badge className="bg-slate-700 text-slate-200">
                           {user.role}
                         </Badge>
+                        {user.is_beta_tester && (
+                          <Badge className="bg-purple-600 text-white">Beta Tester</Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-slate-400 text-sm">{user.email}</p>
