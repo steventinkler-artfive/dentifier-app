@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Printer, ArrowLeft, Share2 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
+import { base44 } from "@/api/base44Client";
 
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
@@ -88,31 +89,21 @@ export default function QuotePDF() {
       try {
         console.log('Loading PDF data for assessment:', assessmentId);
         
-        // Call the backend function directly via fetch (works without authentication)
-        const functionUrl = `${window.location.origin}/api/functions/getQuotePDFData`;
-        console.log('Calling function URL:', functionUrl);
-        
-        const fetchResponse = await fetch(functionUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ assessment_id: assessmentId })
+        // Call the backend function using SDK (automatically handles auth token)
+        const response = await base44.functions.invoke('getQuotePDFData', { 
+          assessment_id: assessmentId 
         });
-        
-        console.log('Fetch response status:', fetchResponse.status);
-        
-        const response = await fetchResponse.json();
 
         if (!isMounted) return;
 
-        console.log('Backend response:', response);
+        console.log('Backend response:', response.data);
 
-        if (response && !response.error && response.assessment) {
-          const foundAssessment = response.assessment;
-          const foundCustomer = response.customer;
-          const fetchedVehicleData = response.vehicle;
-          const fetchedVehicles = response.vehicles || {};
-          const settings = response.userSettings;
+        if (response.data && !response.data.error && response.data.assessment) {
+          const foundAssessment = response.data.assessment;
+          const foundCustomer = response.data.customer;
+          const fetchedVehicleData = response.data.vehicle;
+          const fetchedVehicles = response.data.vehicles || {};
+          const settings = response.data.userSettings;
 
           setAssessment(foundAssessment);
           setCustomer(foundCustomer);
@@ -166,7 +157,7 @@ export default function QuotePDF() {
           }
         } else {
           // Handle error response from backend
-          console.error('Backend returned error or no data:', response);
+          console.error('Backend returned error or no data:', response.data);
           if (isMounted) {
             setAssessment(null);
             setCustomer(null);
