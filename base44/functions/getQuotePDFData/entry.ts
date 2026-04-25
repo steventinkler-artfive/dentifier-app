@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
         if (assessment.created_by) {
             try {
                 console.log('Querying UserSetting with email:', assessment.created_by);
-                const allSettings = await base44.asServiceRole.entities.UserSetting.filter({ 
+                const allSettings = await base44.entities.UserSetting.filter({ 
                     user_email: assessment.created_by 
                 });
                 console.log('UserSetting query filter used:', { user_email: assessment.created_by });
