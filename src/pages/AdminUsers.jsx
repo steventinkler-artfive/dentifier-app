@@ -129,7 +129,8 @@ export default function AdminUsers() {
         full_name: editingUser.full_name,
         email: editingUser.email,
         role: editingUser.role,
-        subscription_tier: editingUser.subscription_tier
+        subscription_tier: editingUser.subscription_tier,
+        subscription_status: editingUser.subscription_status
       });
       await loadUsers();
       setShowEditDialog(false);
@@ -712,7 +713,7 @@ export default function AdminUsers() {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-white">
+        <DialogContent className="bg-slate-900 border-slate-800 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -724,7 +725,7 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <Label>Name</Label>
                 <Input
-                  value={editingUser.full_name}
+                  value={editingUser.full_name || ''}
                   onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
                   className="bg-slate-800 border-slate-700 text-white"
                 />
@@ -733,14 +734,14 @@ export default function AdminUsers() {
                 <Label>Email</Label>
                 <Input
                   type="email"
-                  value={editingUser.email}
+                  value={editingUser.email || ''}
                   onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
                   className="bg-slate-800 border-slate-700 text-white"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Role</Label>
-                <Select value={editingUser.role} onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}>
+                <Select value={editingUser.role || 'user'} onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}>
                   <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                     <SelectValue />
                   </SelectTrigger>
@@ -761,6 +762,20 @@ export default function AdminUsers() {
                     <SelectItem value="professional" className="text-white">Professional</SelectItem>
                     <SelectItem value="founder" className="text-white">Founder</SelectItem>
                     <SelectItem value="early_bird" className="text-white">Early Bird</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Subscription Status</Label>
+                <Select value={editingUser.subscription_status || 'active'} onValueChange={(value) => setEditingUser({ ...editingUser, subscription_status: value })}>
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="active" className="text-white">Active</SelectItem>
+                    <SelectItem value="trialing" className="text-white">Trialing</SelectItem>
+                    <SelectItem value="past_due" className="text-white">Past Due</SelectItem>
+                    <SelectItem value="cancelled" className="text-white">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
