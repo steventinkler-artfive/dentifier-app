@@ -18,18 +18,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Registration number is required' }, { status: 400 });
     }
 
-    // Read the user's own UserSetting using their own token (respects RLS created_by rule)
-    const userSettings = await base44.entities.UserSetting.filter({ user_email: user.email });
-    console.log('[DVLA] UserSetting records found:', userSettings.length);
-
-    let apiKey = null;
-
-    if (userSettings.length > 0) {
-      const s = userSettings[0];
-      const useTest = s.dvla_use_test_environment ?? false;
-      apiKey = useTest ? s.dvla_test_api_key : s.dvla_prod_api_key;
-    }
-
+    const apiKey = Deno.env.get('DVLA_API_KEY');
     console.log('[DVLA] apiKey present:', !!apiKey);
 
     if (!apiKey) {
