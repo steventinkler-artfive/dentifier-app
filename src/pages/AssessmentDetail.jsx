@@ -851,9 +851,12 @@ export default function AssessmentDetail() {
     ? currentVehicleData?.damage_photos || []
     : assessment.damage_photos || [];
 
-  const currentLineItems = assessment.is_multi_vehicle && vehicleIndex !== null
+  const isPerPanelQuote = assessment.vehicles && assessment.vehicles.length > 0 && !assessment.vehicle_id;
+  const currentLineItems = (assessment.is_multi_vehicle || isPerPanelQuote) && vehicleIndex !== null
     ? currentVehicleData?.line_items || []
-    : assessment.line_items || [];
+    : isPerPanelQuote
+      ? assessment.vehicles.flatMap(v => v.line_items || [])
+      : assessment.line_items || [];
 
   const currentDamageAnalysis = assessment.is_multi_vehicle && vehicleIndex !== null
     ? currentVehicleData?.damage_analysis
@@ -1005,8 +1008,8 @@ export default function AssessmentDetail() {
         </CardContent>
       </Card>
 
-      {/* Per-panel multi-vehicle: flat single-scroll view */}
-      {assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0 && !assessment.vehicle_id ? (
+      {/* Per-panel quote view: rendered whenever the assessment has a vehicles array (single or multi-vehicle per-panel flow) */}
+      {assessment.vehicles && assessment.vehicles.length > 0 && !assessment.vehicle_id ? (
         <div className="space-y-4">
           {/* Customer */}
           <Card className="bg-slate-900 border-slate-800">
@@ -1618,7 +1621,7 @@ export default function AssessmentDetail() {
               </Button>
             )}
 
-            {(assessment.status === 'draft' || assessment.status === 'ready') && currentLineItems.length === 0 && (
+            {(assessment.status === 'draft' || assessment.status === 'ready') && currentLineItems.length === 0 && !isPerPanelQuote && (
               <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
                 <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
                   <Plus className="w-4 h-4 mr-2" />Add Quote Details
