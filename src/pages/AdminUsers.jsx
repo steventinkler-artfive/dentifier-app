@@ -234,7 +234,7 @@ export default function AdminUsers() {
   };
 
   const getAuthMethod = (user) => {
-    if (user.auth_provider === 'google' || (!user.auth_provider && !user.hashed_password)) {
+    if (user.auth_provider === 'google') {
       return { method: 'Google OAuth', color: 'bg-blue-600' };
     }
     return { method: 'Email/Password', color: 'bg-slate-600' };
