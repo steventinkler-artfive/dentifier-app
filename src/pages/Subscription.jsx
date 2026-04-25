@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,12 +11,16 @@ import { createStripeCheckoutSession } from "@/functions/createStripeCheckoutSes
 export default function Subscription() {
   const [loading, setLoading] = useState({ starter: false, professional: false });
   const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadUser = async () => {
       try {
         const user = await base44.auth.me();
         setCurrentUser(user);
+        if (user?.is_beta_tester || user?.data?.is_beta_tester) {
+          navigate(createPageUrl('Dashboard'), { replace: true });
+        }
       } catch (error) {
         console.error("Failed to load user:", error);
       }
