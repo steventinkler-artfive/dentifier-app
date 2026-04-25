@@ -233,9 +233,7 @@ export default function AdminUsers() {
   };
 
   const getAuthMethod = (user) => {
-    // OAuth users typically don't have a password field
-    // Check both auth_provider field and password presence
-    if (user.auth_provider === 'google' || !user.password) {
+    if (user.auth_provider === 'google') {
       return { method: 'Google OAuth', color: 'bg-blue-600' };
     }
     return { method: 'Email/Password', color: 'bg-slate-600' };
