@@ -19,20 +19,30 @@ Deno.serve(async (req) => {
     // Get the calling user's own UserSetting record
     const userSettings = await base44.asServiceRole.entities.UserSetting.filter({ user_email: user.email });
     
+    console.log('[DVLA] Calling user email:', user.email);
+    console.log('[DVLA] UserSetting records found for user:', userSettings.length);
+
     let apiKey = null;
 
     if (userSettings.length > 0) {
       const s = userSettings[0];
       const useTest = s.dvla_use_test_environment ?? false;
+      console.log('[DVLA] dvla_use_test_environment:', useTest);
+      console.log('[DVLA] dvla_prod_api_key present:', !!s.dvla_prod_api_key);
+      console.log('[DVLA] dvla_test_api_key present:', !!s.dvla_test_api_key);
       apiKey = useTest ? s.dvla_test_api_key : s.dvla_prod_api_key;
+      console.log('[DVLA] apiKey selected from user settings:', !!apiKey);
     }
 
     // If the user has no key, fall back to any admin-configured setting
     if (!apiKey) {
+      console.log('[DVLA] No key on user record, scanning all UserSettings...');
       const allSettings = await base44.asServiceRole.entities.UserSetting.list('-created_date', 50);
+      console.log('[DVLA] Total UserSetting records:', allSettings.length);
       for (const s of allSettings) {
         const useTest = s.dvla_use_test_environment ?? false;
         const key = useTest ? s.dvla_test_api_key : s.dvla_prod_api_key;
+        console.log('[DVLA] Checking record for', s.user_email, '- useTest:', useTest, '- key present:', !!key);
         if (key) {
           apiKey = key;
           break;
