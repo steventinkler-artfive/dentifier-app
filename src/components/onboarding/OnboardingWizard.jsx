@@ -11,6 +11,7 @@ import BusinessProfileForm from "./BusinessProfileForm";
 import BankingPaymentForm from "./BankingPaymentForm";
 import PricingQuotingForm from "./PricingQuotingForm";
 import TechnicianDetailsForm from "./TechnicianDetailsForm";
+import LogoUploader from "./LogoUploader";
 
 const STEPS = [
   { id: 'welcome', title: 'Welcome', section: null },
@@ -292,28 +293,18 @@ export default function OnboardingWizard({ user, onComplete }) {
         const storedTier = localStorage.getItem('selected_plan_tier');
         const isBetaTester = user?.is_beta_tester === true || user?.data?.is_beta_tester === true;
         const isProfessional = ['professional', 'founder', 'early_bird'].includes(user?.subscription_plan) || storedTier === 'professional' || isBetaTester;
-        console.log('[OnboardingWizard Step 5] user object:', JSON.stringify(user));
-        console.log('[OnboardingWizard Step 5] isBetaTester:', isBetaTester, '| isProfessional:', isProfessional);
         return (
           <div className="space-y-6 text-center">
             {isProfessional ? (
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-4">Add Your Business Logo</h3>
-                {formData.business_logo_url ? (
-                  <div className="space-y-3">
-                    <div className="w-64 h-32 bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden mx-auto">
-                      <img src={formData.business_logo_url} alt="Business Logo" className="max-w-full max-h-full object-contain" />
-                    </div>
-                    <p className="text-green-400">✓ Logo uploaded successfully</p>
-                    <p className="text-slate-400 text-sm">Your logo will appear on all quotes and invoices</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-slate-400">Upload your business logo in the Business Profile section</p>
-                    <Button onClick={() => setCurrentStep(1)} variant="outline" className="bg-slate-800 border-slate-700 text-white">
-                      Go Back to Add Logo
-                    </Button>
-                  </div>
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-white">Add Your Business Logo</h3>
+                <p className="text-slate-400 text-sm">Your logo will appear on all quotes and invoices</p>
+                <LogoUploader
+                  logoUrl={formData.business_logo_url}
+                  onChange={(url) => handleChange('business_logo_url', url)}
+                />
+                {formData.business_logo_url && (
+                  <p className="text-green-400 text-sm">✓ Logo uploaded successfully</p>
                 )}
               </div>
             ) : (
