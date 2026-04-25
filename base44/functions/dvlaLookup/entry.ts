@@ -5,6 +5,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
+    console.log('[DVLA] User email:', user?.email);
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -19,6 +20,7 @@ Deno.serve(async (req) => {
 
     // Read the user's own UserSetting using their own token (respects RLS created_by rule)
     const userSettings = await base44.entities.UserSetting.filter({ user_email: user.email });
+    console.log('[DVLA] UserSetting records found:', userSettings.length);
 
     let apiKey = null;
 
@@ -27,6 +29,8 @@ Deno.serve(async (req) => {
       const useTest = s.dvla_use_test_environment ?? false;
       apiKey = useTest ? s.dvla_test_api_key : s.dvla_prod_api_key;
     }
+
+    console.log('[DVLA] apiKey present:', !!apiKey);
 
     if (!apiKey) {
       return Response.json({ 
