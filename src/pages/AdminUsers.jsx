@@ -27,7 +27,7 @@ export default function AdminUsers() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "user", subscription_tier: "starter" });
+  const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "user", subscription_tier: "starter", is_beta_tester: false });
   const [resettingPassword, setResettingPassword] = useState(null);
   const [togglingStatus, setTogglingStatus] = useState(null);
   const { showAlert, showConfirm } = useAlert();
@@ -100,6 +100,14 @@ export default function AdminUsers() {
     try {
       // Send invitation
       await base44.users.inviteUser(newUser.email, newUser.role);
+      if (newUser.is_beta_tester) {
+        // After invite, find and update the user to set beta tester fields
+        const allUsers = await base44.entities.User.list();
+        const created = allUsers.find(u => u.email === newUser.email);
+        if (created) {
+          await base44.entities.User.update(created.id, { is_beta_tester: true, subscription_tier: 'professional' });
+        }
+      }
       
       // Send welcome email immediately after invitation
       try {
@@ -113,7 +121,7 @@ export default function AdminUsers() {
       
       await loadUsers();
       setShowAddDialog(false);
-      setNewUser({ full_name: "", email: "", role: "user", subscription_tier: "starter" });
+      setNewUser({ full_name: "", email: "", role: "user", subscription_tier: "starter", is_beta_tester: false });
       await showAlert("Invitation sent successfully! Welcome email also sent.", "Success");
     } catch (error) {
       console.error("Failed to add user:", error);
@@ -130,7 +138,8 @@ export default function AdminUsers() {
         email: editingUser.email,
         role: editingUser.role,
         subscription_tier: editingUser.subscription_tier,
-        subscription_status: editingUser.subscription_status
+        subscription_status: editingUser.subscription_status,
+        is_beta_tester: editingUser.is_beta_tester || false
       });
       await loadUsers();
       setShowEditDialog(false);
@@ -702,6 +711,22 @@ export default function AdminUsers() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-start gap-3 p-3 bg-purple-900/20 border border-purple-700 rounded-lg">
+              <input
+                type="checkbox"
+                id="new-user-beta-tester"
+                checked={newUser.is_beta_tester}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setNewUser({ ...newUser, is_beta_tester: checked, subscription_tier: checked ? 'professional' : newUser.subscription_tier });
+                }}
+                className="mt-0.5 w-4 h-4 rounded border-2 border-purple-600 bg-slate-800 accent-purple-600"
+              />
+              <div>
+                <Label htmlFor="new-user-beta-tester" className="text-white font-medium cursor-pointer">Beta Tester</Label>
+                <p className="text-slate-400 text-xs mt-0.5">Bypasses subscription checks and grants full access</p>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)} className="bg-slate-800 border-slate-700 text-white">
@@ -781,6 +806,22 @@ export default function AdminUsers() {
                     <SelectItem value="cancelled" className="text-white">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-purple-900/20 border border-purple-700 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="edit-user-beta-tester"
+                  checked={editingUser.is_beta_tester || editingUser.data?.is_beta_tester || false}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setEditingUser({ ...editingUser, is_beta_tester: checked, subscription_tier: checked ? 'professional' : editingUser.subscription_tier });
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded border-2 border-purple-600 bg-slate-800 accent-purple-600"
+                />
+                <div>
+                  <Label htmlFor="edit-user-beta-tester" className="text-white font-medium cursor-pointer">Beta Tester</Label>
+                  <p className="text-slate-400 text-xs mt-0.5">Bypasses subscription checks and grants full access</p>
+                </div>
               </div>
             </div>
           )}
