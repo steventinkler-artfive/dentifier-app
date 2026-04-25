@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Save, Search, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import { Car, Save, Search, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 
@@ -69,13 +69,8 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
   });
   const [saving, setSaving] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
-  const [dvlaConfigured, setDvlaConfigured] = useState(false);
   const [vehicleMakes, setVehicleMakes] = useState(VEHICLE_MAKES);
   const [vehicleColors, setVehicleColors] = useState(VEHICLE_COLORS);
-
-  useEffect(() => {
-    setDvlaConfigured(true);
-  }, []);
 
   const handleDvlaLookup = async () => {
     if (!formData.license_plate || formData.license_plate.length < 2) {
@@ -192,31 +187,27 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                 placeholder="AB12CDE"
                 className="bg-[#f4c500] border-[#f4c500] text-slate-900 placeholder:text-slate-600 font-semibold"
               />
-              {dvlaConfigured && (
-                <Button
-                  type="button"
-                  onClick={handleDvlaLookup}
-                  disabled={lookingUp || !formData.license_plate || formData.license_plate.length < 2}
-                  variant="outline"
-                  className="bg-blue-900 border-blue-700 text-blue-300 hover:bg-blue-800 hover:text-white hover:border-blue-600"
-                >
-                  {lookingUp ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Looking up...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-4 h-4 mr-2" />
-                      Look Up
-                    </>
-                  )}
-                </Button>
-              )}
+              <Button
+                type="button"
+                onClick={handleDvlaLookup}
+                disabled={lookingUp || !formData.license_plate || formData.license_plate.length < 2}
+                variant="outline"
+                className="bg-blue-900 border-blue-700 text-blue-300 hover:bg-blue-800 hover:text-white hover:border-blue-600"
+              >
+                {lookingUp ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Looking up...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 mr-2" />
+                    Look Up
+                  </>
+                )}
+              </Button>
             </div>
-            {dvlaConfigured && (
-              <p className="text-slate-400 text-xs">Enter a UK reg and click "Look Up" to auto-fill details</p>
-            )}
+            <p className="text-slate-400 text-xs">Enter a UK reg and click "Look Up" to auto-fill details</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
