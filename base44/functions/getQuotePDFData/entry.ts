@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
     try {
@@ -9,11 +9,25 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Missing assessment_id' }, { status: 400 });
         }
 
-        // Try getting the assessment directly first
+        // Use asServiceRole to bypass RLS and fetch any assessment by created_by
+        // We need to know who created it — try fetching with service role
         let assessment;
         try {
-            assessment = await base44.asServiceRole.entities.Assessment.get(assessment_id);
+            // Try to get the current user to use their context
+            let createdBy = null;
+            try {
+                const user = await base44.auth.me();
+                createdBy = user?.email;
+            } catch (e) {
+                // public/unauthenticated access
+            }
+
+            // Use service role to fetch the specific assessment
+            const results = await base44.asServiceRole.entities.Assessment.list('-created_date', 2000);
+            assessment = results.find(a => a.id === assessment_id) || null;
+            console.log('Fetched:', results.length, 'assessments. Found target:', !!assessment);
         } catch (error) {
+            console.error('Assessment fetch error:', error.message);
             return Response.json({ 
                 error: 'Assessment not found',
                 details: error.message 
@@ -24,7 +38,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Assessment not found' }, { status: 404 });
         }
 
-        // Fetch related data
+        // Fetch related data using asServiceRole
         let customer = null;
         let vehicle = null;
         let settings = null;
@@ -32,24 +46,28 @@ Deno.serve(async (req) => {
 
         if (assessment.customer_id) {
             try {
-                customer = await base44.asServiceRole.entities.Customer.get(assessment.customer_id);
+                const results = await base44.asServiceRole.entities.Customer.filter({ id: assessment.customer_id });
+                customer = results[0] || null;
             } catch (e) {
-                console.error('Customer fetch failed:', e);
+                console.error('Customer fetch failed:', e.message);
             }
         }
 
         if (assessment.vehicle_id) {
             try {
-                vehicle = await base44.asServiceRole.entities.Vehicle.get(assessment.vehicle_id);
+                const results = await base44.asServiceRole.entities.Vehicle.filter({ id: assessment.vehicle_id });
+                vehicle = results[0] || null;
             } catch (e) {
-                console.error('Vehicle fetch failed:', e);
+                console.error('Vehicle fetch failed:', e.message);
             }
         }
 
         if (assessment.is_multi_vehicle && assessment.vehicles) {
             for (const v of assessment.vehicles) {
+                if (!v.vehicle_id) continue;
                 try {
-                    const veh = await base44.asServiceRole.entities.Vehicle.get(v.vehicle_id);
+                    const results = await base44.asServiceRole.entities.Vehicle.filter({ id: v.vehicle_id });
+                    const veh = results[0];
                     if (veh) {
                         vehiclesData[veh.id] = {
                             id: veh.id,
@@ -62,19 +80,19 @@ Deno.serve(async (req) => {
                         };
                     }
                 } catch (e) {
-                    console.error('Vehicle fetch failed:', e);
+                    console.error('Vehicle fetch failed:', e.message);
                 }
             }
         }
 
         if (assessment.created_by) {
             try {
-                const userSettingsList = await base44.asServiceRole.entities.UserSetting.filter({ 
+                const allSettings = await base44.asServiceRole.entities.UserSetting.filter({ 
                     user_email: assessment.created_by 
                 });
-                settings = userSettingsList[0];
+                settings = allSettings[0] || null;
             } catch (e) {
-                console.error('Settings fetch failed:', e);
+                console.error('Settings fetch failed:', e.message);
             }
         }
 
@@ -131,6 +149,7 @@ Deno.serve(async (req) => {
             } : null,
         });
     } catch (error) {
+        console.error('Outer error:', error.message);
         return Response.json({ 
             error: error.message,
             stack: error.stack 

@@ -95,6 +95,7 @@ export default function QuotePDF() {
         const fetchResponse = await fetch(functionUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ assessment_id: assessmentId })
         });
         
