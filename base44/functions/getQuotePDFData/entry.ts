@@ -22,10 +22,10 @@ Deno.serve(async (req) => {
                 // public/unauthenticated access
             }
 
-            // Use service role to fetch the specific assessment
-            const results = await base44.asServiceRole.entities.Assessment.list('-created_date', 2000);
-            assessment = results.find(a => a.id === assessment_id) || null;
-            console.log('Fetched:', results.length, 'assessments. Found target:', !!assessment);
+            // Fetch assessment using authenticated user's token (respects RLS created_by rule)
+            const results = await base44.entities.Assessment.filter({ id: assessment_id });
+            assessment = results.length > 0 ? results[0] : null;
+            console.log('Assessment lookup result:', !!assessment);
         } catch (error) {
             console.error('Assessment fetch error:', error.message);
             return Response.json({ 
