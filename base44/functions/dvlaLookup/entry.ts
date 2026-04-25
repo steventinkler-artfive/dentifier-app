@@ -10,9 +10,9 @@ Deno.serve(async (req) => {
     }
 
     // Get request payload
-    const { registrationNumber, checkOnly } = await req.json();
+    const { registrationNumber } = await req.json();
 
-    if (!checkOnly && !registrationNumber) {
+    if (!registrationNumber) {
       return Response.json({ error: 'Registration number is required' }, { status: 400 });
     }
 
@@ -39,11 +39,6 @@ Deno.serve(async (req) => {
         error: 'DVLA API key not configured',
         message: 'Please contact your administrator to configure the DVLA API key'
       }, { status: 400 });
-    }
-
-    // checkOnly: just confirm the key exists, don't call DVLA
-    if (checkOnly) {
-      return Response.json({ configured: true });
     }
 
     // Strip spaces and hyphens from registration number
