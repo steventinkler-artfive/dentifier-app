@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
 
         if (assessment.customer_id) {
             try {
-                const results = await base44.asServiceRole.entities.Customer.filter({ id: assessment.customer_id });
+                const results = await base44.entities.Customer.filter({ id: assessment.customer_id });
                 customer = results[0] || null;
             } catch (e) {
                 console.error('Customer fetch failed:', e.message);
