@@ -61,11 +61,14 @@ export default function QuotePDFContent({
 
   // Helper: build vehicle label for per-panel multi-vehicle
   const getVehicleLabel = (vData, idx) => {
-    if (!vData.registration && !vData.colour) return `Vehicle ${idx + 1}`;
+    if (!vData.registration && !vData.colour && !vData.notes) return `Vehicle ${idx + 1}`;
     let label = [vData.registration, vData.colour].filter(Boolean).join(" · ");
     if (vData.notes) label += ` — ${vData.notes}`;
     return label;
   };
+
+  // For per-panel single-vehicle: fall back to vehicles[0] when vehicle prop is null
+  const effectiveVehicle = vehicle || (!isMultiVehicle && assessment.vehicles && assessment.vehicles.length > 0 ? assessment.vehicles[0] : null);
 
   // Assessment-level line items (not tied to a vehicle)
   const assessmentLineItems = assessment.line_items || [];
@@ -191,7 +194,7 @@ export default function QuotePDFContent({
           </div>
         )}
 
-        {!isMultiVehicle && vehicle && (
+        {!isMultiVehicle && effectiveVehicle && (
           <div style={{ marginTop: "16px" }}>
             <h3
               style={{
@@ -205,14 +208,21 @@ export default function QuotePDFContent({
             >
               VEHICLE
             </h3>
-            <p style={{ fontWeight: "bold", color: "#1f2937" }}>
-              {vehicle.year} {vehicle.make} {vehicle.model}
-            </p>
-            {vehicle.color && <p style={{ color: "#4b5563" }}>Colour: {vehicle.color}</p>}
-            {vehicle.license_plate && (
-              <p style={{ color: "#4b5563" }}>Licence: {vehicle.license_plate}</p>
+            {(effectiveVehicle.year || effectiveVehicle.make || effectiveVehicle.model) && (
+              <p style={{ fontWeight: "bold", color: "#1f2937" }}>
+                {[effectiveVehicle.year, effectiveVehicle.make, effectiveVehicle.model].filter(Boolean).join(" ")}
+              </p>
             )}
-            {vehicle.vin && <p style={{ color: "#4b5563" }}>VIN: {vehicle.vin}</p>}
+            {(effectiveVehicle.color || effectiveVehicle.colour) && (
+              <p style={{ color: "#4b5563" }}>Colour: {effectiveVehicle.color || effectiveVehicle.colour}</p>
+            )}
+            {(effectiveVehicle.license_plate || effectiveVehicle.registration) && (
+              <p style={{ color: "#4b5563" }}>Licence: {effectiveVehicle.license_plate || effectiveVehicle.registration}</p>
+            )}
+            {effectiveVehicle.notes && (
+              <p style={{ color: "#4b5563" }}>{effectiveVehicle.notes}</p>
+            )}
+            {effectiveVehicle.vin && <p style={{ color: "#4b5563" }}>VIN: {effectiveVehicle.vin}</p>}
           </div>
         )}
 
