@@ -59,7 +59,7 @@ export default function QuotePDFContent({
   const shouldIncludeNotes = includeNotes || assessment.include_notes_in_quote;
   const notesForCustomer = shouldIncludeNotes ? assessment.notes || "" : "";
 
-  // Helper: build vehicle label for per-panel multi-vehicle
+  // Helper: build vehicle label for per-panel vehicles (multi or single)
   const getVehicleLabel = (vData, idx) => {
     if (!vData.registration && !vData.colour && !vData.notes) return `Vehicle ${idx + 1}`;
     let label = [vData.registration, vData.colour].filter(Boolean).join(" · ");
@@ -67,8 +67,9 @@ export default function QuotePDFContent({
     return label;
   };
 
-  // For per-panel single-vehicle: fall back to vehicles[0] when vehicle prop is null
-  const effectiveVehicle = vehicle || (!isMultiVehicle && assessment.vehicles && assessment.vehicles.length > 0 ? assessment.vehicles[0] : null);
+  // Per-panel single-vehicle: no vehicle_id, but has assessment.vehicles with inline data
+  const isPerPanelSingleVehicle = !isMultiVehicle && !assessment.vehicle_id &&
+    assessment.vehicles && assessment.vehicles.length > 0;
 
   // Assessment-level line items (not tied to a vehicle)
   const assessmentLineItems = assessment.line_items || [];
@@ -82,7 +83,7 @@ export default function QuotePDFContent({
   const vatRate = userSettings?.tax_rate || 0;
 
   let subtotal = 0;
-  if (isMultiVehicle) {
+  if (isMultiVehicle || isPerPanelSingleVehicle) {
     const vehiclesTotal = assessment.vehicles.reduce((sum, v) => sum + (v.quote_amount || 0), 0);
     subtotal = vehiclesTotal + assessmentLineItemsTotal;
   } else {
@@ -194,7 +195,8 @@ export default function QuotePDFContent({
           </div>
         )}
 
-        {!isMultiVehicle && effectiveVehicle && (
+        {/* Standard single-vehicle (entity-based): show VEHICLE section */}
+        {!isMultiVehicle && !isPerPanelSingleVehicle && vehicle && (
           <div style={{ marginTop: "16px" }}>
             <h3
               style={{
@@ -208,25 +210,20 @@ export default function QuotePDFContent({
             >
               VEHICLE
             </h3>
-            {(effectiveVehicle.year || effectiveVehicle.make || effectiveVehicle.model) && (
+            {(vehicle.year || vehicle.make || vehicle.model) && (
               <p style={{ fontWeight: "bold", color: "#1f2937" }}>
-                {[effectiveVehicle.year, effectiveVehicle.make, effectiveVehicle.model].filter(Boolean).join(" ")}
+                {[vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(" ")}
               </p>
             )}
-            {(effectiveVehicle.color || effectiveVehicle.colour) && (
-              <p style={{ color: "#4b5563" }}>Colour: {effectiveVehicle.color || effectiveVehicle.colour}</p>
+            {vehicle.color && <p style={{ color: "#4b5563" }}>Colour: {vehicle.color}</p>}
+            {vehicle.license_plate && (
+              <p style={{ color: "#4b5563" }}>Licence: {vehicle.license_plate}</p>
             )}
-            {(effectiveVehicle.license_plate || effectiveVehicle.registration) && (
-              <p style={{ color: "#4b5563" }}>Licence: {effectiveVehicle.license_plate || effectiveVehicle.registration}</p>
-            )}
-            {effectiveVehicle.notes && (
-              <p style={{ color: "#4b5563" }}>{effectiveVehicle.notes}</p>
-            )}
-            {effectiveVehicle.vin && <p style={{ color: "#4b5563" }}>VIN: {effectiveVehicle.vin}</p>}
+            {vehicle.vin && <p style={{ color: "#4b5563" }}>VIN: {vehicle.vin}</p>}
           </div>
         )}
 
-        {/* Multi-vehicle: no separate VEHICLES header — breakdown is in QUOTE DETAILS below */}
+        {/* Per-panel / multi-vehicle: vehicle details appear inline in QUOTE DETAILS below */}
       </div>
 
       {/* Line Items */}
@@ -243,25 +240,22 @@ export default function QuotePDFContent({
         {isCompleted ? "INVOICE DETAILS" : "QUOTE DETAILS"}
       </h3>
 
-      {isMultiVehicle ? (
+      {(isMultiVehicle || isPerPanelSingleVehicle) ? (
+        /* Per-panel (single or multi): render each vehicle as an inline heading + its line items */
         <div style={{ marginBottom: "24px" }}>
           {assessment.vehicles.map((vData, vIdx) => {
             const vehicleLabel = getVehicleLabel(vData, vIdx);
-            const lineItems = vData.line_items && vData.line_items.length > 0
-              ? vData.line_items
-              : [];
+            const lineItems = vData.line_items && vData.line_items.length > 0 ? vData.line_items : [];
             const vehSubtotal = vData.quote_amount ||
               lineItems.reduce((s, i) => s + ((i.quantity || 1) * (i.unit_price || 0)), 0);
 
             return (
               <div key={vIdx} style={{ marginBottom: "24px" }}>
-                {/* Vehicle heading */}
                 <p style={{ fontWeight: "700", color: "#1f2937", fontSize: "14px", marginBottom: "6px" }}>
                   {vehicleLabel}
                 </p>
                 <div style={{ borderBottom: "1px solid #d1d5db", marginBottom: "8px" }} />
 
-                {/* Line items */}
                 {lineItems.length > 0 ? (
                   <table style={{ width: "100%", marginBottom: "8px", borderCollapse: "collapse" }}>
                     <tbody>
@@ -279,13 +273,15 @@ export default function QuotePDFContent({
                   <p style={{ color: "#6b7280", fontSize: "13px", marginBottom: "8px" }}>Paintless Dent Repair Service</p>
                 )}
 
-                {/* Vehicle subtotal */}
-                <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "6px" }}>
-                  <span style={{ fontSize: "13px", color: "#4b5563" }}>Subtotal </span>
-                  <span style={{ fontWeight: "600", color: "#1f2937", marginLeft: "16px", fontSize: "13px" }}>
-                    {currencySymbol}{vehSubtotal.toFixed(2)}
-                  </span>
-                </div>
+                {/* Only show per-vehicle subtotal when there are multiple vehicles */}
+                {(isMultiVehicle || assessment.vehicles.length > 1) && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "6px" }}>
+                    <span style={{ fontSize: "13px", color: "#4b5563" }}>Subtotal </span>
+                    <span style={{ fontWeight: "600", color: "#1f2937", marginLeft: "16px", fontSize: "13px" }}>
+                      {currencySymbol}{vehSubtotal.toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -309,6 +305,7 @@ export default function QuotePDFContent({
           )}
         </div>
       ) : (
+        /* Standard single-vehicle: render assessment-level line items */
         <table style={{ width: "100%", marginBottom: "24px", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
