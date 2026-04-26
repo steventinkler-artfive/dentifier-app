@@ -122,8 +122,12 @@ export default function Quotes() {
   };
 
   const getVehicleDisplay = (assessment) => {
+    // Per-panel quotes: have assessment.vehicles but no vehicle_id (single or multi)
+    if (!assessment.vehicle_id && assessment.vehicles && assessment.vehicles.length > 0) {
+      return { isMulti: true, count: assessment.vehicles.length, isPerPanel: true };
+    }
     if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
-      return { isMulti: true, count: assessment.vehicles.length };
+      return { isMulti: true, count: assessment.vehicles.length, isPerPanel: false };
     }
     if (assessment.vehicle_id) {
       const v = vehicles[assessment.vehicle_id];
@@ -198,7 +202,7 @@ export default function Quotes() {
             const badge = getBadge(assessment);
             const bottomLine = getBottomLine(assessment);
             const vehicleInfo = getVehicleDisplay(assessment);
-            const isPanelQuote = assessment.is_multi_vehicle && !assessment.vehicle_id;
+            const isPanelQuote = !assessment.vehicle_id && assessment.vehicles && assessment.vehicles.length > 0;
             const price = formatCardPrice(assessment.quote_amount, assessment.currency || 'GBP');
 
             return (

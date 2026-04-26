@@ -211,21 +211,31 @@ export default function QuotePDF() {
       shareText += `*Customer:* ${custName}\n`;
     }
 
-    if (isMultiVehicle) {
+    const isPerPanel = !assessment.vehicle_id && assessment.vehicles && assessment.vehicles.length > 0;
+
+    if (isMultiVehicle || isPerPanel) {
       shareText += `\nVehicles & Line Items:\n\n`;
       assessment.vehicles.forEach((v) => {
-        const vInfo = vehicles[v.vehicle_id];
-        if (vInfo) {
-          shareText += `${vInfo.year} ${vInfo.make} ${vInfo.model}\n`;
-          if (v.line_items && v.line_items.length > 0) {
-            v.line_items.forEach(item => {
-              shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}\n`;
-            });
-          } else {
-            shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n`;
-          }
-          shareText += `Subtotal: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n\n`;
+        // Per-panel: use inline registration/colour/notes as label
+        let vehicleLabel;
+        if (isPerPanel) {
+          vehicleLabel = [v.registration, v.colour].filter(Boolean).join(' · ');
+          if (v.notes) vehicleLabel += ` — ${v.notes}`;
+          if (!vehicleLabel) vehicleLabel = 'Vehicle';
+        } else {
+          const vInfo = vehicles[v.vehicle_id];
+          vehicleLabel = vInfo ? `${vInfo.year} ${vInfo.make} ${vInfo.model}` : null;
         }
+        if (!vehicleLabel) return;
+        shareText += `*${vehicleLabel}*\n`;
+        if (v.line_items && v.line_items.length > 0) {
+          v.line_items.forEach(item => {
+            shareText += `- ${item.description}: ${currencySymbol}${((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}\n`;
+          });
+        } else {
+          shareText += `- Paintless Dent Repair Service: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n`;
+        }
+        shareText += `Subtotal: ${currencySymbol}${(v.quote_amount || 0).toFixed(2)}\n\n`;
       });
     } else {
       if (vehicle) {
