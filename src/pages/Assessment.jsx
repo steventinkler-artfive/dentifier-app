@@ -212,7 +212,7 @@ export default function AssessmentPage() {
           quote_amount: totalAmount,
           total_amount: totalAmount,
           currency: quoteData.currency || 'GBP',
-          status: assessmentData.customer ? 'quoted' : 'draft',
+          status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',
           include_notes_in_quote: true,
           estimated_time_hours: 0,
@@ -253,7 +253,7 @@ export default function AssessmentPage() {
           quote_amount: totalQuoteAmount,
           total_amount: totalQuoteAmount,
           currency: quoteData.currency || 'GBP',
-          status: assessmentData.customer ? 'quoted' : 'draft',
+          status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',
           estimated_time_hours: allVehicles.reduce((sum, v) => sum + (v.estimated_time_hours || 0), 0)
         };
@@ -271,7 +271,7 @@ export default function AssessmentPage() {
           quote_amount: quoteData.quoteAmount || 0,
           discount_percentage: quoteData.discountPercentage || 0,
           currency: quoteData.currency || 'GBP',
-          status: assessmentData.customer ? 'quoted' : 'draft',
+          status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',
           estimated_time_hours: quoteData.estimatedTime || 0
         };
