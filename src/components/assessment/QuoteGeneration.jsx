@@ -1059,7 +1059,6 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
               <div className="p-4 bg-slate-700 rounded-lg text-center">
                 <p className="text-slate-400 text-sm mb-2">No line items yet</p>
                 <Button onClick={addLineItem} variant="outline" size="sm" className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500">
-                  <Plus className="w-4 h-4 mr-1" />
                   Add First Item
                 </Button>
               </div>

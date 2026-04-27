@@ -459,7 +459,7 @@ export default function PerPanelQuoteView({
                     onClick={() => openAddVehicleLineItem(vIdx)}
                     className="flex-1 bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 text-xs h-8"
                   >
-                    <Plus className="w-3 h-3 mr-1" />Add Line Item
+                    Add Line Item
                   </Button>
                 </div>
               )}
@@ -601,7 +601,6 @@ export default function PerPanelQuoteView({
           onClick={openAddAssessmentLineItem}
           className="w-full bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800 text-sm h-10"
         >
-          <Plus className="w-4 h-4 mr-2" />
           Add Line Item
         </Button>
       )}

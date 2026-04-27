@@ -485,7 +485,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
             {damageItems.length > 0 && !showAddLineItemForm && (
               <Button onClick={() => setShowAddLineItemForm(true)} variant="outline"
                 className="w-full bg-transparent border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white text-sm">
-                <Receipt className="w-4 h-4 mr-2" />+ Add Line Item
+                + Add Line Item
               </Button>
             )}
 
