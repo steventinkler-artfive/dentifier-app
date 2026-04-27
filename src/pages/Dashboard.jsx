@@ -214,28 +214,29 @@ export default function Dashboard() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed':
-      case 'approved':
-        return 'bg-green-500 text-white';
-      case 'quoted':
-        return 'bg-blue-500 text-white';
-      case 'declined':
-        return 'bg-red-500 text-white';
-      case 'draft':
-        return 'bg-gray-500 text-white';
-      default:
-        return 'bg-gray-500 text-white';
+      case 'draft':     return 'bg-slate-600 text-slate-200';
+      case 'ready':     return 'bg-blue-600 text-white';
+      case 'sent':      return 'bg-teal-600 text-white';
+      case 'approved':  return 'bg-green-600 text-white';
+      case 'completed': return 'bg-purple-600 text-white';
+      case 'declined':  return 'bg-red-600 text-white';
+      default:          return 'bg-slate-600 text-slate-200';
     }
   };
 
   const getVehicleDisplay = (assessment) => {
-    if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
-      return `${assessment.vehicles.length} Vehicles`;
-    } else if (assessment.vehicle_id) {
-      const vehicle = vehiclesMap[assessment.vehicle_id];
-      return vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'Vehicle details loading...';
+    // Per-panel quotes: no vehicle_id but have an inline vehicles array
+    if (!assessment.vehicle_id && assessment.vehicles && assessment.vehicles.length > 0) {
+      return { label: `${assessment.vehicles.length} Vehicles`, isPerPanel: true };
     }
-    return 'N/A';
+    if (assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0) {
+      return { label: `${assessment.vehicles.length} Vehicles`, isPerPanel: false };
+    }
+    if (assessment.vehicle_id) {
+      const vehicle = vehiclesMap[assessment.vehicle_id];
+      return { label: vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'Vehicle details loading...', isPerPanel: false };
+    }
+    return { label: 'No vehicle', isPerPanel: false };
   };
 
   const getDisplayIdentifier = (assessment) => {
@@ -405,9 +406,16 @@ export default function Dashboard() {
                               {assessment.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>
-                          <p className="text-white font-medium truncate mb-1">
-                            {getVehicleDisplay(assessment)}
-                          </p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-white font-medium truncate">
+                              {getVehicleDisplay(assessment).label}
+                            </p>
+                            {getVehicleDisplay(assessment).isPerPanel && (
+                              <span className="text-xs border border-rose-500 text-rose-400 rounded-full px-2 py-0.5 flex-shrink-0">
+                                Panel quote
+                              </span>
+                            )}
+                          </div>
                           <p className="text-slate-400 text-sm truncate">
                             {customerName}
                           </p>
