@@ -4,7 +4,7 @@ import { Customer } from "@/entities/all";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, User, Plus, Phone, Mail } from "lucide-react";
+import { Search, User, Plus, Phone, Mail, ArrowRight } from "lucide-react";
 import CustomerForm from "../customers/CustomerForm";
 
 export default function CustomerSelection({ selectedCustomer, onCustomerSelect }) {
@@ -87,10 +87,11 @@ export default function CustomerSelection({ selectedCustomer, onCustomerSelect }
             
             <Button
               onClick={handleCreateDraft}
-              className="bg-sky-600 hover:bg-sky-700 text-white border-sky-600"
+              className="bg-green-600 hover:bg-green-700 text-white border-green-600"
               variant="outline"
             >
               Skip Customer
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
 
