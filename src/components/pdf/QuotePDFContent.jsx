@@ -319,7 +319,7 @@ export default function QuotePDFContent({
                 <tr key={index} style={{ borderBottom: "1px solid #e5e7eb" }}>
                   <td style={{ padding: "16px 0", color: "#374151", fontWeight: "500" }}>{item.description}</td>
                   <td style={{ textAlign: "right", padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>
-                    {currencySymbol}{((item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}
+                    {currencySymbol}{(item.total_price || (item.quantity || 1) * (item.unit_price || 0)).toFixed(2)}
                   </td>
                 </tr>
               ))
