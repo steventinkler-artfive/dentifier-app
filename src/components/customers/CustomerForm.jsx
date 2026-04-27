@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +84,7 @@ export default function CustomerForm({ customer, onSave, onCancel }) {
               type="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="(555) 123-4567"
+              placeholder="e.g. 07700 900000"
               className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
             />
           </div>

@@ -4,7 +4,7 @@ import { Customer } from "@/entities/all";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, User, Plus, Phone, Mail, FileText } from "lucide-react";
+import { Search, User, Plus, Phone, Mail } from "lucide-react";
 import CustomerForm from "../customers/CustomerForm";
 
 export default function CustomerSelection({ selectedCustomer, onCustomerSelect }) {
@@ -90,8 +90,7 @@ export default function CustomerSelection({ selectedCustomer, onCustomerSelect }
               className="bg-sky-600 hover:bg-sky-700 text-white border-sky-600"
               variant="outline"
             >
-              <FileText className="w-4 h-4 mr-2" />
-              Create Draft
+              Skip Customer
             </Button>
           </div>
 

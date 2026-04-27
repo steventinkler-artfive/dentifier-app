@@ -284,7 +284,7 @@ OUTPUT: JSON only. No other text.`;
           <div className="w-20 h-20 bg-gradient-to-br from-rose-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
             <DentifierIcon className="text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">Dentifier Analyzing...</h3>
+          <h3 className="text-xl font-semibold text-white mb-2">Dentifier Analysing...</h3>
           <p className="text-slate-400 mb-4">Cross-referencing photos with your inputs</p>
           <Loader2 className="w-6 h-6 text-rose-400 animate-spin mx-auto" />
         </CardContent>

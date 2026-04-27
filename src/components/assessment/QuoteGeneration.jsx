@@ -1051,7 +1051,6 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
             <div className="flex items-center justify-between">
               <Label className="text-white">Line Items</Label>
               <Button onClick={addLineItem} variant="outline" size="sm" className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
-                <Plus className="w-4 h-4 mr-1" />
                 Add Item
               </Button>
             </div>
