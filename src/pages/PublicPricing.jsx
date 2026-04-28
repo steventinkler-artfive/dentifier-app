@@ -27,8 +27,8 @@ export default function PublicPricing() {
     "Your logo, remove Dentifier branding",
     "Advanced reports (client filters, date ranges, trends)",
     "CSV export for accounting software",
-    "Save custom line items",
-    "Priority email support",
+    "Save custom line items - coming soon",
+    "Email support",
     "Early access to new features"
   ];
 
