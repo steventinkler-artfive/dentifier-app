@@ -23,6 +23,11 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.UserSetting.filter({ user_email: userEmail }),
     ]);
 
+    console.log('[countAssociatedRecords] assessments.length:', assessments.length);
+    console.log('[countAssociatedRecords] customers.length:', customers.length);
+    console.log('[countAssociatedRecords] vehicles.length:', vehicles.length);
+    console.log('[countAssociatedRecords] userSettings.length:', userSettings.length);
+
     return Response.json({
       assessments: assessments.length,
       customers: customers.length,
