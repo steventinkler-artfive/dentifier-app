@@ -881,7 +881,7 @@ export default function AssessmentDetail() {
     ? currentVehicleData?.damage_photos || []
     : assessment.damage_photos || [];
 
-  const isPerPanelQuote = assessment.vehicles && assessment.vehicles.length > 0 && !assessment.vehicle_id;
+  const isPerPanelQuote = assessment.is_multi_vehicle;
   const currentLineItems = (assessment.is_multi_vehicle || isPerPanelQuote) && vehicleIndex !== null
     ? currentVehicleData?.line_items || []
     : isPerPanelQuote
@@ -1039,7 +1039,7 @@ export default function AssessmentDetail() {
       </Card>
 
       {/* Per-panel quote view: rendered whenever the assessment has a vehicles array (single or multi-vehicle per-panel flow) */}
-      {assessment.vehicles && assessment.vehicles.length > 0 && !assessment.vehicle_id ? (
+      {assessment.is_multi_vehicle ? (
         <div className="space-y-4">
           {/* Customer */}
           <Card className="bg-slate-900 border-slate-800">
