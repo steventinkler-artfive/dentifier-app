@@ -207,7 +207,7 @@ export default function AssessmentPage() {
 
         const assessmentPayload = {
           customer_id: assessmentData.customer?.id,
-          is_multi_vehicle: perPanelVehicleCards.length > 1,
+          is_multi_vehicle: true,
           vehicles,
           quote_amount: totalAmount,
           total_amount: totalAmount,
