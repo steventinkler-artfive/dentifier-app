@@ -78,12 +78,6 @@ export default function PerPanelQuoteView({
   const currency = assessment.currency || "GBP";
   const sym = getCurrencySymbol(currency);
 
-  // Default price for new panels: job_panel_price → first existing line item price → 60
-  const defaultPanelPrice =
-    assessment.job_panel_price ||
-    assessment.vehicles?.[0]?.line_items?.[0]?.unit_price ||
-    60;
-
   // Sync local state when assessment prop changes
   useEffect(() => {
     setVehicles(JSON.parse(JSON.stringify(assessment.vehicles || [])));
