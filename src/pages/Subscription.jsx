@@ -72,7 +72,8 @@ export default function Subscription() {
     "Your logo, remove Dentifier branding",
     "Advanced reports (client filters, date ranges, trends)",
     "CSV export for accounting software",
-    "Priority email support",
+    "Save custom line items - coming soon",
+    "Email support",
     "Early access to new features"
   ];
 
