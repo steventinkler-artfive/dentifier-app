@@ -326,7 +326,8 @@ export default function OnboardingWizard({ user, onComplete }) {
                 <div className="p-4 bg-slate-800 rounded-xl space-y-3 text-left">
                   <p className="text-white font-medium text-sm">To add to your Home Screen:</p>
                   <ol className="text-slate-300 text-sm space-y-2 list-decimal list-inside">
-                    <li>Tap the <span className="font-semibold text-white">Share</span> button in Safari (the box with an arrow pointing up)</li>
+                    <li>Tap the <span className="font-semibold text-white">•••</span> button at the bottom of Safari</li>
+                    <li>Tap the <span className="font-semibold text-white">Share</span> button (the box with an arrow pointing up)</li>
                     <li>Scroll down and tap <span className="font-semibold text-white">"Add to Home Screen"</span></li>
                     <li>Tap <span className="font-semibold text-white">"Add"</span> in the top right</li>
                   </ol>
@@ -353,13 +354,25 @@ export default function OnboardingWizard({ user, onComplete }) {
               )}
             </div>
 
-            <Button
-              variant="ghost"
-              onClick={() => setCurrentStep(6)}
-              className="text-slate-400 hover:text-white text-sm"
-            >
-              Maybe Later
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={() => setCurrentStep(6)}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+              >
+                I've Added It ✓
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setCurrentStep(6)}
+                className="w-full text-slate-400 hover:text-white text-sm"
+              >
+                Skip for now
+              </Button>
+            </div>
+
+            <p className="text-slate-500 text-xs text-center max-w-xs mx-auto">
+              When you first open Dentifier from your home screen you'll need to log in once — after that it stays logged in.
+            </p>
           </div>
         );
       }
