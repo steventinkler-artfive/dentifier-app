@@ -33,10 +33,8 @@ export default function AdminUsers() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUserToDelete, setSelectedUserToDelete] = useState(null);
   const [deleteAssociatedData, setDeleteAssociatedData] = useState(false);
-  const [associatedCounts, setAssociatedCounts] = useState(null);
   const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
   const [isDeletingUser, setIsDeletingUser] = useState(false);
-  const [loadingCounts, setLoadingCounts] = useState(false);
   const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
@@ -154,19 +152,7 @@ export default function AdminUsers() {
     setSelectedUserToDelete(user);
     setDeleteAssociatedData(false);
     setDeleteConfirmInput("");
-    setAssociatedCounts(null);
     setShowDeleteModal(true);
-
-    // Pre-fetch counts in background
-    setLoadingCounts(true);
-    try {
-      const { data: counts } = await base44.functions.invoke('countAssociatedRecords', { userEmail: user.email });
-      setAssociatedCounts(counts);
-    } catch (error) {
-      console.error("Failed to fetch counts:", error);
-    } finally {
-      setLoadingCounts(false);
-    }
   };
 
   const handleFinalConfirmDelete = async () => {
@@ -790,30 +776,11 @@ export default function AdminUsers() {
               </div>
             </label>
 
-            {/* Associated data counts */}
+            {/* Static warning when deleting associated data */}
             {deleteAssociatedData && (
-              <div className="rounded-lg border border-red-700 bg-red-900/20 p-4 space-y-3">
-                <p className="text-red-400 font-semibold text-sm flex items-center gap-2">
-                  ⚠️ This cannot be undone
-                </p>
-                {loadingCounts ? (
-                  <div className="flex items-center gap-2 text-slate-400 text-sm">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Counting records…
-                  </div>
-                ) : associatedCounts ? (
-                  <div className="space-y-1 text-sm">
-                    <p className="text-red-300">The following records will be permanently deleted:</p>
-                    <ul className="text-slate-300 space-y-0.5 ml-2">
-                      <li>• {associatedCounts.assessments} Assessment{associatedCounts.assessments !== 1 ? 's' : ''}</li>
-                      <li>• {associatedCounts.customers} Customer{associatedCounts.customers !== 1 ? 's' : ''}</li>
-                      <li>• {associatedCounts.vehicles} Vehicle{associatedCounts.vehicles !== 1 ? 's' : ''}</li>
-                      <li>• {associatedCounts.userSettings} Settings record{associatedCounts.userSettings !== 1 ? 's' : ''}</li>
-                    </ul>
-                    <p className="text-red-400 font-semibold mt-2">{associatedCounts.total} total records will be deleted.</p>
-                  </div>
-                ) : (
-                  <p className="text-slate-400 text-sm">Could not load record counts.</p>
-                )}
+              <div className="rounded-lg border border-red-700 bg-red-900/20 p-4 space-y-2">
+                <p className="text-red-400 font-semibold text-sm">⚠️ This cannot be undone</p>
+                <p className="text-slate-300 text-sm">All of this user's Assessments, Customers, Vehicles, and Settings will be permanently deleted.</p>
               </div>
             )}
 

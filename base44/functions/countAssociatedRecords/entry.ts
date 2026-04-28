@@ -10,28 +10,24 @@ Deno.serve(async (req) => {
     }
 
     const { userEmail } = await req.json();
-    console.log('[countAssociatedRecords] received userEmail:', userEmail);
 
     if (!userEmail) {
       return Response.json({ error: 'userEmail is required' }, { status: 400 });
     }
 
-    // DIAGNOSTIC: fetch ALL assessments without any filter
-    const allAssessments = await base44.asServiceRole.entities.Assessment.list();
-    console.log('[DIAGNOSTIC] Total Assessment records returned by list():', allAssessments.length);
-
-    const matchingAssessments = allAssessments.filter(r => r.created_by === userEmail);
-    console.log('[DIAGNOSTIC] Assessments with created_by ===', userEmail, ':', matchingAssessments.length);
-
-    if (allAssessments.length > 0) {
-      console.log('[DIAGNOSTIC] Sample created_by values:', allAssessments.slice(0, 5).map(r => JSON.stringify(r.created_by)));
-    }
+    const [assessments, customers, vehicles, userSettings] = await Promise.all([
+      base44.asServiceRole.entities.Assessment.filter({ created_by: userEmail }),
+      base44.asServiceRole.entities.Customer.filter({ created_by: userEmail }),
+      base44.asServiceRole.entities.Vehicle.filter({ created_by: userEmail }),
+      base44.asServiceRole.entities.UserSetting.filter({ user_email: userEmail }),
+    ]);
 
     return Response.json({
-      diagnostic: true,
-      totalAssessmentsInDB: allAssessments.length,
-      matchingAssessments: matchingAssessments.length,
-      userEmail,
+      assessments: assessments.length,
+      customers: customers.length,
+      vehicles: vehicles.length,
+      userSettings: userSettings.length,
+      total: assessments.length + customers.length + vehicles.length + userSettings.length,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
