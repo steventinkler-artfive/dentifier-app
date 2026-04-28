@@ -1,9 +1,24 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        const { email, fullName } = await req.json();
+        const body = await req.json();
+
+        // Support both direct call (email, fullName) and entity automation payload (event, data)
+        let email, fullName;
+        if (body.event && body.data) {
+            // Triggered from UserSetting create automation — user_email is the identifier
+            email = body.data.user_email;
+            fullName = null; // full_name not available on UserSetting
+        } else {
+            email = body.email;
+            fullName = body.fullName;
+        }
+
+        if (!email) {
+            return Response.json({ error: 'Missing email' }, { status: 400 });
+        }
 
         const logoUrl = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
         const dashboardUrl = "https://app.dentifierpro.com/dashboard";
@@ -40,12 +55,7 @@ Deno.serve(async (req) => {
                             <a href="${dashboardUrl}" style="display: inline-block; background-color: #E31C5F; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Get Started Now!</a>
                         </div>
                         
-                        <h2 style="color: #333; font-size: 20px; margin: 30px 0 15px 0;">Need Help?</h2>
-                        <p style="font-size: 15px; line-height: 1.8;">
-                            📚 Check out our video tutorials<br>
-                            📧 Email us: <a href="mailto:${supportEmail}" style="color: #E31C5F; text-decoration: none;">${supportEmail}</a><br>
-                            💬 Join our community
-                        </p>
+                        <p style="font-size: 15px;">📧 Questions? Email us: <a href="mailto:${supportEmail}" style="color: #E31C5F; text-decoration: none;">${supportEmail}</a></p>
                         
                         <p style="font-size: 16px; margin-top: 40px;">Thanks for choosing Dentifier!</p>
                         <p style="font-size: 16px; color: #666;">The Dentifier Team</p>
