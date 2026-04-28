@@ -14,6 +14,7 @@ export default function EmailModal({
   onSend,
   isSending,
   docType,
+  contactEmail,
 }) {
   const [to, setTo] = useState(initialTo || "");
   const [cc, setCc] = useState("");
@@ -66,6 +67,9 @@ export default function EmailModal({
               className="bg-slate-800 border-slate-600 text-white focus:border-blue-500"
               placeholder="recipient@example.com"
             />
+            {contactEmail && (
+              <p className="text-slate-500 text-xs">A copy of this email will be sent to {contactEmail}</p>
+            )}
           </div>
 
           {/* CC */}

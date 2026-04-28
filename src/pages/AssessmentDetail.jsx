@@ -1650,6 +1650,7 @@ export default function AssessmentDetail() {
         onSend={handleSendEmail}
         isSending={isSendingEmail}
         docType={assessment.status === 'completed' ? 'invoice' : 'quote'}
+        contactEmail={userSettings?.contact_email}
       />
 
       {/* Image Viewer */}
