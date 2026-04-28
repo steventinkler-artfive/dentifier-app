@@ -30,6 +30,13 @@ export default function AdminUsers() {
   const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "user", subscription_tier: "starter" });
   const [resettingPassword, setResettingPassword] = useState(null);
   const [togglingStatus, setTogglingStatus] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUserToDelete, setSelectedUserToDelete] = useState(null);
+  const [deleteAssociatedData, setDeleteAssociatedData] = useState(false);
+  const [associatedCounts, setAssociatedCounts] = useState(null);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [loadingCounts, setLoadingCounts] = useState(false);
   const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
@@ -144,20 +151,47 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = async (user) => {
-    const confirmed = await showConfirm(
-      `⚠️ PERMANENT DELETION - Are you sure?`,
-      `This will permanently delete all data for ${user.full_name}. This cannot be undone. Only use this for GDPR deletion requests. Type DELETE to confirm.`
-    );
+    setSelectedUserToDelete(user);
+    setDeleteAssociatedData(false);
+    setDeleteConfirmInput("");
+    setAssociatedCounts(null);
+    setShowDeleteModal(true);
 
-    if (!confirmed) return;
-
+    // Pre-fetch counts in background
+    setLoadingCounts(true);
     try {
-      await base44.entities.User.delete(user.id);
+      const counts = await base44.functions.invoke('countAssociatedRecords', { userEmail: user.email });
+      setAssociatedCounts(counts);
+    } catch (error) {
+      console.error("Failed to fetch counts:", error);
+    } finally {
+      setLoadingCounts(false);
+    }
+  };
+
+  const handleFinalConfirmDelete = async () => {
+    if (!selectedUserToDelete || deleteConfirmInput !== "DELETE") return;
+    setIsDeletingUser(true);
+    try {
+      await base44.functions.invoke('deleteUserAndAssociatedData', {
+        userId: selectedUserToDelete.id,
+        userEmail: selectedUserToDelete.email,
+        deleteAssociatedData,
+      });
+      setShowDeleteModal(false);
+      setSelectedUserToDelete(null);
       await loadUsers();
-      await showAlert("User permanently deleted", "Success");
+      await showAlert(
+        deleteAssociatedData
+          ? "User and all associated data permanently deleted."
+          : "User account permanently deleted.",
+        "Success"
+      );
     } catch (error) {
       console.error("Failed to delete user:", error);
-      await showAlert("Failed to delete user", "Error");
+      await showAlert("Failed to delete user: " + error.message, "Error");
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -710,6 +744,107 @@ export default function AdminUsers() {
             </Button>
             <Button onClick={handleAddUser} className="bg-rose-600 hover:bg-rose-700 text-white">
               Add User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteModal} onOpenChange={(open) => { if (!isDeletingUser) setShowDeleteModal(open); }}>
+        <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Delete User: {selectedUserToDelete?.full_name}</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              {selectedUserToDelete?.email}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Option 1 */}
+            <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800 transition-colors">
+              <input
+                type="radio"
+                name="deleteOption"
+                checked={!deleteAssociatedData}
+                onChange={() => setDeleteAssociatedData(false)}
+                className="mt-0.5 accent-rose-500"
+              />
+              <div>
+                <p className="text-white font-medium text-sm">Delete account only</p>
+                <p className="text-slate-400 text-xs mt-0.5">Removes the user's login. Their data records remain in the system.</p>
+              </div>
+            </label>
+
+            {/* Option 2 */}
+            <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800 transition-colors">
+              <input
+                type="radio"
+                name="deleteOption"
+                checked={deleteAssociatedData}
+                onChange={() => setDeleteAssociatedData(true)}
+                className="mt-0.5 accent-rose-500"
+              />
+              <div>
+                <p className="text-white font-medium text-sm">Delete account + all associated data</p>
+                <p className="text-slate-400 text-xs mt-0.5">Permanently removes the account and all their Assessments, Customers, Vehicles, and Settings.</p>
+              </div>
+            </label>
+
+            {/* Associated data counts */}
+            {deleteAssociatedData && (
+              <div className="rounded-lg border border-red-700 bg-red-900/20 p-4 space-y-3">
+                <p className="text-red-400 font-semibold text-sm flex items-center gap-2">
+                  ⚠️ This cannot be undone
+                </p>
+                {loadingCounts ? (
+                  <div className="flex items-center gap-2 text-slate-400 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Counting records…
+                  </div>
+                ) : associatedCounts ? (
+                  <div className="space-y-1 text-sm">
+                    <p className="text-red-300">The following records will be permanently deleted:</p>
+                    <ul className="text-slate-300 space-y-0.5 ml-2">
+                      <li>• {associatedCounts.assessments} Assessment{associatedCounts.assessments !== 1 ? 's' : ''}</li>
+                      <li>• {associatedCounts.customers} Customer{associatedCounts.customers !== 1 ? 's' : ''}</li>
+                      <li>• {associatedCounts.vehicles} Vehicle{associatedCounts.vehicles !== 1 ? 's' : ''}</li>
+                      <li>• {associatedCounts.userSettings} Settings record{associatedCounts.userSettings !== 1 ? 's' : ''}</li>
+                    </ul>
+                    <p className="text-red-400 font-semibold mt-2">{associatedCounts.total} total records will be deleted.</p>
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-sm">Could not load record counts.</p>
+                )}
+              </div>
+            )}
+
+            {/* Confirm input */}
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-sm">Type <span className="font-mono font-bold text-white">DELETE</span> to confirm</Label>
+              <Input
+                value={deleteConfirmInput}
+                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                placeholder="DELETE"
+                className="bg-slate-800 border-slate-700 text-white font-mono"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeletingUser}
+              className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleFinalConfirmDelete}
+              disabled={deleteConfirmInput !== "DELETE" || isDeletingUser}
+              className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+            >
+              {isDeletingUser ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Confirm Delete
             </Button>
           </DialogFooter>
         </DialogContent>
