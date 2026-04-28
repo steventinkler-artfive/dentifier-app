@@ -160,7 +160,7 @@ export default function AdminUsers() {
     // Pre-fetch counts in background
     setLoadingCounts(true);
     try {
-      const counts = await base44.functions.invoke('countAssociatedRecords', { userEmail: user.email });
+      const { data: counts } = await base44.functions.invoke('countAssociatedRecords', { userEmail: user.email });
       setAssociatedCounts(counts);
     } catch (error) {
       console.error("Failed to fetch counts:", error);
