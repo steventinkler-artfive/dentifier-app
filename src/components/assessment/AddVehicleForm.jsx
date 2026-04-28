@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, X } from "lucide-react";
+import { Plus, Loader2, X, Camera, Upload } from "lucide-react";
+import { compressMultipleImages } from "../utils/imageCompression";
 
 const CAR_PANELS = [
   "Bonnet/Hood", "Front Wing/Fender (Left)", "Front Wing/Fender (Right)",
@@ -21,9 +22,11 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
     registration: '',
     colour: '',
     notes: '',
-    panels: [createEmptyPanel()]
+    panels: [createEmptyPanel()],
+    photo_urls: []
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
   const updateNewVehicle = (field, value) => {
@@ -46,6 +49,30 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
     });
   };
 
+  const handlePhotoUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const compressed = await compressMultipleImages(files);
+      const urls = await Promise.all(compressed.map(f => base44.integrations.Core.UploadFile({ file: f }).then(r => r.file_url)));
+      setNewVehicle(prev => ({
+        ...prev,
+        photo_urls: [...prev.photo_urls, ...urls]
+      }));
+    } catch (e) {
+      console.error('Upload failed:', e);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePhoto = (photoIdx) => {
+    setNewVehicle(prev => ({
+      ...prev,
+      photo_urls: prev.photo_urls.filter((_, i) => i !== photoIdx)
+    }));
+  };
+
   const handleSave = async () => {
     setError('');
     const validPanels = newVehicle.panels.filter(p => p.panel);
@@ -56,13 +83,20 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
 
     setIsSaving(true);
     try {
+      const lineItems = validPanels.map(p => ({
+        description: `PDR Labour - ${p.panel}${p.notes ? `: ${p.notes}` : ''}`,
+        quantity: 1,
+        unit_price: defaultPanelPrice,
+        total_price: defaultPanelPrice
+      }));
+
       const newVehicleData = {
         registration: newVehicle.registration || '',
         colour: newVehicle.colour || '',
         notes: newVehicle.notes || '',
         panels: validPanels,
-        photo_urls: [],
-        line_items: [],
+        photo_urls: newVehicle.photo_urls,
+        line_items: lineItems,
         quote_amount: defaultPanelPrice * validPanels.length
       };
 
@@ -182,6 +216,72 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
             <Plus className="w-4 h-4 mr-2" />
             + Add a Panel
           </Button>
+        </div>
+
+        {/* Photos Section */}
+        <div className="space-y-2">
+          <p className="text-slate-400 text-sm">📷 Add Photos (optional)</p>
+
+          {newVehicle.photo_urls.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {newVehicle.photo_urls.map((url, photoIdx) => (
+                <div key={photoIdx} className="relative group">
+                  <img src={url} alt={`Photo ${photoIdx + 1}`} className="w-full aspect-square object-cover rounded-lg" />
+                  <button
+                    onClick={() => removePhoto(photoIdx)}
+                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <label className="flex-1">
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                disabled={uploading}
+                onChange={e => { handlePhotoUpload(e.target.files); e.target.value = ''; }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full bg-green-600 border-green-600 text-white hover:bg-green-700"
+                disabled={uploading}
+                onClick={e => e.currentTarget.previousElementSibling.click()}
+              >
+                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Camera className="w-3.5 h-3.5 mr-1" />}
+                Camera
+              </Button>
+            </label>
+            <label className="flex-1">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                disabled={uploading}
+                onChange={e => { handlePhotoUpload(e.target.files); e.target.value = ''; }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full bg-rose-600 border-rose-600 text-white hover:bg-rose-700"
+                disabled={uploading}
+                onClick={e => e.currentTarget.previousElementSibling.click()}
+              >
+                <Upload className="w-3.5 h-3.5 mr-1" />
+                Gallery
+              </Button>
+            </label>
+          </div>
         </div>
 
         {error && (
