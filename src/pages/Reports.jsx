@@ -219,6 +219,18 @@ export default function Reports() {
     const selectedCustomer = customers[selectedCustomerId];
     const periodLabel = getPeriodLabel();
 
+    // Fetch logo as blob URL for cross-origin safety (same as AssessmentDetail)
+    let logoDisplayUrl = null;
+    if (userSettings?.business_logo_url) {
+      try {
+        const r = await fetch(userSettings.business_logo_url);
+        if (r.ok) {
+          const blob = await r.blob();
+          logoDisplayUrl = URL.createObjectURL(blob);
+        }
+      } catch (_) {}
+    }
+
     const container = document.createElement("div");
     container.style.position = "fixed";
     container.style.top = "-9999px";
@@ -236,9 +248,10 @@ export default function Reports() {
           userSettings,
           periodLabel,
           currency: stats.currency,
+          logoDisplayUrl,
         })
       );
-      setTimeout(resolve, 600);
+      setTimeout(resolve, 800);
     });
 
     let pdfBase64 = null;
@@ -274,6 +287,7 @@ export default function Reports() {
     } finally {
       root.unmount();
       document.body.removeChild(container);
+      if (logoDisplayUrl) URL.revokeObjectURL(logoDisplayUrl);
     }
     return pdfBase64;
   };
@@ -283,12 +297,9 @@ export default function Reports() {
     try {
       const pdfBase64 = await generateStatementPdfBase64();
       if (!pdfBase64) return;
-      const link = document.createElement("a");
-      link.href = `data:application/pdf;base64,${pdfBase64}`;
-      const customer = customers[selectedCustomerId];
-      const name = customer?.business_name || customer?.name || "client";
-      link.download = `Statement_${name.replace(/\s+/g, "_")}_${getPeriodLabel().replace(/\s+/g, "_")}.pdf`;
-      link.click();
+      // Open in browser for preview (same behaviour as quote/invoice PDFs)
+      const dataUrl = `data:application/pdf;base64,${pdfBase64}`;
+      window.open(dataUrl, "_blank");
     } finally {
       setIsGeneratingPDF(false);
     }

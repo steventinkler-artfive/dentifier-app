@@ -1,89 +1,90 @@
 import React from "react";
 
+const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
+
 const getCurrencySymbol = (currency) => {
   const symbols = { GBP: "£", USD: "$", EUR: "€", CAD: "C$", AUD: "A$" };
   return symbols[currency] || "£";
 };
 
-const fmt = (amount, currency) => {
+export default function ClientStatementPDF({ assessments, customer, userSettings, periodLabel, currency = "GBP", logoDisplayUrl }) {
   const sym = getCurrencySymbol(currency);
-  return `${sym}${(amount || 0).toFixed(2)}`;
-};
+  const fmt = (amount) => `${sym}${(amount || 0).toFixed(2)}`;
 
-export default function ClientStatementPDF({ assessments, customer, userSettings, periodLabel, currency = "GBP" }) {
   const totalInvoiced = assessments.reduce((s, a) => s + (a.quote_amount || 0), 0);
-  const totalPaid = assessments
-    .filter((a) => a.payment_status === "paid")
-    .reduce((s, a) => s + (a.quote_amount || 0), 0);
+  const totalPaid = assessments.filter((a) => a.payment_status === "paid").reduce((s, a) => s + (a.quote_amount || 0), 0);
   const outstanding = totalInvoiced - totalPaid;
+
+  const businessName = userSettings?.business_name || "Dentifier PDR";
+  const businessAddress = userSettings?.business_address || "";
+  const contactEmail = userSettings?.contact_email || "";
 
   return (
     <div
       style={{
-        fontFamily: "Arial, sans-serif",
-        fontSize: "13px",
-        color: "#1e293b",
-        background: "#fff",
+        background: "white",
         padding: "48px",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "14px",
+        lineHeight: "1.4",
+        color: "#1f2937",
         width: "794px",
-        minHeight: "1123px",
         boxSizing: "border-box",
       }}
     >
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "36px" }}>
+      {/* Header — logo left, title right (mirrors QuotePDFContent) */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "32px" }}>
         <div>
-          {userSettings?.business_name && (
-            <div style={{ fontWeight: "bold", fontSize: "16px", marginBottom: "4px" }}>
-              {userSettings.business_name}
-            </div>
-          )}
-          {userSettings?.business_address && (
-            <div style={{ color: "#475569", whiteSpace: "pre-line", marginBottom: "4px" }}>
-              {userSettings.business_address}
-            </div>
-          )}
-          {userSettings?.contact_email && (
-            <div style={{ color: "#475569" }}>{userSettings.contact_email}</div>
+          <img
+            src={userSettings?.business_logo_url || logoDisplayUrl || DEFAULT_DENTIFIER_LOGO}
+            alt="Business Logo"
+            style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
+            onError={(e) => { e.target.src = DEFAULT_DENTIFIER_LOGO; }}
+          />
+          {!userSettings?.business_logo_url && (
+            <h1 style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}>{businessName}</h1>
           )}
         </div>
         <div style={{ textAlign: "right" }}>
-          {customer?.business_name && (
-            <div style={{ fontWeight: "bold", fontSize: "15px", marginBottom: "4px" }}>
-              {customer.business_name}
-            </div>
-          )}
-          <div style={{ fontWeight: customer?.business_name ? "normal" : "bold", fontSize: customer?.business_name ? "13px" : "15px", marginBottom: "4px" }}>
-            {customer?.name}
-          </div>
-          {customer?.address && (
-            <div style={{ color: "#475569", whiteSpace: "pre-line" }}>{customer.address}</div>
-          )}
+          <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#374151" }}>STATEMENT OF ACCOUNT</h2>
+          <p style={{ color: "#6b7280", fontSize: "14px", marginTop: "8px" }}>Period: {periodLabel}</p>
         </div>
       </div>
 
-      {/* Title & Period */}
-      <div style={{ borderTop: "2px solid #e2e8f0", paddingTop: "24px", marginBottom: "24px" }}>
-        <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "6px" }}>
-          Statement of Account
-        </div>
-        <div style={{ color: "#64748b", fontSize: "13px" }}>Period: {periodLabel}</div>
+      {/* Billed To */}
+      <div style={{ marginBottom: "32px" }}>
+        <h3 style={{ fontWeight: "600", color: "#6b7280", borderBottom: "1px solid #e5e7eb", paddingBottom: "8px", marginBottom: "8px", fontSize: "14px" }}>
+          BILLED TO
+        </h3>
+        {customer?.business_name && (
+          <p style={{ fontWeight: "bold", color: "#1f2937" }}>{customer.business_name}</p>
+        )}
+        <p style={{ color: customer?.business_name ? "#4b5563" : "#1f2937", fontWeight: customer?.business_name ? "normal" : "bold" }}>
+          {customer?.business_name ? `Contact: ${customer.name}` : customer?.name}
+        </p>
+        {customer?.address && (
+          <p style={{ color: "#4b5563", whiteSpace: "pre-wrap" }}>{customer.address}</p>
+        )}
+        {customer?.email && <p style={{ color: "#4b5563" }}>{customer.email}</p>}
       </div>
 
       {/* Invoice Table */}
-      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "32px" }}>
+      <h3 style={{ fontWeight: "600", color: "#6b7280", borderBottom: "1px solid #e5e7eb", paddingBottom: "8px", marginBottom: "8px", fontSize: "14px" }}>
+        INVOICE DETAILS
+      </h3>
+
+      <table style={{ width: "100%", marginBottom: "24px", borderCollapse: "collapse" }}>
         <thead>
-          <tr style={{ background: "#f1f5f9" }}>
-            {["Date", "Invoice No.", "Amount", "Status"].map((h) => (
+          <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+            {["Date", "Invoice No.", "Amount", "Status"].map((h, i) => (
               <th
                 key={h}
                 style={{
-                  padding: "10px 12px",
-                  textAlign: h === "Amount" ? "right" : "left",
+                  textAlign: i === 2 ? "right" : "left",
                   fontWeight: "600",
-                  fontSize: "12px",
-                  color: "#475569",
-                  borderBottom: "1px solid #e2e8f0",
+                  color: "#4b5563",
+                  padding: "8px 0",
+                  fontSize: "14px",
                 }}
               >
                 {h}
@@ -92,29 +93,17 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
           </tr>
         </thead>
         <tbody>
-          {assessments.map((a, i) => {
+          {assessments.map((a) => {
             const date = new Date(a.sent_date || a.created_date).toLocaleDateString("en-GB");
             const invNo = a.invoice_number || a.quote_number || `#${a.id.slice(-6)}`;
-            const amount = fmt(a.quote_amount || 0, currency);
-            const status = a.payment_status === "paid" ? "Paid" : "Pending Payment";
+            const isPaid = a.payment_status === "paid";
             return (
-              <tr key={a.id} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc" }}>
-                <td style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0", color: "#334155" }}>{date}</td>
-                <td style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0", color: "#334155" }}>{invNo}</td>
-                <td style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "right", color: "#334155" }}>{amount}</td>
-                <td style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>
-                  <span
-                    style={{
-                      padding: "2px 8px",
-                      borderRadius: "9999px",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      background: a.payment_status === "paid" ? "#dcfce7" : "#fff7ed",
-                      color: a.payment_status === "paid" ? "#166534" : "#9a3412",
-                    }}
-                  >
-                    {status}
-                  </span>
+              <tr key={a.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                <td style={{ padding: "16px 0", color: "#374151", fontWeight: "500" }}>{date}</td>
+                <td style={{ padding: "16px 0", color: "#374151", fontWeight: "500" }}>{invNo}</td>
+                <td style={{ padding: "16px 0", textAlign: "right", fontWeight: "500", color: "#1f2937" }}>{fmt(a.quote_amount || 0)}</td>
+                <td style={{ padding: "16px 0", fontWeight: "600", color: isPaid ? "#16a34a" : "#dc2626" }}>
+                  {isPaid ? "Paid" : "Pending Payment"}
                 </td>
               </tr>
             );
@@ -122,36 +111,41 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
         </tbody>
       </table>
 
-      {/* Summary */}
-      <div
-        style={{
-          marginLeft: "auto",
-          width: "300px",
-          background: "#f8fafc",
-          border: "1px solid #e2e8f0",
-          borderRadius: "8px",
-          padding: "16px 20px",
-          marginBottom: "48px",
-        }}
-      >
-        {[
-          { label: "Total Invoiced:", value: fmt(totalInvoiced, currency) },
-          { label: "Total Paid:", value: fmt(totalPaid, currency) },
-          { label: "Outstanding:", value: fmt(outstanding, currency), bold: true, color: outstanding > 0 ? "#dc2626" : "#16a34a" },
-        ].map(({ label, value, bold, color }) => (
-          <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ color: "#475569", fontWeight: bold ? "600" : "normal" }}>{label}</span>
-            <span style={{ fontWeight: bold ? "700" : "500", color: color || "#1e293b" }}>{value}</span>
+      {/* Summary totals — right-aligned, mirrors QuotePDFContent totals block */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "32px" }}>
+        <div style={{ width: "50%" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
+            <span style={{ fontWeight: "500", color: "#4b5563" }}>Total Invoiced</span>
+            <span style={{ fontWeight: "500", color: "#1f2937" }}>{fmt(totalInvoiced)}</span>
           </div>
-        ))}
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
+            <span style={{ fontWeight: "500", color: "#4b5563" }}>Total Paid</span>
+            <span style={{ fontWeight: "500", color: "#16a34a" }}>{fmt(totalPaid)}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "2px solid #d1d5db", marginTop: "8px" }}>
+            <span style={{ fontWeight: "bold", fontSize: "20px", color: "#1f2937" }}>Outstanding</span>
+            <span style={{ fontWeight: "bold", fontSize: "20px", color: outstanding > 0 ? "#dc2626" : "#16a34a" }}>
+              {fmt(outstanding)}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "20px", color: "#94a3b8", fontSize: "12px", textAlign: "center" }}>
-        <div style={{ marginBottom: "4px" }}>Thank you for your business.</div>
-        <div>
-          {userSettings?.business_name}
-          {userSettings?.contact_email ? ` · ${userSettings.contact_email}` : ""}
+      {/* Footer — mirrors QuotePDFContent two-column footer */}
+      <div style={{ paddingTop: "16px", marginTop: "24px", borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div style={{ flex: "0 0 auto", maxWidth: "50%" }}>
+          <h3 style={{ fontWeight: "600", color: "#374151", fontSize: "13px", marginBottom: "4px" }}>{businessName}</h3>
+          {businessAddress && <p style={{ color: "#4b5563", fontSize: "11px", whiteSpace: "pre-wrap", lineHeight: "1.5" }}>{businessAddress}</p>}
+          {contactEmail && <p style={{ color: "#4b5563", fontSize: "11px", marginTop: "2px" }}>{contactEmail}</p>}
+        </div>
+        <div style={{ flex: "0 0 auto", maxWidth: "46%", textAlign: "right" }}>
+          <p style={{ fontSize: "12px", color: "#4b5563", marginBottom: "12px" }}>Thank you for your business.</p>
+          <p style={{ fontSize: "10px", color: "#9ca3af", marginBottom: "4px" }}>POWERED BY DENTIFIER</p>
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68a8991579d29e7c386105d5/f8b406687_dentifierfullcolourstraphi-res.png"
+            alt="Dentifier Logo"
+            style={{ height: "20px", display: "inline-block" }}
+          />
         </div>
       </div>
     </div>
