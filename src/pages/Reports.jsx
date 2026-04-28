@@ -292,17 +292,11 @@ export default function Reports() {
     return pdfBase64;
   };
 
-  const handlePDFStatement = async () => {
-    setIsGeneratingPDF(true);
-    try {
-      const pdfBase64 = await generateStatementPdfBase64();
-      if (!pdfBase64) return;
-      // Open in browser for preview (same behaviour as quote/invoice PDFs)
-      const dataUrl = `data:application/pdf;base64,${pdfBase64}`;
-      window.open(dataUrl, "_blank");
-    } finally {
-      setIsGeneratingPDF(false);
-    }
+  const handlePDFStatement = () => {
+    const ids = filteredAssessments.map((a) => a.id).join(",");
+    const period = encodeURIComponent(getPeriodLabel());
+    const url = createPageUrl(`StatementPDF?customer_id=${selectedCustomerId}&period=${period}&ids=${ids}`);
+    window.open(url, "_blank");
   };
 
   const handleEmailStatement = () => {
