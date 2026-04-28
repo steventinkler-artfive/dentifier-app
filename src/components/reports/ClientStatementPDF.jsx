@@ -82,8 +82,8 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
         </colgroup>
         <thead>
           <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Date</th>
-            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Invoice No.</th>
+            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "left" }}>Date</th>
+            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "left" }}>Invoice No.</th>
             <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "right" }}>Amount</th>
             <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "right" }}>Status</th>
           </tr>
