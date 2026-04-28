@@ -104,6 +104,8 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
         // Add to dropdowns if not present, then update form
         setVehicleMakes(prev => prev.includes(make) ? prev : [...prev, make].sort());
         setVehicleColors(prev => prev.includes(color) ? prev : [...prev, color].sort());
+        console.log('DVLA make value:', make);
+        console.log('vehicleMakes list at this point:', vehicleMakes);
         setFormData(prev => ({
           ...prev,
           make: make,
