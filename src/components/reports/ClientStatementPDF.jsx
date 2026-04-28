@@ -73,24 +73,19 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
         INVOICE DETAILS
       </h3>
 
-      <table style={{ width: "100%", marginBottom: "24px", borderCollapse: "collapse" }}>
+      <table style={{ width: "100%", marginBottom: "24px", borderCollapse: "collapse", tableLayout: "fixed" }}>
+        <colgroup>
+          <col style={{ width: "25%" }} />
+          <col style={{ width: "25%" }} />
+          <col style={{ width: "25%" }} />
+          <col style={{ width: "25%" }} />
+        </colgroup>
         <thead>
           <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-            {["Date", "Invoice No.", "Amount", "Status"].map((h, i) => (
-            <th
-              key={h}
-              style={{
-                textAlign: i === 2 ? "right" : "left",
-                fontWeight: "600",
-                color: "#4b5563",
-                padding: "8px 0",
-                paddingRight: i === 2 ? "24px" : "0",
-                fontSize: "14px",
-              }}
-            >
-              {h}
-            </th>
-            ))}
+            <th style={{ textAlign: "left", fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Date</th>
+            <th style={{ textAlign: "left", fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Invoice No.</th>
+            <th style={{ textAlign: "right", fontWeight: "600", color: "#4b5563", padding: "8px 0", paddingRight: "16px", fontSize: "14px" }}>Amount</th>
+            <th style={{ textAlign: "left", fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -100,9 +95,9 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
             const isPaid = a.payment_status === "paid";
             return (
               <tr key={a.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                <td style={{ padding: "16px 0", color: "#374151", fontWeight: "500" }}>{date}</td>
-                <td style={{ padding: "16px 0", color: "#374151", fontWeight: "500" }}>{invNo}</td>
-                <td style={{ padding: "16px 0", paddingRight: "24px", textAlign: "right", fontWeight: "500", color: "#1f2937" }}>{fmt(a.quote_amount || 0)}</td>
+                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>{date}</td>
+                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>{invNo}</td>
+                <td style={{ padding: "16px 0", paddingRight: "16px", textAlign: "right", fontWeight: "500", color: "#1f2937" }}>{fmt(a.quote_amount || 0)}</td>
                 <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>
                   {isPaid ? "Paid" : "Pending Payment"}
                 </td>
