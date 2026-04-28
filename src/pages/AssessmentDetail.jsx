@@ -1182,30 +1182,13 @@ export default function AssessmentDetail() {
             includeNotesInQuote={includeNotesInQuote}
             isUpdating={isUpdating}
             userSettings={userSettings}
+            showAddVehicleForm={showAddVehicleForm}
+            setShowAddVehicleForm={setShowAddVehicleForm}
+            assessment_customer_id={assessment.customer_id}
+            onAddNewVehicle={handleAddNewVehicle}
+            defaultPanelPrice={userSettings?.default_panel_price || assessment.job_panel_price || 60}
+            is_multi_vehicle={assessment.is_multi_vehicle}
           />
-
-          {/* Add Another Vehicle - only for multi-vehicle assessments */}
-          {assessment.is_multi_vehicle && (
-            <>
-              {showAddVehicleForm ? (
-                <AddVehicleForm
-                  customerId={assessment.customer_id}
-                  onSave={handleAddNewVehicle}
-                  onCancel={() => setShowAddVehicleForm(false)}
-                  defaultPanelPrice={userSettings?.default_panel_price || assessment.job_panel_price || 60}
-                />
-              ) : (
-                <Button
-                  onClick={() => setShowAddVehicleForm(true)}
-                  className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold h-10"
-                  variant="outline"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Another Vehicle
-                </Button>
-              )}
-            </>
-          )}
 
           {/* Action buttons */}
           <div className="space-y-3">

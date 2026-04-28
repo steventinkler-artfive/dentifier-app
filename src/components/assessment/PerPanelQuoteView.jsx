@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Edit2, Save, Trash2, Plus, Loader2, Check, X } from "lucide-react";
+import AddVehicleForm from "./AddVehicleForm";
 
 
 const CAR_PANELS = [
@@ -31,6 +32,12 @@ export default function PerPanelQuoteView({
   includeNotesInQuote,
   isUpdating,
   userSettings,
+  showAddVehicleForm,
+  setShowAddVehicleForm,
+  assessment_customer_id,
+  onAddNewVehicle,
+  defaultPanelPrice,
+  is_multi_vehicle,
 }) {
   const [vehicles, setVehicles] = useState([]);
   const [assessmentItems, setAssessmentItems] = useState([]);
@@ -592,6 +599,29 @@ export default function PerPanelQuoteView({
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Add Another Vehicle - only for multi-vehicle assessments */}
+      {is_multi_vehicle && (
+        <>
+          {showAddVehicleForm ? (
+            <AddVehicleForm
+              customerId={assessment_customer_id}
+              onSave={onAddNewVehicle}
+              onCancel={() => setShowAddVehicleForm(false)}
+              defaultPanelPrice={defaultPanelPrice || 60}
+            />
+          ) : (
+            <Button
+              onClick={() => setShowAddVehicleForm(true)}
+              className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold h-10"
+              variant="outline"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Another Vehicle
+            </Button>
+          )}
+        </>
       )}
 
       {/* Assessment-level Add Line Item button */}
