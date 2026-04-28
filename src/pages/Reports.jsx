@@ -304,28 +304,10 @@ export default function Reports() {
     const periodLabel = getPeriodLabel();
     const bizName = userSettings?.business_name || "Dentifier PDR";
     const replyTo = userSettings?.contact_email || "";
-    const sym = getCurrencySymbol(stats.currency);
-
-    const totalInvoiced = filteredAssessments.reduce((s, a) => s + (a.quote_amount || 0), 0);
-    const totalPaid = filteredAssessments.filter(a => a.payment_status === "paid").reduce((s, a) => s + (a.quote_amount || 0), 0);
-    const outstanding = totalInvoiced - totalPaid;
 
     const subject = `Statement of Account — ${bizName} — ${periodLabel}`;
 
-    let message = `Hi ${customer?.business_name || customer?.name},\n\nPlease find attached your statement of account for the period: ${periodLabel}.\n\n`;
-    message += `INVOICES\n${"─".repeat(50)}\n`;
-    filteredAssessments.forEach((a) => {
-      const date = new Date(a.sent_date || a.created_date).toLocaleDateString("en-GB");
-      const invNo = a.invoice_number || a.quote_number || `#${a.id.slice(-6)}`;
-      const amt = `${sym}${(a.quote_amount || 0).toFixed(2)}`;
-      const status = a.payment_status === "paid" ? "Paid" : "Pending Payment";
-      message += `${date}  ${invNo}  ${amt}  ${status}\n`;
-    });
-    message += `\n${"─".repeat(50)}\n`;
-    message += `Total Invoiced:   ${sym}${totalInvoiced.toFixed(2)}\n`;
-    message += `Total Paid:       ${sym}${totalPaid.toFixed(2)}\n`;
-    message += `Outstanding:      ${sym}${outstanding.toFixed(2)}\n\n`;
-    message += `Best regards,\n${bizName}`;
+    let message = `Hi ${customer?.business_name || customer?.name},\n\nPlease find attached your statement of account for the period: ${periodLabel}.\n\nIf you have any questions, please don't hesitate to get in touch.\n\nBest regards,\n${bizName}`;
     if (replyTo) message += `\n${replyTo}`;
 
     setEmailModalDefaults({ to: customer?.email || "", subject, message });

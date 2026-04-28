@@ -116,11 +116,11 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
             <span style={{ fontWeight: "500", color: "#4b5563" }}>Total Paid</span>
-            <span style={{ fontWeight: "500", color: "#16a34a" }}>{fmt(totalPaid)}</span>
+            <span style={{ fontWeight: "500", color: "#1f2937" }}>{fmt(totalPaid)}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "2px solid #d1d5db", marginTop: "8px" }}>
             <span style={{ fontWeight: "bold", fontSize: "20px", color: "#1f2937" }}>Outstanding</span>
-            <span style={{ fontWeight: "bold", fontSize: "20px", color: outstanding > 0 ? "#dc2626" : "#16a34a" }}>
+            <span style={{ fontWeight: "bold", fontSize: "20px", color: "#1f2937" }}>
               {fmt(outstanding)}
             </span>
           </div>
