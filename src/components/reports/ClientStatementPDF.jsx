@@ -84,8 +84,8 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
           <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
             <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "left" }}>Date</th>
             <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "left" }}>Invoice No.</th>
+            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "left" }}>Status</th>
             <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "right" }}>Amount</th>
-            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "right" }}>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -97,10 +97,10 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
               <tr key={a.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
                 <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>{date}</td>
                 <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>{invNo}</td>
-                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937", textAlign: "right" }}>{fmt(a.quote_amount || 0)}</td>
-                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937", textAlign: "right" }}>
+                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>
                   {isPaid ? "Paid" : "Pending Payment"}
                 </td>
+                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937", textAlign: "right" }}>{fmt(a.quote_amount || 0)}</td>
               </tr>
             );
           })}
