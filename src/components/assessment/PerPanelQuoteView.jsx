@@ -134,6 +134,18 @@ export default function PerPanelQuoteView({
     await saveToApi(updated, assessmentItems);
   };
 
+  const removeVehicle = async (vIdx) => {
+    setSaving(true);
+    try {
+      const updatedVehicles = vehicles.filter((_, i) => i !== vIdx);
+      await base44.entities.Assessment.update(assessment.id, { vehicles: updatedVehicles });
+      setVehicles(updatedVehicles);
+      await onAssessmentUpdate();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // ─── Per-vehicle: add panel ─────────────────────────────────────────────────
   const openAddPanel = (vIdx) => {
     setAddingPanel(vIdx);
@@ -264,12 +276,23 @@ export default function PerPanelQuoteView({
         return (
           <Card key={vIdx} className="bg-slate-900 border-slate-800">
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <Car className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <div>
-                  <span className="text-white font-semibold text-sm">{label}</span>
-                  {sublabel && <p className="text-slate-400 text-xs mt-0.5">{sublabel}</p>}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Car className="w-4 h-4 text-green-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-white font-semibold text-sm">{label}</span>
+                    {sublabel && <p className="text-slate-400 text-xs mt-0.5">{sublabel}</p>}
+                  </div>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeVehicle(vIdx)}
+                  disabled={saving}
+                  className="h-6 w-6 text-red-400 hover:text-red-300 flex-shrink-0"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="text-sm space-y-1.5 pt-1">

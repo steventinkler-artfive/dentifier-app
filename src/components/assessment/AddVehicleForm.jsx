@@ -294,7 +294,7 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
           className="w-full pink-gradient text-white font-semibold h-10"
         >
           {isSaving ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Adding...</>
           ) : (
             <><Plus className="w-4 h-4 mr-2" />Add Vehicle</>
           )}
