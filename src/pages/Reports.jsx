@@ -643,8 +643,8 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Statement Buttons — only show when a specific client is selected */}
-            {selectedCustomerId !== "all" && (
+            {/* Statement Buttons — only show when a specific client is selected and user is on Professional tier */}
+            {selectedCustomerId !== "all" && ['professional', 'founder', 'early_bird'].includes(userSettings?.subscription_tier) && (
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={handlePDFStatement}
