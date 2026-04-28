@@ -157,6 +157,14 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
 
   const canSubmit = formData.make && formData.year && formData.color;
 
+  const makeOptions = formData.make && !vehicleMakes.includes(formData.make)
+    ? [...vehicleMakes, formData.make]
+    : vehicleMakes;
+
+  const colorOptions = formData.color && !vehicleColors.includes(formData.color)
+    ? [...vehicleColors, formData.color]
+    : vehicleColors;
+
   return (
     <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
@@ -215,10 +223,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                   <SelectValue placeholder="Select make" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                  {(formData.make && !vehicleMakes.includes(formData.make)
-                    ? [...vehicleMakes, formData.make].sort()
-                    : vehicleMakes
-                  ).map(make => (
+                  {makeOptions.map(make => (
                     <SelectItem key={make} value={make} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
                       {make}
                     </SelectItem>
@@ -257,10 +262,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                 <SelectValue placeholder="Select colour" />
               </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                  {(formData.color && !vehicleColors.includes(formData.color)
-                    ? [...vehicleColors, formData.color].sort()
-                    : vehicleColors
-                  ).map(color => (
+                  {colorOptions.map(color => (
                     <SelectItem key={color} value={color} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
                       {color}
                     </SelectItem>
