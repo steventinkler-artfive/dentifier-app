@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { CheckCircle2, Circle, AlertTriangle, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, AlertTriangle, Loader2, Smartphone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
@@ -18,6 +18,7 @@ const STEPS = [
   { id: 'banking', title: 'Banking & Payment', section: 'banking' },
   { id: 'pricing', title: 'Pricing Configuration', section: 'pricing' },
   { id: 'skills', title: 'Technician Profile', section: 'skills' },
+  { id: 'homescreen', title: 'Add to Home Screen', section: null },
   { id: 'complete', title: 'Complete', section: null }
 ];
 
@@ -28,8 +29,18 @@ export default function OnboardingWizard({ user, onComplete }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSkipWarning, setShowSkipWarning] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const { showAlert } = useAlert();
   const dialogScrollRef = React.useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
 
   useEffect(() => {
     if (dialogScrollRef.current) {
@@ -118,6 +129,8 @@ export default function OnboardingWizard({ user, onComplete }) {
     }
   };
 
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
   const handleContinue = async () => {
     const step = STEPS[currentStep];
     
@@ -128,6 +141,12 @@ export default function OnboardingWizard({ user, onComplete }) {
 
     if (currentStep === 4 && !validateSection('skills')) {
       setShowSkipWarning(true);
+      return;
+    }
+
+    // Skip homescreen step (index 5) if already in standalone/PWA mode
+    if (currentStep === 4 && isStandalone) {
+      setCurrentStep(6);
       return;
     }
 
@@ -154,7 +173,12 @@ export default function OnboardingWizard({ user, onComplete }) {
     if (step.section) {
       await saveProgress(step.section, false);
     }
-    setCurrentStep(prev => prev + 1);
+    // Skip homescreen step if already standalone
+    if (isStandalone) {
+      setCurrentStep(6);
+    } else {
+      setCurrentStep(prev => prev + 1);
+    }
   };
 
   const validateSection = (section) => {
@@ -284,6 +308,63 @@ export default function OnboardingWizard({ user, onComplete }) {
         );
 
       case 5: {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isAndroid = /android/i.test(navigator.userAgent);
+
+        return (
+          <div className="text-center space-y-6">
+            <div>
+              <Smartphone className="w-12 h-12 text-rose-400 mx-auto mb-3" />
+              <h2 className="text-2xl font-bold text-white mb-2">Get the Full Dentifier Experience</h2>
+              <p className="text-slate-400">
+                For the best experience, add Dentifier to your home screen — it works just like a native app, with no browser bars getting in the way.
+              </p>
+            </div>
+
+            <div className="max-w-sm mx-auto">
+              {isIOS ? (
+                <div className="p-4 bg-slate-800 rounded-xl space-y-3 text-left">
+                  <p className="text-white font-medium text-sm">To add to your Home Screen:</p>
+                  <ol className="text-slate-300 text-sm space-y-2 list-decimal list-inside">
+                    <li>Tap the <span className="font-semibold text-white">Share</span> button in Safari (the box with an arrow pointing up)</li>
+                    <li>Scroll down and tap <span className="font-semibold text-white">"Add to Home Screen"</span></li>
+                    <li>Tap <span className="font-semibold text-white">"Add"</span> in the top right</li>
+                  </ol>
+                </div>
+              ) : deferredPrompt ? (
+                <Button
+                  onClick={async () => {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    setDeferredPrompt(null);
+                    setCurrentStep(6);
+                  }}
+                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3"
+                >
+                  <Smartphone className="w-4 h-4 mr-2" />
+                  Add to Home Screen
+                </Button>
+              ) : (
+                <div className="p-4 bg-slate-800 rounded-xl text-left">
+                  <p className="text-slate-300 text-sm">
+                    Open Dentifier in your mobile browser and use the browser menu to find <span className="font-semibold text-white">"Add to Home Screen"</span>.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentStep(6)}
+              className="text-slate-400 hover:text-white text-sm"
+            >
+              Maybe Later
+            </Button>
+          </div>
+        );
+      }
+
+      case 6: {
         const sectionsCompleted = settings?.sections_completed || {};
         const completionItems = [
           { key: 'business', label: 'Business profile', isComplete: sectionsCompleted.business },
