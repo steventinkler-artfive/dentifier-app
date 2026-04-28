@@ -55,8 +55,10 @@ export default function StatementPDF() {
         }
 
         // Set document title for print filename
-        const bizName = (s?.business_name || "Statement").replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "-").toUpperCase().substring(0, 20);
-        document.title = `Statement_${bizName}_${periodLabel.replace(/\s+/g, "_")}`;
+        const sanitize = (str) => (str || "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_");
+        const bizName = sanitize(s?.business_name || "Statement").toUpperCase();
+        const clientName = sanitize(cust?.business_name || cust?.name || "Client");
+        document.title = `Statement_${bizName}_${clientName}_${sanitize(periodLabel)}`;
       } catch (e) {
         console.error("StatementPDF load error:", e);
       } finally {
