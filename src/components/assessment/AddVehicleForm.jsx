@@ -56,22 +56,14 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
 
     setIsSaving(true);
     try {
-      const lineItems = validPanels.map(p => ({
-        description: `PDR Labour - ${p.panel}${p.notes ? `: ${p.notes}` : ""}`,
-        quantity: 1,
-        unit_price: defaultPanelPrice,
-        total_price: defaultPanelPrice,
-      }));
-
       const newVehicleData = {
-        registration: newVehicle.registration,
-        colour: newVehicle.colour,
-        notes: newVehicle.notes,
+        registration: newVehicle.registration || '',
+        colour: newVehicle.colour || '',
+        notes: newVehicle.notes || '',
         panels: validPanels,
-        damage_photos: [],
-        line_items: lineItems,
-        quote_amount: lineItems.reduce((sum, item) => sum + item.total_price, 0),
-        include_notes_in_quote: false
+        photo_urls: [],
+        line_items: [],
+        quote_amount: defaultPanelPrice * validPanels.length
       };
 
       onSave(newVehicleData);
@@ -106,7 +98,7 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
               value={newVehicle.registration}
               onChange={e => updateNewVehicle('registration', e.target.value.toUpperCase())}
               placeholder="e.g. KP24 XXX"
-              className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+              className="bg-[#f4c500] border-[#f4c500] text-slate-900 placeholder:text-slate-600 font-semibold"
             />
           </div>
 

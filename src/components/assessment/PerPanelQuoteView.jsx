@@ -594,6 +594,22 @@ export default function PerPanelQuoteView({
         </Card>
       )}
 
+      {/* Add Another Vehicle - only for multi-vehicle assessments */}
+      {assessment.is_multi_vehicle && (
+        <>
+          {!addingPanel && !addingLineItem && (
+            <Button
+              onClick={() => setAddingLineItem(null)}
+              className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold h-10"
+              variant="outline"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Another Vehicle
+            </Button>
+          )}
+        </>
+      )}
+
       {/* Assessment-level Add Line Item button */}
       {addingLineItem !== "assessment" && (
         <Button
