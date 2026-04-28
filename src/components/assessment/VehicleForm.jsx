@@ -101,9 +101,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
         const color = toTitleCase(dvlaData.colour);
         const model = dvlaData.model ? toTitleCase(dvlaData.model) : '';
 
-        // Add to dropdowns if not present, then update form
-        setVehicleMakes(prev => prev.includes(make) ? prev : [...prev, make].sort());
-        setVehicleColors(prev => prev.includes(color) ? prev : [...prev, color].sort());
+        // Update form data — makeOptions/colorOptions derived vars handle missing list entries
         console.log('DVLA make value:', make);
         console.log('vehicleMakes list at this point:', vehicleMakes);
         setFormData(prev => ({
