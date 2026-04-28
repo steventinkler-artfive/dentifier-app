@@ -18,10 +18,17 @@ import {
   Clock,
   ExternalLink,
   ArrowUpDown,
-  Loader2
+  Loader2,
+  Mail
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ReactDOM from "react-dom/client";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
+import { base44 } from "@/api/base44Client";
+import ClientStatementPDF from "@/components/reports/ClientStatementPDF";
+import EmailModal from "@/components/EmailModal";
 
 export default function Reports() {
   const [assessments, setAssessments] = useState([]);
@@ -51,7 +58,13 @@ export default function Reports() {
     currency: 'GBP'
   });
 
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
+
+  // Statement state
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailModalDefaults, setEmailModalDefaults] = useState({ to: "", subject: "", message: "" });
 
   useEffect(() => {
     loadData();
@@ -187,6 +200,171 @@ export default function Reports() {
   const calculateVAT = (amount) => {
     if (!stats.isVatRegistered) return 0;
     return (amount * stats.taxRate) / 100;
+  };
+
+  const getPeriodLabel = () => {
+    if (selectedMonth && selectedYear) {
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      return `${monthNames[parseInt(selectedMonth)]} ${selectedYear}`;
+    }
+    if (fromDate || toDate) {
+      const f = fromDate ? new Date(fromDate).toLocaleDateString("en-GB") : "Start";
+      const t = toDate ? new Date(toDate).toLocaleDateString("en-GB") : "Today";
+      return `${f} to ${t}`;
+    }
+    return "All dates";
+  };
+
+  const generateStatementPdfBase64 = async () => {
+    const selectedCustomer = customers[selectedCustomerId];
+    const periodLabel = getPeriodLabel();
+
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.top = "-9999px";
+    container.style.left = "-9999px";
+    container.style.zIndex = "-1";
+    container.style.width = "794px";
+    document.body.appendChild(container);
+
+    const root = ReactDOM.createRoot(container);
+    await new Promise((resolve) => {
+      root.render(
+        React.createElement(ClientStatementPDF, {
+          assessments: filteredAssessments,
+          customer: selectedCustomer,
+          userSettings,
+          periodLabel,
+          currency: stats.currency,
+        })
+      );
+      setTimeout(resolve, 600);
+    });
+
+    let pdfBase64 = null;
+    try {
+      const contentEl = container.firstChild;
+      const canvas = await html2canvas(contentEl, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF({ unit: "px", format: "a4", orientation: "portrait" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+      let yOffset = 0;
+      let remainingHeight = imgHeight;
+      let firstPage = true;
+      while (remainingHeight > 0) {
+        if (!firstPage) pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, -yOffset, imgWidth, imgHeight);
+        yOffset += pageHeight;
+        remainingHeight -= pageHeight;
+        firstPage = false;
+      }
+
+      pdfBase64 = pdf.output("datauristring").split(",")[1];
+    } finally {
+      root.unmount();
+      document.body.removeChild(container);
+    }
+    return pdfBase64;
+  };
+
+  const handlePDFStatement = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      const pdfBase64 = await generateStatementPdfBase64();
+      if (!pdfBase64) return;
+      const link = document.createElement("a");
+      link.href = `data:application/pdf;base64,${pdfBase64}`;
+      const customer = customers[selectedCustomerId];
+      const name = customer?.business_name || customer?.name || "client";
+      link.download = `Statement_${name.replace(/\s+/g, "_")}_${getPeriodLabel().replace(/\s+/g, "_")}.pdf`;
+      link.click();
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const handleEmailStatement = () => {
+    const customer = customers[selectedCustomerId];
+    const periodLabel = getPeriodLabel();
+    const bizName = userSettings?.business_name || "Dentifier PDR";
+    const replyTo = userSettings?.contact_email || "";
+    const sym = getCurrencySymbol(stats.currency);
+
+    const totalInvoiced = filteredAssessments.reduce((s, a) => s + (a.quote_amount || 0), 0);
+    const totalPaid = filteredAssessments.filter(a => a.payment_status === "paid").reduce((s, a) => s + (a.quote_amount || 0), 0);
+    const outstanding = totalInvoiced - totalPaid;
+
+    const subject = `Statement of Account — ${bizName} — ${periodLabel}`;
+
+    let message = `Hi ${customer?.business_name || customer?.name},\n\nPlease find attached your statement of account for the period: ${periodLabel}.\n\n`;
+    message += `INVOICES\n${"─".repeat(50)}\n`;
+    filteredAssessments.forEach((a) => {
+      const date = new Date(a.sent_date || a.created_date).toLocaleDateString("en-GB");
+      const invNo = a.invoice_number || a.quote_number || `#${a.id.slice(-6)}`;
+      const amt = `${sym}${(a.quote_amount || 0).toFixed(2)}`;
+      const status = a.payment_status === "paid" ? "Paid" : "Pending Payment";
+      message += `${date}  ${invNo}  ${amt}  ${status}\n`;
+    });
+    message += `\n${"─".repeat(50)}\n`;
+    message += `Total Invoiced:   ${sym}${totalInvoiced.toFixed(2)}\n`;
+    message += `Total Paid:       ${sym}${totalPaid.toFixed(2)}\n`;
+    message += `Outstanding:      ${sym}${outstanding.toFixed(2)}\n\n`;
+    message += `Best regards,\n${bizName}`;
+    if (replyTo) message += `\n${replyTo}`;
+
+    setEmailModalDefaults({ to: customer?.email || "", subject, message });
+    setEmailModalOpen(true);
+  };
+
+  const handleSendStatementEmail = async (to, cc, subject, message) => {
+    setIsSendingEmail(true);
+    try {
+      const pdfBase64 = await generateStatementPdfBase64();
+      if (!pdfBase64) return;
+
+      const customer = customers[selectedCustomerId];
+      const bizName = userSettings?.business_name || "Dentifier PDR";
+      const replyTo = userSettings?.contact_email || "";
+      const periodLabel = getPeriodLabel();
+      const filename = `Statement_${(customer?.business_name || customer?.name || "client").replace(/\s+/g, "_")}_${periodLabel.replace(/\s+/g, "_")}.pdf`;
+
+      const response = await base44.functions.invoke("sendQuoteInvoiceEmail", {
+        type: "quote",
+        to,
+        cc,
+        subject,
+        body: message,
+        customer_name: customer?.business_name || customer?.name,
+        business_name: bizName,
+        reply_to_email: replyTo,
+        pdf_base64: pdfBase64,
+        quote_number: `Statement-${periodLabel}`,
+        invoice_number: `Statement-${periodLabel}`,
+      });
+
+      if (response.data?.success) {
+        setEmailModalOpen(false);
+        alert(`Statement emailed to ${to}`);
+      } else {
+        alert(response.data?.error || "Failed to send email.");
+      }
+    } catch (error) {
+      console.error("Error sending statement email:", error);
+      alert("Failed to send email. Please try again.");
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const exportToCSV = () => {
@@ -478,6 +656,35 @@ export default function Reports() {
               </div>
             </div>
 
+            {/* Statement Buttons — only show when a specific client is selected */}
+            {selectedCustomerId !== "all" && (
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={handlePDFStatement}
+                  disabled={isGeneratingPDF || filteredAssessments.length === 0}
+                  style={{ backgroundColor: "#F2034D" }}
+                  className="text-white font-semibold hover:opacity-90"
+                >
+                  {isGeneratingPDF ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+                  ) : (
+                    <><FileText className="w-4 h-4 mr-2" />PDF Statement</>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleEmailStatement}
+                  disabled={isSendingEmail || filteredAssessments.length === 0 || !customers[selectedCustomerId]?.email}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                >
+                  {isSendingEmail ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</>
+                  ) : (
+                    <><Mail className="w-4 h-4 mr-2" />Email Statement</>
+                  )}
+                </Button>
+              </div>
+            )}
+
             {/* Export Button */}
             <Button 
               onClick={exportToCSV} 
@@ -598,6 +805,19 @@ export default function Reports() {
           })
         )}
       </div>
+
+      {/* Statement Email Modal */}
+      <EmailModal
+        isOpen={emailModalOpen}
+        onClose={() => setEmailModalOpen(false)}
+        initialTo={emailModalDefaults.to}
+        initialSubject={emailModalDefaults.subject}
+        initialMessage={emailModalDefaults.message}
+        onSend={handleSendStatementEmail}
+        isSending={isSendingEmail}
+        docType="quote"
+        contactEmail={userSettings?.contact_email}
+      />
     </div>
   );
 }
