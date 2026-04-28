@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        const logoUrl = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
+        const logoUrl = "https://dentifier.b-cdn.net/logo/dentifier-logo-strap-white2.svg";
         const dashboardUrl = "https://app.dentifierpro.com/dashboard";
         const supportEmail = "hello@dentifierpro.com";
         const companyWebsite = "dentifierpro.com";
