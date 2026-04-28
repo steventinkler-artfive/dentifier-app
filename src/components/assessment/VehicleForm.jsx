@@ -101,13 +101,9 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
         const color = toTitleCase(dvlaData.colour);
         const model = dvlaData.model ? toTitleCase(dvlaData.model) : '';
 
-        // Add to dropdowns if not present, then update form in the same render cycle
-        const newMakes = vehicleMakes.includes(make) ? vehicleMakes : [...vehicleMakes, make].sort();
-        const newColors = vehicleColors.includes(color) ? vehicleColors : [...vehicleColors, color].sort();
-        setVehicleMakes(newMakes);
-        setVehicleColors(newColors);
-
-        // Update form
+        // Add to dropdowns if not present, then update form
+        setVehicleMakes(prev => prev.includes(make) ? prev : [...prev, make].sort());
+        setVehicleColors(prev => prev.includes(color) ? prev : [...prev, color].sort());
         setFormData(prev => ({
           ...prev,
           make: make,
@@ -219,7 +215,10 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                   <SelectValue placeholder="Select make" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                  {vehicleMakes.map(make => (
+                  {(formData.make && !vehicleMakes.includes(formData.make)
+                    ? [...vehicleMakes, formData.make].sort()
+                    : vehicleMakes
+                  ).map(make => (
                     <SelectItem key={make} value={make} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
                       {make}
                     </SelectItem>
@@ -258,7 +257,10 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                 <SelectValue placeholder="Select colour" />
               </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                  {vehicleColors.map(color => (
+                  {(formData.color && !vehicleColors.includes(formData.color)
+                    ? [...vehicleColors, formData.color].sort()
+                    : vehicleColors
+                  ).map(color => (
                     <SelectItem key={color} value={color} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
                       {color}
                     </SelectItem>
