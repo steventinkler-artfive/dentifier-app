@@ -45,8 +45,8 @@ Deno.serve(async (req) => {
                         
                         <h2 style="color: #333; font-size: 20px; margin: 30px 0 15px 0;">Quick Start Guide:</h2>
                         <ul style="font-size: 15px; line-height: 1.8; padding-left: 20px;">
-                            <li style="margin-bottom: 8px;">✓ Complete your business profile in Settings</li>
-                            <li style="margin-bottom: 8px;">✓ Set up your pricing matrix</li>
+                            <li style="margin-bottom: 8px;">✓ Complete your business profile in settings</li>
+                            <li style="margin-bottom: 8px;">✓ Set up your pricing matrix in settings</li>
                             <li style="margin-bottom: 8px;">✓ Upload your logo (Professional tier)</li>
                             <li style="margin-bottom: 8px;">✓ Create your first quote</li>
                         </ul>
