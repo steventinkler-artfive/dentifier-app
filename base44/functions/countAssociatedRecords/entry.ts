@@ -16,24 +16,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'userEmail is required' }, { status: 400 });
     }
 
-    const [assessments, customers, vehicles, userSettings] = await Promise.all([
-      base44.asServiceRole.entities.Assessment.filter({ created_by: userEmail }),
-      base44.asServiceRole.entities.Customer.filter({ created_by: userEmail }),
-      base44.asServiceRole.entities.Vehicle.filter({ created_by: userEmail }),
-      base44.asServiceRole.entities.UserSetting.filter({ user_email: userEmail }),
-    ]);
+    // DIAGNOSTIC: fetch ALL assessments without any filter
+    const allAssessments = await base44.asServiceRole.entities.Assessment.list();
+    console.log('[DIAGNOSTIC] Total Assessment records returned by list():', allAssessments.length);
 
-    console.log('[countAssociatedRecords] assessments.length:', assessments.length);
-    console.log('[countAssociatedRecords] customers.length:', customers.length);
-    console.log('[countAssociatedRecords] vehicles.length:', vehicles.length);
-    console.log('[countAssociatedRecords] userSettings.length:', userSettings.length);
+    const matchingAssessments = allAssessments.filter(r => r.created_by === userEmail);
+    console.log('[DIAGNOSTIC] Assessments with created_by ===', userEmail, ':', matchingAssessments.length);
+
+    if (allAssessments.length > 0) {
+      console.log('[DIAGNOSTIC] Sample created_by values:', allAssessments.slice(0, 5).map(r => JSON.stringify(r.created_by)));
+    }
 
     return Response.json({
-      assessments: assessments.length,
-      customers: customers.length,
-      vehicles: vehicles.length,
-      userSettings: userSettings.length,
-      total: assessments.length + customers.length + vehicles.length + userSettings.length,
+      diagnostic: true,
+      totalAssessmentsInDB: allAssessments.length,
+      matchingAssessments: matchingAssessments.length,
+      userEmail,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
