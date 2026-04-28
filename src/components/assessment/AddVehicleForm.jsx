@@ -14,57 +14,12 @@ const CAR_PANELS = [
   "Roof", "A-Pillar", "B-Pillar", "C-Pillar", "Tailgate", "Other"
 ];
 
-const VEHICLE_MAKES = [
-  "Abarth", "AC", "Acura", "AK", "Alfa Romeo", "Allard", "Alpina", "Alpine", 
-  "Alvis", "Ariel", "Aston Martin", "Audi", "Austin", "BAC", "Banham", 
-  "Beauford", "Bentley", "BMW", "Bowler", "Bramwith", "Bugatti", "Buick", 
-  "BYD", "Cadillac", "Caterham", "CFMOTO", "Changan", "Chery", "Chesil", 
-  "Chevrolet", "Chrysler", "Citroen", "Corbin", "Corvette", "Cupra", "Dacia", 
-  "Daewoo", "Daihatsu", "Daimler", "Datsun", "David Brown", "Dax", "Dodge", 
-  "DS Automobiles", "E-COBRA", "Ferrari", "Fiat", "Fisker", "Ford", 
-  "Gardner Douglas", "GBS", "Genesis", "GMC", "Great Wall", "GWM", "Hillman", 
-  "Honda", "Humber", "Hummer", "Hyundai", "INEOS", "Infiniti", "ISO", "Isuzu", 
-  "Iveco", "JAECOO", "Jaguar", "JBA", "Jeep", "Jensen", "KGM", "Kia", 
-  "Koenigsegg", "KTM", "Lada", "Lagonda", "Lamborghini", "Lancia", 
-  "Land Rover", "LDV", "Leapmotor", "LEVC", "Lexus", "Leyland", "Lincoln", 
-  "Lister", "Locust", "London Taxis International", "Lotus", "Mahindra", 
-  "Maserati", "MAXUS", "Maybach", "Mazda", "McLaren", "Mercedes-Benz", "MEV", 
-  "MG", "Micro", "Mini", "Mitsubishi", "Mitsuoka", "MK", "MOKE", "Morgan", 
-  "Morris", "Nardini", "Nissan", "Noble", "Omoda", "Opel", "Pagani", 
-  "Panther", "Perodua", "Peugeot", "PGO", "Pilgrim", "Plymouth", "Polestar", 
-  "Pontiac", "Porsche", "Porsche Singer", "Proton", "Quantum", "Radical", 
-  "Ram", "RBW", "Reliant", "Renault", "Reva", "Rivian", "Robin Hood", 
-  "Rolls-Royce", "Rover", "RUF", "Saab", "Seat", "Shelby", "Skoda", 
-  "Skywell", "Smart", "SsangYong", "Standard", "Subaru", "Sunbeam", "Suzuki", 
-  "Tesla", "Tiger", "Tornado", "Toyota", "Triumph", "TVR", "Ultima", 
-  "Vauxhall", "Volkswagen", "Volvo", "VRS", "Westfield", "XPENG", "Zenos"
-].sort();
-
-const VEHICLE_COLORS = [
-  "Beige", "Black", "Blue", "Brown", "Bronze", "Burgundy", "Charcoal", "Cream",
-  "Gold", "Grey", "Green", "Maroon", "Navy", "Orange", "Pink", "Purple", 
-  "Red", "Silver", "Tan", "Turquoise", "White", "Yellow"
-].sort();
-
-const generateYears = () => {
-  const currentYear = new Date().getFullYear();
-  const years = [];
-  for (let year = currentYear + 1; year >= 1950; year--) {
-    years.push(year);
-  }
-  return years;
-};
-
-const VEHICLE_YEARS = generateYears();
-
 const createEmptyPanel = () => ({ panel: '', notes: '' });
 
 export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPanelPrice = 60 }) {
   const [newVehicle, setNewVehicle] = useState({
-    make: '',
-    year: new Date().getFullYear(),
-    colour: '',
     registration: '',
+    colour: '',
     notes: '',
     panels: [createEmptyPanel()]
   });
@@ -99,19 +54,12 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
       return;
     }
 
-    if (!newVehicle.make || !newVehicle.year || !newVehicle.colour) {
-      setError('Make, year, and colour are required.');
-      return;
-    }
-
     setIsSaving(true);
     try {
       const createdVehicle = await base44.entities.Vehicle.create({
         customer_id: customerId,
-        make: newVehicle.make,
-        year: newVehicle.year,
+        registration: newVehicle.registration,
         color: newVehicle.colour,
-        license_plate: newVehicle.registration,
       });
 
       const lineItems = newVehicle.panels.map(p => ({
@@ -159,66 +107,6 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-white text-sm">Make *</Label>
-            <select
-              value={newVehicle.make}
-              onChange={e => updateNewVehicle('make', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                backgroundColor: '#1e293b',
-                border: '1px solid #475569',
-                borderRadius: '6px',
-                color: newVehicle.make ? 'white' : '#94a3b8',
-                fontSize: '14px'
-              }}
-            >
-              <option value="" disabled>Select make</option>
-              {VEHICLE_MAKES.map(make => (
-                <option key={make} value={make}>{make}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-white text-sm">Year *</Label>
-            <Select
-              value={newVehicle.year.toString()}
-              onValueChange={v => updateNewVehicle('year', parseInt(v))}
-            >
-              <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                {VEHICLE_YEARS.map(year => (
-                  <SelectItem key={year} value={year.toString()} className="text-white hover:!bg-slate-700">
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-white text-sm">Colour *</Label>
-            <Select
-              value={newVehicle.colour}
-              onValueChange={v => updateNewVehicle('colour', v)}
-            >
-              <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                {VEHICLE_COLORS.map(color => (
-                  <SelectItem key={color} value={color} className="text-white hover:!bg-slate-700">
-                    {color}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
             <Label className="text-white text-sm">Reg</Label>
             <Input
               value={newVehicle.registration}
@@ -229,11 +117,21 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
           </div>
 
           <div className="space-y-1.5">
+            <Label className="text-white text-sm">Colour</Label>
+            <Input
+              value={newVehicle.colour}
+              onChange={e => updateNewVehicle('colour', e.target.value)}
+              placeholder="e.g. Silver, White, Black"
+              className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label className="text-white text-sm">Notes</Label>
             <Input
               value={newVehicle.notes}
               onChange={e => updateNewVehicle('notes', e.target.value)}
-              placeholder="e.g. nearside rear door, light crease"
+              placeholder="e.g. Silver Astra — nearside rear door, light crease"
               className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
             />
           </div>
@@ -306,7 +204,7 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
 
         <Button
           onClick={handleSave}
-          disabled={isSaving || newVehicle.panels.filter(p => p.panel).length === 0 || !newVehicle.make || !newVehicle.colour}
+          disabled={isSaving || newVehicle.panels.filter(p => p.panel).length === 0}
           className="w-full pink-gradient text-white font-semibold h-10"
         >
           {isSaving ? (
