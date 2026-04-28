@@ -94,6 +94,7 @@ Deno.serve(async (req) => {
       from: 'quotes@dentifierpro.com',
       to: [to],
       cc: cc ? cc.split(',').map(e => e.trim()).filter(Boolean) : undefined,
+      bcc: reply_to_email ? [reply_to_email] : undefined,
       reply_to: reply_to_email || undefined,
       subject,
       text: body,
