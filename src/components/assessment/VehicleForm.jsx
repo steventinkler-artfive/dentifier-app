@@ -157,13 +157,15 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
 
   const canSubmit = formData.make && formData.year && formData.color;
 
-  const makeOptions = formData.make && !vehicleMakes.includes(formData.make)
+  const allMakes = formData.make && !vehicleMakes.includes(formData.make)
     ? [...vehicleMakes, formData.make]
     : vehicleMakes;
+  const makeOptions = allMakes.length > 0 ? allMakes : (formData.make ? [formData.make] : []);
 
-  const colorOptions = formData.color && !vehicleColors.includes(formData.color)
+  const allColors = formData.color && !vehicleColors.includes(formData.color)
     ? [...vehicleColors, formData.color]
     : vehicleColors;
+  const colorOptions = allColors.length > 0 ? allColors : (formData.color ? [formData.color] : []);
 
   return (
     <Card className="bg-slate-800 border-slate-700">
