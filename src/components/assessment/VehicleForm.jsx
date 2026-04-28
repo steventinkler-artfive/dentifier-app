@@ -217,21 +217,24 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-white">Make *</Label>
-              <Select 
-                value={formData.make} 
-                onValueChange={(value) => handleInputChange('make', value)}
+              <select
+                value={formData.make || ''}
+                onChange={(e) => handleInputChange('make', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  backgroundColor: '#334155',
+                  border: '1px solid #475569',
+                  borderRadius: '6px',
+                  color: formData.make ? 'white' : '#94a3b8',
+                  fontSize: '14px'
+                }}
               >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue placeholder="Select make" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                  {makeOptions.map(make => (
-                    <SelectItem key={make} value={make} className="text-white hover:!bg-slate-700 focus:bg-slate-700">
-                      {make}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="" disabled>Select make</option>
+                {makeOptions.map(make => (
+                  <option key={make} value={make}>{make}</option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">
