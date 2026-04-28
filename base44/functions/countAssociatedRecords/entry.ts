@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     }
 
     const { userEmail } = await req.json();
+    console.log('[countAssociatedRecords] received userEmail:', userEmail);
 
     if (!userEmail) {
       return Response.json({ error: 'userEmail is required' }, { status: 400 });
