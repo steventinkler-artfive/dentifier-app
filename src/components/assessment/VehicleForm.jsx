@@ -101,13 +101,11 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
         const color = toTitleCase(dvlaData.colour);
         const model = dvlaData.model ? toTitleCase(dvlaData.model) : '';
 
-        // Add to dropdowns if not present
-        if (!vehicleMakes.includes(make)) {
-          setVehicleMakes(prev => [...prev, make].sort());
-        }
-        if (!vehicleColors.includes(color)) {
-          setVehicleColors(prev => [...prev, color].sort());
-        }
+        // Add to dropdowns if not present, then update form in the same render cycle
+        const newMakes = vehicleMakes.includes(make) ? vehicleMakes : [...vehicleMakes, make].sort();
+        const newColors = vehicleColors.includes(color) ? vehicleColors : [...vehicleColors, color].sort();
+        setVehicleMakes(newMakes);
+        setVehicleColors(newColors);
 
         // Update form
         setFormData(prev => ({
