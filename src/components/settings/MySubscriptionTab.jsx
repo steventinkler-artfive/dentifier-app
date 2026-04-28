@@ -31,8 +31,8 @@ const PROFESSIONAL_FEATURES = [
   "Remove Dentifier branding from all customer-facing documents",
   "Advanced reports (filter by client, date range, payment status, view trends)",
   "CSV export for accounting software",
-  "Save custom line items for quick re-use",
-  "Priority email support",
+  "Save custom line items - coming soon",
+  "Email support",
   "Early access to new features",
 ];
 
