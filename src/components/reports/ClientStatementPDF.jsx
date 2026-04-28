@@ -75,17 +75,17 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
 
       <table style={{ width: "100%", marginBottom: "24px", borderCollapse: "collapse", tableLayout: "fixed" }}>
         <colgroup>
-          <col style={{ width: "25%" }} />
-          <col style={{ width: "25%" }} />
+          <col style={{ width: "20%" }} />
+          <col style={{ width: "30%" }} />
           <col style={{ width: "25%" }} />
           <col style={{ width: "25%" }} />
         </colgroup>
         <thead>
           <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-            <th style={{ textAlign: "left", fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Date</th>
-            <th style={{ textAlign: "left", fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Invoice No.</th>
-            <th style={{ textAlign: "right", fontWeight: "600", color: "#4b5563", padding: "8px 0", paddingRight: "16px", fontSize: "14px" }}>Amount</th>
-            <th style={{ textAlign: "left", fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Status</th>
+            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Date</th>
+            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px" }}>Invoice No.</th>
+            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "right" }}>Amount</th>
+            <th style={{ fontWeight: "600", color: "#4b5563", padding: "8px 0", fontSize: "14px", textAlign: "right" }}>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -97,8 +97,8 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
               <tr key={a.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
                 <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>{date}</td>
                 <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>{invNo}</td>
-                <td style={{ padding: "16px 0", paddingRight: "16px", textAlign: "right", fontWeight: "500", color: "#1f2937" }}>{fmt(a.quote_amount || 0)}</td>
-                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>
+                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937", textAlign: "right" }}>{fmt(a.quote_amount || 0)}</td>
+                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937", textAlign: "right" }}>
                   {isPaid ? "Paid" : "Pending Payment"}
                 </td>
               </tr>
