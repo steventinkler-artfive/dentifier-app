@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import QuoteTab from "@/components/assessment/QuoteTab";
+import AddVehicleForm from "@/components/assessment/AddVehicleForm";
 import ReactDOM from "react-dom/client";
 import EmailModal from "@/components/EmailModal";
 import html2canvas from "html2canvas";
@@ -101,6 +102,7 @@ export default function AssessmentDetail() {
   const [detailsTab, setDetailsTab] = useState("analysis");
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
 
   const openImageViewer = (index) => {
     setSelectedImageIndex(index);
@@ -392,6 +394,27 @@ export default function AssessmentDetail() {
     } catch (error) {
       console.error('Error saving details:', error);
       alert('Failed to save details');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleAddNewVehicle = async (newVehicleData) => {
+    if (!assessment) return;
+    setIsUpdating(true);
+    try {
+      const updatedVehicles = [...(assessment.vehicles || []), newVehicleData];
+      const newQuoteAmount = updatedVehicles.reduce((sum, v) => sum + (v.quote_amount || 0), 0) + 
+        ((assessment.line_items || []).reduce((sum, i) => sum + (i.total_price || 0), 0));
+      await base44.entities.Assessment.update(assessment.id, {
+        vehicles: updatedVehicles,
+        quote_amount: newQuoteAmount
+      });
+      await loadAssessmentDetails();
+      setShowAddVehicleForm(false);
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      alert('Failed to add vehicle');
     } finally {
       setIsUpdating(false);
     }
@@ -1164,6 +1187,25 @@ export default function AssessmentDetail() {
             isUpdating={isUpdating}
             userSettings={userSettings}
           />
+
+          {/* Add Another Vehicle - only for per-panel assessments */}
+          {showAddVehicleForm ? (
+            <AddVehicleForm
+              customerId={assessment.customer_id}
+              onSave={handleAddNewVehicle}
+              onCancel={() => setShowAddVehicleForm(false)}
+              defaultPanelPrice={userSettings?.default_panel_price || assessment.job_panel_price || 60}
+            />
+          ) : (
+            <Button
+              onClick={() => setShowAddVehicleForm(true)}
+              className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold h-10"
+              variant="outline"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Another Vehicle
+            </Button>
+          )}
 
           {/* Action buttons */}
           <div className="space-y-3">
