@@ -56,13 +56,7 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
 
     setIsSaving(true);
     try {
-      const createdVehicle = await base44.entities.Vehicle.create({
-        customer_id: customerId,
-        registration: newVehicle.registration,
-        color: newVehicle.colour,
-      });
-
-      const lineItems = newVehicle.panels.map(p => ({
+      const lineItems = validPanels.map(p => ({
         description: `PDR Labour - ${p.panel}${p.notes ? `: ${p.notes}` : ""}`,
         quantity: 1,
         unit_price: defaultPanelPrice,
@@ -70,10 +64,10 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
       }));
 
       const newVehicleData = {
-        vehicle_id: createdVehicle.id,
         registration: newVehicle.registration,
         colour: newVehicle.colour,
         notes: newVehicle.notes,
+        panels: validPanels,
         damage_photos: [],
         line_items: lineItems,
         quote_amount: lineItems.reduce((sum, item) => sum + item.total_price, 0),

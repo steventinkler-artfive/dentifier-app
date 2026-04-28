@@ -404,8 +404,10 @@ export default function AssessmentDetail() {
     setIsUpdating(true);
     try {
       const updatedVehicles = [...(assessment.vehicles || []), newVehicleData];
-      const newQuoteAmount = updatedVehicles.reduce((sum, v) => sum + (v.quote_amount || 0), 0) + 
-        ((assessment.line_items || []).reduce((sum, i) => sum + (i.total_price || 0), 0));
+      const vehiclesTotal = updatedVehicles.reduce((sum, v) => sum + (v.quote_amount || 0), 0);
+      const assessmentLevelTotal = (assessment.line_items || []).reduce((sum, i) => sum + (i.total_price || 0), 0);
+      const newQuoteAmount = vehiclesTotal + assessmentLevelTotal;
+      
       await base44.entities.Assessment.update(assessment.id, {
         vehicles: updatedVehicles,
         quote_amount: newQuoteAmount
