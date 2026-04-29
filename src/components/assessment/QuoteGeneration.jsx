@@ -43,13 +43,13 @@ function calculateRepairMethodMultiplier(damageItem) {
       return needsToolFinishing ? 1.35 : 1.1;
       
     case "Glue Pull Only":
-      return 1.0;
+      return 1.20;
 
     case "Glue Pull + Rod Finish":
-      return 1.0;
+      return 1.15;
       
     case "Unsure":
-      return 1.0;
+      return 1.10;
       
     default:
       return 1.1;
