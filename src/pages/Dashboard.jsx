@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import {
   Camera,
   FileText,
-  Receipt,
+  ClipboardList,
   TrendingUp,
   Clock,
   Coins,
@@ -327,7 +327,7 @@ export default function Dashboard() {
           <Link to={createPageUrl("Invoices")}>
             <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 h-full">
               <CardContent className="p-4 text-center">
-                <Receipt className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                <ClipboardList className="w-8 h-8 text-green-500 mx-auto mb-2" />
                 <p className="text-white font-medium">Invoices</p>
                 <p className="text-slate-400 text-xs">View invoices</p>
               </CardContent>
