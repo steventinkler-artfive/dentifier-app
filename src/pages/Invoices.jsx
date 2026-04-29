@@ -188,7 +188,7 @@ export default function Invoices() {
               <Card
                 key={assessment.id}
                 className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 cursor-pointer"
-                onClick={() => navigate(createPageUrl(`AssessmentDetail?id=${assessment.id}`))}
+                onClick={() => navigate(createPageUrl(`AssessmentDetail?id=${assessment.id}&from=invoices`))}
               >
                 <CardContent className="p-4 space-y-2">
                   {/* Line 1 — Reference + Badge */}

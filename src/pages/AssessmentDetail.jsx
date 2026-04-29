@@ -73,6 +73,8 @@ export default function AssessmentDetail() {
   const [searchParams] = useSearchParams();
   const assessmentId = searchParams.get('id');
   const vehicleIndex = searchParams.get('vehicle');
+  const fromPage = searchParams.get('from') || 'quotes';
+  const backUrl = createPageUrl(fromPage === 'invoices' ? 'Invoices' : 'Quotes');
   const navigate = useNavigate();
   const { showAlert, showConfirm } = useAlert();
   
@@ -307,7 +309,7 @@ export default function AssessmentDetail() {
     setIsDeleting(true);
     try {
       await base44.entities.Assessment.delete(assessment.id);
-      navigate(createPageUrl("Quotes"));
+      navigate(backUrl);
     } catch (error) {
       console.error('Error deleting assessment:', error);
       alert('Failed to delete assessment');
@@ -857,10 +859,10 @@ export default function AssessmentDetail() {
             <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">Assessment Not Found</h3>
             <p className="text-slate-400 mb-4">The assessment you're looking for doesn't exist.</p>
-            <Link to={createPageUrl("Quotes")}>
+            <Link to={backUrl}>
               <Button className="bg-rose-600 hover:bg-rose-700 text-white">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Quotes
+                {fromPage === 'invoices' ? 'Back to Invoices' : 'Back to Quotes'}
               </Button>
             </Link>
           </CardContent>
@@ -896,7 +898,7 @@ export default function AssessmentDetail() {
     <div className="p-4 max-w-md mx-auto pb-20">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <Link to={createPageUrl("Quotes")}>
+        <Link to={backUrl}>
           <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-800">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
