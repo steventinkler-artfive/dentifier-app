@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Assessment, Customer, Vehicle } from "@/entities/all";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,11 @@ import {
   Calendar,
   Car,
   ArrowRight,
-  Loader2
+  Loader2,
+  TrendingUp
 } from "lucide-react";
 
-export default function Quotes() {
+export default function Invoices() {
   const [assessments, setAssessments] = useState([]);
   const [customers, setCustomers] = useState({});
   const [vehicles, setVehicles] = useState({});
@@ -24,14 +25,14 @@ export default function Quotes() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadQuotes();
+    loadInvoices();
   }, []);
 
-  const loadQuotes = async () => {
+  const loadInvoices = async () => {
     try {
       const user = await base44.auth.me();
       const [assessmentData, customerData, vehicleData] = await Promise.all([
-        Assessment.filter({ created_by: user.email }, '-created_date'),
+        Assessment.filter({ created_by: user.email, status: 'completed' }, '-created_date'),
         Customer.filter({ created_by: user.email }),
         Vehicle.filter({ created_by: user.email })
       ]);
@@ -45,27 +46,23 @@ export default function Quotes() {
       setVehicles(vehicleLookup);
 
     } catch (error) {
-      console.error('Error loading quotes:', error);
+      console.error('Error loading invoices:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Quotes only show non-completed statuses
-  const quoteAssessments = assessments.filter(a => a.status !== 'completed');
-
-  const filteredAssessments = quoteAssessments.filter((assessment) => {
+  const filteredAssessments = assessments.filter((assessment) => {
     if (filter === 'all') return true;
-    return assessment.status === filter;
+    if (filter === 'paid') return assessment.payment_status === 'paid';
+    if (filter === 'unpaid') return assessment.payment_status === 'pending';
+    return true;
   });
 
   const filterOptions = [
-    { value: 'all',      label: 'All',      count: quoteAssessments.length },
-    { value: 'draft',    label: 'Draft',    count: quoteAssessments.filter(a => a.status === 'draft').length },
-    { value: 'ready',    label: 'Ready',    count: quoteAssessments.filter(a => a.status === 'ready').length },
-    { value: 'sent',     label: 'Sent',     count: quoteAssessments.filter(a => a.status === 'sent').length },
-    { value: 'approved', label: 'Approved', count: quoteAssessments.filter(a => a.status === 'approved').length },
-    { value: 'declined', label: 'Declined', count: quoteAssessments.filter(a => a.status === 'declined').length },
+    { value: 'all',    label: 'All',    count: assessments.length },
+    { value: 'paid',   label: 'Paid',   count: assessments.filter(a => a.payment_status === 'paid').length },
+    { value: 'unpaid', label: 'Unpaid', count: assessments.filter(a => a.payment_status === 'pending').length },
   ];
 
   const getCurrencySymbol = (currency) => {
@@ -79,50 +76,26 @@ export default function Quotes() {
   };
 
   const getDisplayReference = (assessment) => {
-    if (assessment.status === 'completed') {
-      if (assessment.invoice_number) return { label: `Invoice: ${assessment.invoice_number}`, isInvoice: true };
-      if (assessment.quote_number)   return { label: `Quote: ${assessment.quote_number}`, isInvoice: false };
-      return { label: `Ref: #${assessment.id.slice(-6)}`, isInvoice: false };
-    }
-    if (assessment.quote_number) return { label: `Quote: ${assessment.quote_number}`, isInvoice: false };
-    return { label: `Ref: #${assessment.id.slice(-6)}`, isInvoice: false };
+    if (assessment.invoice_number) return assessment.invoice_number;
+    if (assessment.quote_number) return assessment.quote_number;
+    return `#${assessment.id.slice(-6)}`;
   };
 
   const getBadge = (assessment) => {
-    if (assessment.status === 'completed' && assessment.payment_status === 'paid') {
+    if (assessment.payment_status === 'paid') {
       return { label: 'Paid', className: 'bg-green-600 text-white' };
     }
-    switch (assessment.status) {
-      case 'draft':     return { label: 'Draft',     className: 'bg-slate-600 text-slate-200' };
-      case 'ready':     return { label: 'Ready',     className: 'bg-blue-600 text-white' };
-      case 'sent':      return { label: 'Sent',      className: 'bg-teal-600 text-white' };
-      case 'approved':  return { label: 'Approved',  className: 'bg-green-600 text-white' };
-      case 'completed': return { label: 'Completed', className: 'bg-purple-600 text-white' };
-      case 'declined':  return { label: 'Declined',  className: 'bg-red-600 text-white' };
-      default:          return { label: assessment.status, className: 'bg-slate-600 text-slate-200' };
-    }
+    return { label: 'Unpaid', className: 'bg-orange-600 text-white' };
   };
 
   const getBottomLine = (assessment) => {
-    const { status, payment_status, sent_date } = assessment;
-    const { isInvoice } = getDisplayReference(assessment);
-    const docLabel = isInvoice ? 'INVOICE' : 'QUOTE';
+    const { sent_date } = assessment;
     const formatDate = (d) => new Date(d).toLocaleDateString('en-GB');
-
-    if (status === 'draft') return null;
-    if (status === 'ready') return 'Ready to send';
-    if (status === 'sent') {
-      return sent_date ? `${docLabel} sent ${formatDate(sent_date)}` : `${docLabel} sent`;
-    }
-    if (['approved', 'completed'].includes(status) || payment_status === 'paid') {
-      if (sent_date) return `${docLabel} sent ${formatDate(sent_date)}`;
-      return 'Not yet marked as sent';
-    }
-    return null;
+    if (sent_date) return `INVOICE sent ${formatDate(sent_date)}`;
+    return 'Not yet marked as sent';
   };
 
   const getVehicleDisplay = (assessment) => {
-    // Per-panel quotes: have assessment.vehicles but no vehicle_id (single or multi)
     if (!assessment.vehicle_id && assessment.vehicles && assessment.vehicles.length > 0) {
       return { isMulti: true, count: assessment.vehicles.length, isPerPanel: true };
     }
@@ -149,9 +122,15 @@ export default function Quotes() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Quotes</h1>
-          <p className="text-slate-400 text-sm">{filteredAssessments.length} quote{filteredAssessments.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-2xl font-bold text-white">Invoices</h1>
+          <p className="text-slate-400 text-sm">{filteredAssessments.length} invoice{filteredAssessments.length !== 1 ? 's' : ''}</p>
         </div>
+        <Link to={createPageUrl("Reports")}>
+          <Button variant="outline" size="sm" className="bg-slate-900 border-slate-700 text-white hover:bg-slate-800">
+            <TrendingUp className="w-4 h-4 mr-1.5" />
+            Reports
+          </Button>
+        </Link>
       </div>
 
       {/* Filter Tabs */}
@@ -178,17 +157,17 @@ export default function Quotes() {
         ))}
       </div>
 
-      {/* Quotes List */}
+      {/* Invoices List */}
       <div className="space-y-3">
         {filteredAssessments.length === 0 ? (
           <Card className="bg-slate-900 border-slate-800">
             <CardContent className="p-8 text-center">
               <FileText className="w-16 h-16 text-slate-700 mx-auto mb-4" />
               <p className="text-slate-400 mb-2">
-                {quoteAssessments.length === 0 ? 'No quotes yet' : 'No quotes found for this filter'}
+                {assessments.length === 0 ? 'No invoices yet' : 'No invoices found for this filter'}
               </p>
-              <p className="text-slate-500 text-sm mb-4">
-                {quoteAssessments.length === 0 ? 'Create an assessment to see quotes here' : 'Try selecting a different filter'}
+              <p className="text-slate-500 text-sm">
+                {assessments.length === 0 ? 'Completed jobs will appear here' : 'Try selecting a different filter'}
               </p>
             </CardContent>
           </Card>
@@ -214,7 +193,7 @@ export default function Quotes() {
                 <CardContent className="p-4 space-y-2">
                   {/* Line 1 — Reference + Badge */}
                   <div className="flex items-center justify-between">
-                    <span className="text-white font-bold text-lg leading-tight">{ref.label}</span>
+                    <span className="text-white font-bold text-lg leading-tight">Invoice: {ref}</span>
                     <Badge className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${badge.className}`}>
                       {badge.label}
                     </Badge>

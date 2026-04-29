@@ -4,14 +4,13 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Camera,
-  Users,
   FileText,
+  Receipt,
   TrendingUp,
   Clock,
   Coins,
-  Plus,
-  ArrowRight } from
-"lucide-react";
+  Users,
+  ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -315,12 +314,32 @@ export default function Dashboard() {
             </Card>
           </Link>
 
-          <Link to={createPageUrl("Customers")}>
+          <Link to={createPageUrl("Quotes")}>
             <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 h-full">
               <CardContent className="p-4 text-center">
-                <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="text-white font-medium">Customers</p>
-                <p className="text-slate-400 text-xs">Manage customers</p>
+                <FileText className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                <p className="text-white font-medium">Quotes</p>
+                <p className="text-slate-400 text-xs">View quotes</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to={createPageUrl("Invoices")}>
+            <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 h-full">
+              <CardContent className="p-4 text-center">
+                <Receipt className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                <p className="text-white font-medium">Invoices</p>
+                <p className="text-slate-400 text-xs">View invoices</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to={createPageUrl("Reports")}>
+            <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800/60 transition-colors duration-200 h-full">
+              <CardContent className="p-4 text-center">
+                <TrendingUp className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <p className="text-white font-medium">Reports</p>
+                <p className="text-slate-400 text-xs">View reports</p>
               </CardContent>
             </Card>
           </Link>
