@@ -7,10 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Loader2, Zap } from "lucide-react";
 import { createStripeCheckoutSession } from "@/functions/createStripeCheckoutSession";
+import TermsAcceptanceModal from "@/components/ui/TermsAcceptanceModal";
 
 export default function Subscription() {
   const [loading, setLoading] = useState({ starter: false, professional: false });
   const [currentUser, setCurrentUser] = useState(null);
+  const [userSettings, setUserSettings] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,6 +25,9 @@ export default function Subscription() {
         if (user?.is_beta_tester || user?.data?.is_beta_tester) {
           navigate(createPageUrl('Dashboard'), { replace: true });
         }
+        // Load UserSetting so the modal can update it
+        const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+        if (settings.length > 0) setUserSettings(settings[0]);
       } catch (error) {
         console.error("Failed to load user:", error);
       }
@@ -29,30 +36,32 @@ export default function Subscription() {
   }, []);
 
   const handleSubscribe = async (plan) => {
-    setLoading({ ...loading, [plan]: true });
-    try {
-      const isAuthenticated = await base44.auth.isAuthenticated();
-      if (!isAuthenticated) {
-        base44.auth.redirectToLogin(createPageUrl('SubscriptionSuccess'));
-        return;
-      }
+    const isAuthenticated = await base44.auth.isAuthenticated();
+    if (!isAuthenticated) {
+      base44.auth.redirectToLogin(createPageUrl('Subscription'));
+      return;
+    }
+    // Open the T&C modal — Stripe checkout only fires after acceptance
+    setPendingPlan(plan);
+    setModalOpen(true);
+  };
 
+  const proceedToStripe = async (plan) => {
+    setLoading(prev => ({ ...prev, [plan]: true }));
+    try {
       const response = await createStripeCheckoutSession({ tier: plan });
-      
       if (response.data.checkout_url) {
-        // Store pending subscription so we can redirect to SubscriptionSuccess after login
         localStorage.setItem('pending_subscription', plan);
-        // Also store selected tier so success page can display it correctly before webhook fires
         localStorage.setItem('selected_plan_tier', plan);
         window.location.href = response.data.checkout_url;
       } else {
         alert('Failed to create checkout session');
-        setLoading({ ...loading, [plan]: false });
+        setLoading(prev => ({ ...prev, [plan]: false }));
       }
     } catch (error) {
       console.error('Error creating checkout:', error);
       alert('Failed to start checkout. Please try again.');
-      setLoading({ ...loading, [plan]: false });
+      setLoading(prev => ({ ...prev, [plan]: false }));
     }
   };
 
@@ -218,6 +227,15 @@ export default function Subscription() {
           </p>
         </div>
       </div>
+
+      <TermsAcceptanceModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onAccepted={proceedToStripe}
+        selectedPlan={pendingPlan}
+        currentUser={currentUser}
+        userSettings={userSettings}
+      />
     </div>
   );
 }

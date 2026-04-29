@@ -1,0 +1,313 @@
+{
+  "name": "UserSetting",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "The email of the user these settings belong to."
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has completed the onboarding wizard"
+    },
+    "sections_completed": {
+      "type": "object",
+      "description": "Tracks which onboarding sections are complete",
+      "properties": {
+        "business": {
+          "type": "boolean",
+          "default": false
+        },
+        "banking": {
+          "type": "boolean",
+          "default": false
+        },
+        "pricing": {
+          "type": "boolean",
+          "default": false
+        },
+        "skills": {
+          "type": "boolean",
+          "default": false
+        },
+        "branding": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "banking_banner_dismissed_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when banking banner was dismissed (reappears after 3 days)"
+    },
+    "business_name": {
+      "type": "string",
+      "description": "The name of the user's business."
+    },
+    "business_address": {
+      "type": "string",
+      "format": "text",
+      "description": "The physical or mailing address of the business."
+    },
+    "contact_email": {
+      "type": "string",
+      "format": "email",
+      "description": "The public contact email for the business."
+    },
+    "business_logo_url": {
+      "type": "string",
+      "description": "URL of the uploaded business logo."
+    },
+    "bank_account_name": {
+      "type": "string",
+      "description": "Name on the bank account for invoices"
+    },
+    "bank_account_number": {
+      "type": "string",
+      "description": "Bank account number"
+    },
+    "bank_sort_code": {
+      "type": "string",
+      "description": "Bank sort code or routing number"
+    },
+    "bank_iban": {
+      "type": "string",
+      "description": "International Bank Account Number (optional)"
+    },
+    "bank_swift_code": {
+      "type": "string",
+      "description": "SWIFT/BIC code for international payments (optional)"
+    },
+    "payment_provider": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Stripe",
+        "Square",
+        "PayPal"
+      ],
+      "default": "None",
+      "description": "The payment provider the technician uses"
+    },
+    "payment_method_preference": {
+      "type": "string",
+      "enum": [
+        "Bank Transfer Only",
+        "Payment Links Only",
+        "Both"
+      ],
+      "default": "Bank Transfer Only",
+      "description": "How customers should pay invoices"
+    },
+    "stripe_secret_key": {
+      "type": "string",
+      "description": "Technician's Stripe secret API key"
+    },
+    "square_access_token": {
+      "type": "string",
+      "description": "Technician's Square access token"
+    },
+    "paypal_client_id": {
+      "type": "string",
+      "description": "Technician's PayPal client ID"
+    },
+    "paypal_client_secret": {
+      "type": "string",
+      "description": "Technician's PayPal client secret"
+    },
+    "dvla_test_api_key": {
+      "type": "string",
+      "description": "DVLA Vehicle Enquiry Service Test API Key"
+    },
+    "dvla_prod_api_key": {
+      "type": "string",
+      "description": "DVLA Vehicle Enquiry Service Production API Key"
+    },
+    "dvla_use_test_environment": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to use DVLA test environment (true) or production (false)"
+    },
+    "hourly_rate": {
+      "type": "number",
+      "description": "User's hourly rate for PDR work."
+    },
+    "base_cost": {
+      "type": "number",
+      "description": "Default base cost or call-out fee."
+    },
+    "default_panel_price": {
+      "type": "number",
+      "description": "Default price per panel for simplified pricing.",
+      "default": 120
+    },
+    "pricing_matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "damage_type": {
+            "type": "string"
+          },
+          "size_range": {
+            "type": "string"
+          },
+          "base_price": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "damage_type",
+          "size_range",
+          "base_price"
+        ]
+      },
+      "description": "Pricing matrix for different damage type and size combinations"
+    },
+    "custom_damage_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "User-defined custom damage types beyond Standard Dent and Crease"
+    },
+    "custom_size_ranges": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "User-defined custom size ranges beyond the standard options"
+    },
+    "is_vat_registered": {
+      "type": "boolean",
+      "description": "Is the user registered for VAT/tax."
+    },
+    "tax_rate": {
+      "type": "number",
+      "description": "The VAT/tax rate as a percentage (e.g., 20 for 20%)."
+    },
+    "currency": {
+      "type": "string",
+      "enum": [
+        "GBP",
+        "USD",
+        "EUR",
+        "CAD",
+        "AUD"
+      ],
+      "default": "GBP"
+    },
+    "years_experience": {
+      "type": "number"
+    },
+    "available_pdr_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "A list of PDR tools the technician uses."
+    },
+    "specialized_damage_skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Technician's skill level for different damage types."
+    },
+    "works_on_aluminum_panels": {
+      "type": "boolean",
+      "default": false
+    },
+    "primary_vehicle_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Vehicle types the technician primarily works on."
+    },
+    "max_supported_dent_size": {
+      "type": "string",
+      "enum": [
+        "up to 10mm",
+        "up to 25mm",
+        "up to 50mm",
+        "up to 80mm",
+        "up to 120mm",
+        "up to 200mm",
+        "up to 300mm",
+        "up to 500mm",
+        "up to 750mm",
+        "up to 1000mm",
+        "all sizes"
+      ],
+      "default": "all sizes",
+      "description": "Maximum dent size the technician is comfortable working on"
+    },
+    "quote_prefix": {
+      "type": "string",
+      "default": "Q-",
+      "description": "Prefix for quote numbers"
+    },
+    "next_quote_number": {
+      "type": "integer",
+      "default": 1,
+      "description": "The next sequential number to use for quotes"
+    },
+    "invoice_prefix": {
+      "type": "string",
+      "default": "INV-",
+      "description": "Prefix for invoice numbers"
+    },
+    "next_invoice_number": {
+      "type": "integer",
+      "default": 1,
+      "description": "The next sequential number to use for invoices"
+    },
+    "invoice_footer": {
+      "type": "string",
+      "description": "Footer text to appear on invoices"
+    },
+    "terms_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has accepted the Terms & Conditions and Data Processing Agreement."
+    },
+    "terms_accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the user accepted the terms and conditions."
+    },
+    "terms_version": {
+      "type": "string",
+      "default": "1.0",
+      "description": "Version of the terms and conditions the user accepted."
+    }
+  },
+  "required": [
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
