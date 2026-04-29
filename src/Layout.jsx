@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Users, Camera, FileText, Receipt, Crown, Zap, Loader2 } from "lucide-react";
+import { Home, Users, Camera, FileText, ClipboardList, Crown, Zap, Loader2 } from "lucide-react";
 import { AlertProvider } from "@/components/ui/CustomAlert";
 import InactiveUserBanner from "@/components/InactiveUserBanner";
 import UserMenu from "@/components/ui/UserMenu";
@@ -107,7 +107,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Customers", url: createPageUrl("Customers"), icon: Users },
     { name: "Assessment", url: createPageUrl("Assessment"), icon: Camera },
     { name: "Quotes", url: createPageUrl("Quotes"), icon: FileText },
-    { name: "Invoices", url: createPageUrl("Invoices"), icon: Receipt }
+    { name: "Invoices", url: createPageUrl("Invoices"), icon: ClipboardList }
   ];
 
   const getSubscriptionDisplay = () => {
