@@ -161,7 +161,7 @@ export default function AssessmentPage() {
       line_items: quoteData.lineItems || [],
       calculation_breakdown: quoteData.calculationBreakdown || [], // NEW: Include breakdown
       quote_amount: quoteData.quoteAmount || 0,
-      estimated_time_hours: quoteData.estimatedTime || 0,
+      estimated_time_hours: quoteData.estimatedTime || null,
       notes: quoteData.notes || ''
     };
 
@@ -215,7 +215,7 @@ export default function AssessmentPage() {
           status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',
           include_notes_in_quote: true,
-          estimated_time_hours: 0,
+          estimated_time_hours: null,
           quote_number: formattedQuoteNumber,
           job_panel_price: jobPanelPrice || userSettings?.default_panel_price || 60
         };
@@ -239,7 +239,7 @@ export default function AssessmentPage() {
           line_items: quoteData.lineItems || [],
           calculation_breakdown: quoteData.calculationBreakdown || [], // NEW: Include breakdown
           quote_amount: quoteData.quoteAmount || 0,
-          estimated_time_hours: quoteData.estimatedTime || 0,
+          estimated_time_hours: quoteData.estimatedTime || null,
           notes: quoteData.notes || ''
         };
 
@@ -255,7 +255,7 @@ export default function AssessmentPage() {
           currency: quoteData.currency || 'GBP',
           status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',
-          estimated_time_hours: allVehicles.reduce((sum, v) => sum + (v.estimated_time_hours || 0), 0)
+          estimated_time_hours: quoteData.estimatedTime || null
         };
       } else {
         // Single vehicle assessment
@@ -273,7 +273,7 @@ export default function AssessmentPage() {
           currency: quoteData.currency || 'GBP',
           status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',
-          estimated_time_hours: quoteData.estimatedTime || 0
+          estimated_time_hours: quoteData.estimatedTime || null
         };
       }
       

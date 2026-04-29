@@ -161,7 +161,8 @@
             "type": "number"
           },
           "estimated_time_hours": {
-            "type": "number"
+            "type": "string",
+            "description": "Formatted repair time range, e.g. '45\u201390 mins' or '1 hr 15 mins \u2013 2 hrs'"
           },
           "notes": {
             "type": "string"
@@ -236,7 +237,8 @@
       "description": "Whether to include assessment notes in the quote/invoice PDF"
     },
     "estimated_time_hours": {
-      "type": "number"
+      "type": "string",
+      "description": "Formatted repair time range, e.g. '45\u201390 mins' or '1 hr 15 mins \u2013 2 hrs'"
     },
     "quote_number": {
       "type": "string"
@@ -250,5 +252,18 @@
     }
   },
   "required": [],
-  "rls": {}
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
 }

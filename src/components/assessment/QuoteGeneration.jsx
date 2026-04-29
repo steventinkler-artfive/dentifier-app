@@ -11,6 +11,124 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Plus, CheckCircle, Trash2, AlertTriangle, Settings } from "lucide-react";
 
 // ============================================================================
+// TIME RANGE CALCULATION FUNCTIONS
+// ============================================================================
+
+// Base time ranges in minutes: [min, max]
+// Keys: damageType -> sizeCategory -> accessCategory
+const TIME_RANGES = {
+  dent: {
+    'up_to_10':  { good: [15, 30], limited: [25, 45], no_access: [30, 60] },
+    '11_25':     { good: [20, 40], limited: [35, 60], no_access: [45, 75] },
+    '26_50':     { good: [30, 60], limited: [50, 90], no_access: [60, 120] },
+    '51_80':     { good: [45, 90], limited: [75, 120], no_access: [90, 150] },
+    '81_120':    { good: [60, 120], limited: [90, 150], no_access: [120, 180] },
+    '121_200':   { good: [90, 150], limited: [120, 180], no_access: [150, 240] },
+    '201_300':   { good: [120, 180], limited: [150, 210], no_access: [180, 270] },
+    '301_plus':  { good: [150, 240], limited: [180, 270], no_access: [210, 300] },
+  },
+  crease: {
+    'up_to_25':  { good: [30, 60], limited: [45, 90], no_access: [60, 120] },
+    '26_80':     { good: [60, 120], limited: [90, 150], no_access: [120, 180] },
+    '81_200':    { good: [90, 150], limited: [120, 180], no_access: [150, 240] },
+    '201_plus':  { good: [120, 200], limited: [150, 240], no_access: [180, 300] },
+  }
+};
+
+function getSizeCategory(sizeRange, isCrease) {
+  const s = (sizeRange || '').toLowerCase();
+  const nums = s.match(/\d+/g);
+  // Use the upper bound of a range, or the single number for "up to X" patterns
+  let size = 50; // default
+  if (nums && nums.length >= 2) {
+    size = parseInt(nums[1]);
+  } else if (nums && nums.length === 1) {
+    size = parseInt(nums[0]);
+  }
+  // Handle "301mm+" / "301+" style
+  if (s.includes('301') || (nums && parseInt(nums[0]) >= 301 && !isCrease)) return '301_plus';
+  if (s.includes('201') && !isCrease && size <= 300) return '201_300';
+
+  if (isCrease) {
+    if (size <= 25) return 'up_to_25';
+    if (size <= 80) return '26_80';
+    if (size <= 200) return '81_200';
+    return '201_plus';
+  } else {
+    if (size <= 10) return 'up_to_10';
+    if (size <= 25) return '11_25';
+    if (size <= 50) return '26_50';
+    if (size <= 80) return '51_80';
+    if (size <= 120) return '81_120';
+    if (size <= 200) return '121_200';
+    if (size <= 300) return '201_300';
+    return '301_plus';
+  }
+}
+
+function getAccessCategory(repairMethod) {
+  if (!repairMethod) return 'good';
+  const m = repairMethod.toLowerCase();
+  if (m.includes('limited')) return 'limited';
+  if (m.includes('glue') || m.includes('no access') || m.includes('strip')) return 'no_access';
+  return 'good';
+}
+
+function calculateTimeModifiers(damageItem) {
+  let modifier = 0;
+  const depth = (damageItem.depth || '').toLowerCase();
+  if (depth.includes('medium')) modifier += 15;
+  if (depth.includes('deep') || depth.includes('sharp')) modifier += 30;
+  if (damageItem.affects_body_line) modifier += 20;
+  if (damageItem.has_stretched_metal) modifier += 20;
+  if (damageItem.material === 'Aluminum') modifier += 15;
+  return modifier;
+}
+
+function roundToNearest5(mins) {
+  return Math.round(mins / 5) * 5;
+}
+
+function formatTimeRange(minMins, maxMins) {
+  const formatSingle = (m) => {
+    if (m < 60) return `${m} mins`;
+    const hrs = Math.floor(m / 60);
+    const mins = m % 60;
+    if (mins === 0) return `${hrs} hr${hrs !== 1 ? 's' : ''}`;
+    return `${hrs} hr${hrs !== 1 ? 's' : ''} ${mins} mins`;
+  };
+  return `${formatSingle(minMins)} – ${formatSingle(maxMins)}`;
+}
+
+/**
+ * Calculate estimated time range string for an array of damage items.
+ * Returns null for per-panel assessments (no damage items with type/size).
+ */
+function calculateEstimatedTimeRange(damageItems) {
+  if (!damageItems || damageItems.length === 0) return null;
+
+  let totalMin = 0;
+  let totalMax = 0;
+
+  for (const item of damageItems) {
+    const isCrease = (item.damage_type || '').toLowerCase() === 'crease';
+    // Custom damage types fall back to dent ranges
+    const typeKey = isCrease ? 'crease' : 'dent';
+    const sizeKey = getSizeCategory(item.size_range, isCrease);
+    const accessKey = getAccessCategory(item.repair_method);
+
+    const ranges = TIME_RANGES[typeKey];
+    const baseRange = (ranges[sizeKey] || ranges[Object.keys(ranges)[0]])[accessKey] || [30, 60];
+
+    const modifier = calculateTimeModifiers(item);
+    totalMin += roundToNearest5(baseRange[0] + modifier);
+    totalMax += roundToNearest5(baseRange[1] + modifier);
+  }
+
+  return formatTimeRange(totalMin, totalMax);
+}
+
+// ============================================================================
 // PROGRAMMATIC PRICING CALCULATION FUNCTIONS
 // ============================================================================
 
@@ -436,7 +554,7 @@ export default function QuoteGeneration({
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [currency, setCurrency] = useState('GBP');
   const [notes, setNotes] = useState('');
-  const [estimatedTime, setEstimatedTime] = useState(0);
+  const [estimatedTime, setEstimatedTime] = useState(null); // string range or null
   const [userSettings, setUserSettings] = useState(null);
   const [error, setError] = useState(null);
   const [quoteGenerated, setQuoteGenerated] = useState(false);
@@ -556,7 +674,7 @@ export default function QuoteGeneration({
 
         setLineItems(simpleLineItems);
         setCalculationBreakdown([]);
-        setEstimatedTime(damageItems.length * 2);
+        setEstimatedTime(null); // No time estimate for per-panel
         setNotes(PER_PANEL_DISCLAIMER);
         setQuoteGenerated(true);
         setGenerating(false);
@@ -717,7 +835,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
 
       setLineItems(calculatedLineItems);
       setCalculationBreakdown(breakdownDetails);
-      setEstimatedTime(totalEstimatedHours);
+      setEstimatedTime(calculateEstimatedTimeRange(damageItems));
       
       // Generate customer-facing AI assessment notes
       let assessmentNotes = '';
@@ -818,13 +936,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
         fallbackReason: "Global quote generation failed."
       }]);
       
-      const fallbackEstimatedHours = fallbackItems.reduce((sum, item) => {
-        if (item.description === 'Base Cost / Call-out Fee') {
-            return sum;
-        }
-        return sum + item.quantity;
-      }, 0);
-      setEstimatedTime(fallbackEstimatedHours);
+      setEstimatedTime(null);
       setNotes('Auto-generated fallback pricing due to an error. Please review and adjust as necessary.');
       setQuoteGenerated(true);
     } finally {
@@ -884,7 +996,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
         discountPercentage,
         currency,
         notes,
-        estimatedTime: parseFloat(estimatedTime) || 0,
+        estimatedTime: estimatedTime || null,
         calculationBreakdown: calculationBreakdown 
       };
       await onAddAnotherVehicle(quoteData);
@@ -906,7 +1018,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
         quoteAmount: grandTotal,
         currency,
         notes,
-        estimatedTime: 0,
+        estimatedTime: null,
         calculationBreakdown: [],
         vehicleSections
       } : {
@@ -915,7 +1027,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
         discountPercentage,
         currency,
         notes,
-        estimatedTime: parseFloat(estimatedTime) || 0,
+        estimatedTime: estimatedTime || null,
         calculationBreakdown: calculationBreakdown
       };
       await onFinalSave(quoteData);
@@ -1166,10 +1278,12 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
                 ) : (
                   <>
                     <p><span className="font-semibold">Matrix Base:</span> {breakdown.matrixEntry?.damage_type} - {breakdown.matrixEntry?.size_range} ({getCurrencySymbol()}{breakdown.matrixEntry?.base_price?.toFixed(2)})</p>
-                    <div>
-                      <p><span className="font-semibold">Estimated Repair Time (for internal use):</span> {breakdown.roundedHoursForTech} hrs</p>
-                      <p className="text-slate-500 text-xs mt-0.5">Guide only — actual time will vary depending on experience and conditions.</p>
-                    </div>
+                    {estimatedTime && (
+                      <div>
+                        <p><span className="font-semibold">Estimated Time (tech only):</span> {estimatedTime}</p>
+                        <p className="text-slate-500 text-xs mt-0.5">Faster techs typically sit at the lower end of this range.</p>
+                      </div>
+                    )}
                     <p><span className="font-semibold">Final Price:</span> {getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2)}</p>
                   </>
                 )}
