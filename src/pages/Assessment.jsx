@@ -17,6 +17,7 @@ import PhotoCapture from "../components/assessment/PhotoCapture";
 import DamageAnalysis from "../components/assessment/DamageAnalysis";
 import QuoteGeneration from "../components/assessment/QuoteGeneration";
 import { SkillsIncompleteBanner } from "@/components/onboarding/OnboardingBanners";
+import { calculateEstimatedTimeRange } from "@/utils/timeEstimate";
 
 const DentifierIcon = ({ className = "" }) => (
   <svg 
@@ -135,9 +136,11 @@ export default function AssessmentPage() {
   };
 
   const handlePhotosCapture = (data) => {
+    const estimatedTime = calculateEstimatedTimeRange(data.damageItems || []);
     setAssessmentData(prev => ({
       ...prev,
-      currentPhotos: data
+      currentPhotos: data,
+      estimatedTime
     }));
     setCurrentStep('analysis');
   };
@@ -548,10 +551,11 @@ export default function AssessmentPage() {
           ) : (
             <DamageAnalysis
               photos={photos}
-              damageItems={damageItems} // Added damageItems prop
+              damageItems={damageItems}
               vehicle={assessmentData.currentVehicle}
               onAnalysisComplete={handleAnalysisComplete}
               onGoBack={() => setCurrentStep('photos')}
+              estimatedTime={assessmentData.estimatedTime}
             />
           )
         )}

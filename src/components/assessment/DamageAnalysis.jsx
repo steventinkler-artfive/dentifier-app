@@ -117,7 +117,7 @@ function confidenceTextClass(score) {
   return 'text-red-300';
 }
 
-export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysisComplete, onGoBack }) {
+export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysisComplete, onGoBack, estimatedTime }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState(null);
@@ -368,7 +368,18 @@ OUTPUT: JSON only. No other text.`;
         )}
       </div>
 
-      {/* 4. PHOTO OBSERVATION */}
+      {/* 4. ESTIMATED TIME */}
+      {estimatedTime && (
+        <Card className="bg-slate-900 border-slate-800">
+          <CardContent className="p-4">
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Estimated Time</p>
+            <p className="text-white font-semibold">{estimatedTime}</p>
+            <p className="text-slate-500 text-xs mt-1">Faster techs typically sit at the lower end of this range.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 5. PHOTO OBSERVATION */}
       <Card className="bg-slate-900 border-slate-800">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">

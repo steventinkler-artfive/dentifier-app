@@ -170,14 +170,6 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                         </span>
                       </div>
                     )}
-                    {item.roundedHoursForTech && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-300">Tech Hours (reference):</span>
-                        <span className="text-white font-medium">
-                          {item.roundedHoursForTech.toFixed(1)} hrs
-                        </span>
-                      </div>
-                    )}
                     {item.totalPrice !== undefined && (
                       <div className="flex justify-between pt-2 border-t border-green-700/30">
                         <span className="text-green-300 font-semibold">Final Customer Price:</span>

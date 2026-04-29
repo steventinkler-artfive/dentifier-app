@@ -1559,6 +1559,15 @@ export default function AssessmentDetail() {
                             )}
                           </div>
 
+                          {/* Estimated Time */}
+                          {assessment.estimated_time_hours && (
+                            <div className="p-3 bg-slate-800 rounded-lg">
+                              <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Estimated Time</p>
+                              <p className="text-white text-sm font-semibold">{assessment.estimated_time_hours}</p>
+                              <p className="text-slate-500 text-xs mt-1">Faster techs typically sit at the lower end of this range.</p>
+                            </div>
+                          )}
+
                           {/* Photo Observation */}
                           {photoObs && (
                             <div className="p-3 bg-slate-800 rounded-lg flex items-start gap-2">
@@ -1577,13 +1586,6 @@ export default function AssessmentDetail() {
                   </TabsContent>
 
                   <TabsContent value="breakdown" className="p-4 space-y-4">
-                   {assessment.estimated_time_hours && (
-                     <div className="p-3 bg-slate-800 rounded-lg">
-                       <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Estimated Time</p>
-                       <p className="text-white font-semibold">{assessment.estimated_time_hours}</p>
-                       <p className="text-slate-500 text-xs mt-1">Faster techs typically sit at the lower end of this range.</p>
-                     </div>
-                   )}
                    {currentCalculationBreakdown && currentCalculationBreakdown.length > 0 ? (
                      <CalculationBreakdown
                        breakdownData={currentCalculationBreakdown}
