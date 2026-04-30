@@ -16,6 +16,7 @@ export default function QuotePDFContent({
   logoDisplayUrl,
   includeNotes,
   onPaymentButtonRendered,
+  isProfessional = false,
 }) {
   const paymentButtonRef = useRef(null);
 
@@ -118,20 +119,31 @@ export default function QuotePDFContent({
         }}
       >
         <div>
-            <img
-              src={userSettings?.business_logo_url || logoDisplayUrl || DEFAULT_DENTIFIER_LOGO}
-              alt="Business Logo"
-              style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
-              onError={(e) => {
-                e.target.src = DEFAULT_DENTIFIER_LOGO;
-              }}
-            />
-            {!userSettings?.business_logo_url && (
+          {isProfessional ? (
+            userSettings?.business_logo_url ? (
+              <img
+                src={logoDisplayUrl || userSettings.business_logo_url}
+                alt="Business Logo"
+                style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
+              />
+            ) : (
               <h1 style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}>
                 {businessName}
               </h1>
-            )}
-          </div>
+            )
+          ) : (
+            <>
+              <img
+                src={DEFAULT_DENTIFIER_LOGO}
+                alt="Dentifier Logo"
+                style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
+              />
+              <h1 style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}>
+                {businessName}
+              </h1>
+            </>
+          )}
+        </div>
         <div style={{ textAlign: "right" }}>
           <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#374151" }}>
             {isCompleted

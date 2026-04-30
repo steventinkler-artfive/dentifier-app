@@ -18,6 +18,7 @@ export default function QuotePDF() {
   const [loading, setLoading] = useState(true);
   const [logoDisplayUrl, setLogoDisplayUrl] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [isProfessionalTier, setIsProfessionalTier] = useState(false);
 
   const sanitizeBusinessName = (name) => {
     if (!name) return 'BUSINESS';
@@ -34,10 +35,8 @@ export default function QuotePDF() {
       return;
     }
     
-    // Store original title to restore later
     const originalTitle = document.title;
     
-    // Build dynamic filename
     const isCompleted = assessment.status === 'completed';
     const refNum = isCompleted ? 
       (assessment.invoice_number || `INV-${assessment.id.slice(-6)}`) : 
@@ -47,30 +46,9 @@ export default function QuotePDF() {
     const docNum = refNum.replace(/[^a-zA-Z0-9-]/g, '');
     const bizName = sanitizeBusinessName(userSettings.business_name);
     
-    const filename = `${docType}_${docNum}_${bizName}`;
-    
-    // DEBUG: Log what we're setting
-    console.log('=== PDF FILENAME DEBUG ===');
-    console.log('Original title:', originalTitle);
-    console.log('Assessment status:', assessment.status);
-    console.log('Invoice number:', assessment.invoice_number);
-    console.log('Quote number:', assessment.quote_number);
-    console.log('Reference number used:', refNum);
-    console.log('Document type:', docType);
-    console.log('Document number (sanitized):', docNum);
-    console.log('Business name:', userSettings.business_name);
-    console.log('Sanitized business name:', bizName);
-    console.log('Final filename to set:', `${docType}_${docNum}_${bizName}`);
-    
-    // Set document title RIGHT BEFORE printing (NO .pdf extension)
     document.title = `${docType}_${docNum}_${bizName}`;
-    
-    console.log('document.title is now:', document.title);
-    
-    // Open print dialog
     window.print();
     
-    // Restore original title after print dialog opens
     setTimeout(() => {
       document.title = originalTitle;
     }, 100);
@@ -87,16 +65,18 @@ export default function QuotePDF() {
       }
 
       try {
-        console.log('Loading PDF data for assessment:', assessmentId);
-        
-        // Call the backend function using SDK (automatically handles auth token)
-        const response = await base44.functions.invoke('getQuotePDFData', { 
-          assessment_id: assessmentId 
-        });
+        const [response, currentUser] = await Promise.all([
+          base44.functions.invoke('getQuotePDFData', { assessment_id: assessmentId }),
+          base44.auth.me(),
+        ]);
 
         if (!isMounted) return;
 
-        console.log('Backend response:', response.data);
+        // Determine Professional tier
+        if (currentUser) {
+          const isPro = currentUser.subscription_status === 'active' && currentUser.subscription_plan === 'professional';
+          setIsProfessionalTier(isPro);
+        }
 
         if (response.data && !response.data.error && response.data.assessment) {
           const foundAssessment = response.data.assessment;
@@ -114,11 +94,9 @@ export default function QuotePDF() {
           } else {
             setVehicle(fetchedVehicleData);
             setVehicles({});
-            }
+          }
 
-            // No user data needed for public PDF view
-
-            if (settings) {
+          if (settings) {
             setUserSettings(settings);
             
             // Handle logo display
@@ -156,7 +134,6 @@ export default function QuotePDF() {
             document.title = `${docType}_${docNum}_${bizName}`;
           }
         } else {
-          // Handle error response from backend
           console.error('Backend returned error or no data:', response.data);
           if (isMounted) {
             setAssessment(null);
@@ -188,9 +165,7 @@ export default function QuotePDF() {
         URL.revokeObjectURL(currentLogoBlobUrl);
       }
     };
-    }, [assessmentId]);
-
-
+  }, [assessmentId]);
 
   const getCurrencySymbol = (currency) => {
     const symbols = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$' };
@@ -216,7 +191,6 @@ export default function QuotePDF() {
     if (isMultiVehicle || isPerPanel) {
       shareText += `\nVehicles & Line Items:\n\n`;
       assessment.vehicles.forEach((v) => {
-        // Per-panel: use inline registration/colour/notes as label
         let vehicleLabel;
         if (isPerPanel) {
           vehicleLabel = [v.registration, v.colour].filter(Boolean).join(' · ');
@@ -257,7 +231,6 @@ export default function QuotePDF() {
       shareText += `\nNotes: ${notesForCustomer}\n`;
     }
 
-    // Add payment details for completed invoices
     if (isCompleted && userSettings) {
       const paymentPreference = userSettings.payment_method_preference;
       const showBankTransfer = paymentPreference === 'Bank Transfer Only' || paymentPreference === 'Both';
@@ -312,8 +285,6 @@ export default function QuotePDF() {
     }
   };
 
-
-
   if (loading) {
     return <div className="bg-white text-black p-8">Loading...</div>;
   }
@@ -331,10 +302,7 @@ export default function QuotePDF() {
     );
   }
 
-  // Only need shouldIncludeNotes for the shared component
   const shouldIncludeNotes = includeNotesParam || assessment.include_notes_in_quote;
-  
-  // isCompleted needed for handleShare
   const isCompleted = assessment.status === 'completed';
   const isMultiVehicle = assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0;
   const businessName = userSettings?.business_name || "Dentifier PDR";
@@ -385,6 +353,7 @@ export default function QuotePDF() {
           userSettings={userSettings}
           logoDisplayUrl={logoDisplayUrl}
           includeNotes={shouldIncludeNotes}
+          isProfessional={isProfessionalTier}
         />
       </div>
     </div>
