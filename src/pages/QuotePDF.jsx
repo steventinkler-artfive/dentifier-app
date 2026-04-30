@@ -74,7 +74,7 @@ export default function QuotePDF() {
 
         // Determine Professional tier
         if (currentUser) {
-          const isPro = currentUser.subscription_status === 'active' && currentUser.subscription_plan === 'professional';
+          const isPro = ['active', 'trialing'].includes(currentUser.subscription_status) && currentUser.subscription_plan === 'professional';
           setIsProfessionalTier(isPro);
         }
 
