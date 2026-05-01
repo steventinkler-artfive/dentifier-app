@@ -11,10 +11,17 @@ import { compressMultipleImages } from "../utils/imageCompression";
 import { useAlert } from "@/components/ui/CustomAlert";
 
 const CAR_PANELS = [
-  "Bonnet/Hood", "Front Wing/Fender (Left)", "Front Wing/Fender (Right)",
-  "Front Door (Left)", "Front Door (Right)", "Rear Door (Left)", "Rear Door (Right)",
-  "Rear Quarter Panel (Left)", "Rear Quarter Panel (Right)", "Boot Lid/Trunk",
-  "Roof", "A-Pillar", "B-Pillar", "C-Pillar", "Tailgate", "Other"
+  "Bonnet/Hood",
+  "Front Wing/Fender (Left)", "Front Wing/Fender (Right)",
+  "Front Door (Left)", "Front Door (Right)",
+  "Rear Door (Left)", "Rear Door (Right)",
+  "Rear Quarter Panel (Left)", "Rear Quarter Panel (Right)",
+  "Boot Lid/Trunk", "Tailgate",
+  "Roof",
+  "Roof Rail (Left)", "Roof Rail (Right)",
+  "Sill Panel (Left)", "Sill Panel (Right)",
+  "A-Pillar", "B-Pillar", "C-Pillar", "D-Pillar",
+  "Other"
 ];
 
 const BASE_DAMAGE_TYPES = ["Standard Dent", "Crease"];
