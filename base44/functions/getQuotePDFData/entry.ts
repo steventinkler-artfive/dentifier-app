@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
 
         let creatorSubscriptionPlan = null;
         let creatorSubscriptionStatus = null;
+        let creatorIsBetaTester = false;
 
         if (assessment.created_by) {
             try {
@@ -102,6 +103,16 @@ Deno.serve(async (req) => {
                 }
             } catch (e) {
                 console.error('Settings fetch failed:', e.message);
+            }
+
+            // Check is_beta_tester from User record via service role
+            try {
+                const users = await base44.asServiceRole.entities.User.filter({ email: assessment.created_by });
+                if (users.length > 0) {
+                    creatorIsBetaTester = users[0].is_beta_tester === true;
+                }
+            } catch (e) {
+                console.error('User beta tester check failed:', e.message);
             }
         }
 
@@ -145,6 +156,7 @@ Deno.serve(async (req) => {
             vehicles: vehiclesData,
             creatorSubscriptionPlan,
             creatorSubscriptionStatus,
+            creatorIsBetaTester,
             userSettings: settings ? {
                 business_name: settings.business_name,
                 business_address: settings.business_address,
