@@ -65,18 +65,9 @@ export default function QuotePDF() {
       }
 
       try {
-        const [response, currentUser] = await Promise.all([
-          base44.functions.invoke('getQuotePDFData', { assessment_id: assessmentId }),
-          base44.auth.me(),
-        ]);
+        const response = await base44.functions.invoke('getQuotePDFData', { assessment_id: assessmentId });
 
         if (!isMounted) return;
-
-        // Determine Professional tier
-        if (currentUser) {
-          const isPro = ['active', 'trialing'].includes(currentUser.subscription_status) && currentUser.subscription_plan === 'professional';
-          setIsProfessionalTier(isPro);
-        }
 
         if (response.data && !response.data.error && response.data.assessment) {
           const foundAssessment = response.data.assessment;
@@ -84,6 +75,10 @@ export default function QuotePDF() {
           const fetchedVehicleData = response.data.vehicle;
           const fetchedVehicles = response.data.vehicles || {};
           const settings = response.data.userSettings;
+
+          // Determine Professional tier from backend response (works for public links too)
+          const isPro = ['active', 'trialing'].includes(response.data.creatorSubscriptionStatus) && response.data.creatorSubscriptionPlan === 'professional';
+          if (isMounted) setIsProfessionalTier(isPro);
 
           setAssessment(foundAssessment);
           setCustomer(foundCustomer);

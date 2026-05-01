@@ -85,22 +85,30 @@ Deno.serve(async (req) => {
             }
         }
 
+        let creatorSubscriptionPlan = null;
+        let creatorSubscriptionStatus = null;
+
         if (assessment.created_by) {
             try {
-                console.log('Querying UserSetting with email:', assessment.created_by);
                 const allSettings = await base44.entities.UserSetting.filter({ 
                     user_email: assessment.created_by 
                 });
-                console.log('UserSetting query filter used:', { user_email: assessment.created_by });
-                console.log('Number of UserSetting records returned:', allSettings.length);
-                console.log('UserSetting records:', allSettings);
                 settings = allSettings[0] || null;
-                console.log('Selected settings:', settings);
             } catch (e) {
                 console.error('Settings fetch failed:', e.message);
             }
-        } else {
-            console.log('assessment.created_by is not set');
+
+            // Fetch creator's user record for subscription info
+            try {
+                const users = await base44.asServiceRole.entities.User.filter({ email: assessment.created_by });
+                const creator = users[0] || null;
+                if (creator) {
+                    creatorSubscriptionPlan = creator.subscription_plan || null;
+                    creatorSubscriptionStatus = creator.subscription_status || null;
+                }
+            } catch (e) {
+                console.error('Creator user fetch failed:', e.message);
+            }
         }
 
         return Response.json({
@@ -141,6 +149,8 @@ Deno.serve(async (req) => {
                 vin: vehicle.vin,
             } : null,
             vehicles: vehiclesData,
+            creatorSubscriptionPlan,
+            creatorSubscriptionStatus,
             userSettings: settings ? {
                 business_name: settings.business_name,
                 business_address: settings.business_address,
