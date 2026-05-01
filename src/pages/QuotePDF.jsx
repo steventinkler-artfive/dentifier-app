@@ -93,9 +93,21 @@ export default function QuotePDF() {
 
           if (settings) {
             setUserSettings(settings);
-            
-            // Pass logo URL directly — no fetch/blob conversion needed
-            if (isMounted) setLogoDisplayUrl(settings.business_logo_url || null);
+
+            // Fetch logo as blob for cross-origin safe rendering (html2canvas / print)
+            if (settings.business_logo_url) {
+              try {
+                const logoResponse = await fetch(settings.business_logo_url);
+                if (logoResponse.ok) {
+                  const blob = await logoResponse.blob();
+                  const blobUrl = URL.createObjectURL(blob);
+                  currentLogoBlobUrl = blobUrl;
+                  if (isMounted) setLogoDisplayUrl(blobUrl);
+                }
+              } catch (e) {
+                if (isMounted) setLogoDisplayUrl(settings.business_logo_url);
+              }
+            }
 
             // Set document title
             const isCompletedForTitle = foundAssessment.status === 'completed';
