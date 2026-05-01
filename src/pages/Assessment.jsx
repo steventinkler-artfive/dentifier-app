@@ -164,7 +164,7 @@ export default function AssessmentPage() {
       line_items: quoteData.lineItems || [],
       calculation_breakdown: quoteData.calculationBreakdown || [], // NEW: Include breakdown
       quote_amount: quoteData.quoteAmount || 0,
-      estimated_time_hours: quoteData.estimatedTime || null,
+      estimated_time_hours: quoteData.estimatedTime != null ? String(quoteData.estimatedTime) : null,
       notes: quoteData.notes || ''
     };
 
@@ -242,7 +242,7 @@ export default function AssessmentPage() {
           line_items: quoteData.lineItems || [],
           calculation_breakdown: quoteData.calculationBreakdown || [], // NEW: Include breakdown
           quote_amount: quoteData.quoteAmount || 0,
-          estimated_time_hours: quoteData.estimatedTime || null,
+          estimated_time_hours: quoteData.estimatedTime != null ? String(quoteData.estimatedTime) : null,
           notes: quoteData.notes || ''
         };
 
@@ -258,7 +258,7 @@ export default function AssessmentPage() {
           currency: quoteData.currency || 'GBP',
           status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',
-          estimated_time_hours: quoteData.estimatedTime || null
+          estimated_time_hours: quoteData.estimatedTime != null ? String(quoteData.estimatedTime) : null
         };
       } else {
         // Single vehicle assessment
@@ -276,7 +276,7 @@ export default function AssessmentPage() {
           currency: quoteData.currency || 'GBP',
           status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',
-          estimated_time_hours: quoteData.estimatedTime || null
+          estimated_time_hours: quoteData.estimatedTime != null ? String(quoteData.estimatedTime) : null
         };
       }
       
