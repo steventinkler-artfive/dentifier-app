@@ -82,9 +82,23 @@ export default function OnboardingWizard({ user, onComplete }) {
           specialized_damage_skills: [],
           primary_vehicle_types: [],
           pricing_matrix: [
+            { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
+            { damage_type: "Standard Dent", size_range: "11mm - 25mm", base_price: 90 },
             { damage_type: "Standard Dent", size_range: "26mm - 50mm", base_price: 120 },
             { damage_type: "Standard Dent", size_range: "51mm - 80mm", base_price: 180 },
-            { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 }
+            { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 },
+            { damage_type: "Standard Dent", size_range: "121mm - 200mm", base_price: 300 },
+            { damage_type: "Standard Dent", size_range: "201mm - 300mm", base_price: 360 },
+            { damage_type: "Standard Dent", size_range: "301mm - 500mm", base_price: 450 },
+            { damage_type: "Standard Dent", size_range: "501mm - 750mm", base_price: 550 },
+            { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
+            { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 130 },
+            { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 170 },
+            { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 250 },
+            { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 330 },
+            { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 415 },
+            { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
+            { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 620 }
           ]
         });
       }
