@@ -94,20 +94,14 @@ Deno.serve(async (req) => {
                     user_email: assessment.created_by 
                 });
                 settings = allSettings[0] || null;
-            } catch (e) {
-                console.error('Settings fetch failed:', e.message);
-            }
 
-            // Fetch creator's user record for subscription info
-            try {
-                const users = await base44.asServiceRole.entities.User.filter({ email: assessment.created_by });
-                const creator = users[0] || null;
-                if (creator) {
-                    creatorSubscriptionPlan = creator.subscription_plan || null;
-                    creatorSubscriptionStatus = creator.subscription_status || null;
+                // Read subscription info directly from UserSetting (synced from User entity)
+                if (settings) {
+                    creatorSubscriptionPlan = settings.subscription_plan || null;
+                    creatorSubscriptionStatus = settings.subscription_status || null;
                 }
             } catch (e) {
-                console.error('Creator user fetch failed:', e.message);
+                console.error('Settings fetch failed:', e.message);
             }
         }
 

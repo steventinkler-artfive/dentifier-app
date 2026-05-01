@@ -116,6 +116,20 @@ async function handleSubscriptionUpdate(base44, subscription) {
   } else {
     console.error(`User not found with email: ${email}`);
   }
+
+  // Sync subscription_plan and subscription_status to UserSetting
+  try {
+    const userSettings = await base44.asServiceRole.entities.UserSetting.filter({ user_email: email });
+    if (userSettings.length > 0) {
+      await base44.asServiceRole.entities.UserSetting.update(userSettings[0].id, {
+        subscription_plan: subscriptionTier,
+        subscription_status: subscriptionStatus,
+      });
+      console.log(`Synced subscription to UserSetting for ${email}`);
+    }
+  } catch (e) {
+    console.error(`Failed to sync UserSetting for ${email}:`, e.message);
+  }
 }
 
 async function handleSubscriptionDeleted(base44, subscription) {
@@ -142,6 +156,19 @@ async function handleSubscriptionDeleted(base44, subscription) {
     console.log(`Updated user ${email} - subscription cancelled`);
   } else {
     console.error(`User not found with email: ${email}`);
+  }
+
+  // Sync cancellation to UserSetting
+  try {
+    const userSettings = await base44.asServiceRole.entities.UserSetting.filter({ user_email: email });
+    if (userSettings.length > 0) {
+      await base44.asServiceRole.entities.UserSetting.update(userSettings[0].id, {
+        subscription_status: 'cancelled',
+      });
+      console.log(`Synced cancellation to UserSetting for ${email}`);
+    }
+  } catch (e) {
+    console.error(`Failed to sync UserSetting for ${email}:`, e.message);
   }
 }
 

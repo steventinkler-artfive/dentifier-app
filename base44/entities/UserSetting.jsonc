@@ -291,6 +291,14 @@
       "type": "string",
       "default": "1.0",
       "description": "Version of the terms and conditions the user accepted."
+    },
+    "subscription_plan": {
+      "type": "string",
+      "description": "The user's current subscription plan (e.g. starter, professional). Synced from the User entity."
+    },
+    "subscription_status": {
+      "type": "string",
+      "description": "The user's current subscription status (e.g. active, trialing, inactive). Synced from the User entity."
     }
   },
   "required": [
