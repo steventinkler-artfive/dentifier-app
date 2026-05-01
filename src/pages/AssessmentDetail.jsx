@@ -239,7 +239,10 @@ export default function AssessmentDetail() {
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      let updateData = { status: newStatus };
+      let updateData = { 
+        status: newStatus,
+        estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
+      };
 
       // Record sent_date when status moves to 'sent'
       if (newStatus === 'sent' && !assessment.sent_date) {
@@ -289,7 +292,10 @@ export default function AssessmentDetail() {
     if (!assessment) return;
     setIsUpdating(true);
     try {
-      await base44.entities.Assessment.update(assessment.id, { payment_status: newPaymentStatus });
+      await base44.entities.Assessment.update(assessment.id, { 
+        payment_status: newPaymentStatus,
+        estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
+      });
       await loadAssessmentDetails();
       setEditingPaymentStatus(false);
     } catch (error) {

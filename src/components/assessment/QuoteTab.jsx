@@ -112,6 +112,7 @@ export default function QuoteTab({
     try {
       await base44.entities.Assessment.update(assessment.id, {
         discount_percentage: pct,
+        estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
       });
       await loadAssessmentDetails();
     } catch (error) {

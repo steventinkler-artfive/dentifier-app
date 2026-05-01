@@ -57,6 +57,7 @@ export default function PerPanelQuoteView({
     try {
       await base44.entities.Assessment.update(assessment.id, {
         discount_percentage: pct,
+        estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
       });
       await onAssessmentUpdate();
     } finally {
@@ -93,6 +94,7 @@ export default function PerPanelQuoteView({
         vehicles: updatedVehicles || vehicles,
         line_items: updatedAssessmentItems || assessmentItems,
         quote_amount: vehicleTotal + assessmentTotal,
+        estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
       });
       onAssessmentUpdate();
     } finally {
@@ -138,7 +140,10 @@ export default function PerPanelQuoteView({
     setSaving(true);
     try {
       const updatedVehicles = vehicles.filter((_, i) => i !== vIdx);
-      await base44.entities.Assessment.update(assessment.id, { vehicles: updatedVehicles });
+      await base44.entities.Assessment.update(assessment.id, { 
+        vehicles: updatedVehicles,
+        estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
+      });
       setVehicles(updatedVehicles);
       await onAssessmentUpdate();
     } finally {
