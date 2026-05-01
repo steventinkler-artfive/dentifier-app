@@ -99,28 +99,8 @@ export default function QuotePDF() {
           if (settings) {
             setUserSettings(settings);
             
-            // Handle logo display
-            if (settings.business_logo_url) {
-              try {
-                if (settings.business_logo_url.startsWith('data:') || settings.business_logo_url.startsWith('blob:')) {
-                  if (isMounted) setLogoDisplayUrl(settings.business_logo_url);
-                } else {
-                  const logoResponse = await fetch(settings.business_logo_url);
-                  if (!logoResponse.ok) throw new Error(`Logo fetch failed with status: ${logoResponse.status}`);
-                  const imageBlob = await logoResponse.blob();
-                  const localUrl = URL.createObjectURL(imageBlob);
-                  if (isMounted) {
-                    currentLogoBlobUrl = localUrl;
-                    setLogoDisplayUrl(localUrl);
-                  }
-                }
-              } catch (e) {
-                console.error("Failed to fetch logo for PDF:", e);
-                if (isMounted) setLogoDisplayUrl(null);
-              }
-            } else {
-              if (isMounted) setLogoDisplayUrl(null);
-            }
+            // Pass logo URL directly — no fetch/blob conversion needed
+            if (isMounted) setLogoDisplayUrl(settings.business_logo_url || null);
 
             // Set document title
             const isCompletedForTitle = foundAssessment.status === 'completed';

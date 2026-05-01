@@ -124,6 +124,7 @@ export default function QuotePDFContent({
               <img
                 src={logoDisplayUrl || userSettings.business_logo_url}
                 alt="Business Logo"
+                crossOrigin="anonymous"
                 style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
               />
             ) : (
