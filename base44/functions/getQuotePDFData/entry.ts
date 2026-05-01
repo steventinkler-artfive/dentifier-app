@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
 
         let creatorSubscriptionPlan = null;
         let creatorSubscriptionStatus = null;
+        let creatorSubscriptionTier = null;
 
         if (assessment.created_by) {
             try {
@@ -102,6 +103,21 @@ Deno.serve(async (req) => {
                 }
             } catch (e) {
                 console.error('Settings fetch failed:', e.message);
+            }
+
+            // Also fetch subscription_tier directly from the User entity (fallback for accounts
+            // where subscription_plan/status were never synced to UserSetting)
+            try {
+                const creatorUsers = await base44.asServiceRole.entities.User.filter({ email: assessment.created_by });
+                if (creatorUsers.length > 0) {
+                    const creatorUser = creatorUsers[0];
+                    creatorSubscriptionTier = creatorUser.data?.subscription_tier || creatorUser.subscription_tier || null;
+                    // Also fill plan/status from User entity if not already set from UserSetting
+                    if (!creatorSubscriptionPlan) creatorSubscriptionPlan = creatorUser.subscription_plan || null;
+                    if (!creatorSubscriptionStatus) creatorSubscriptionStatus = creatorUser.subscription_status || null;
+                }
+            } catch (e) {
+                console.error('User entity fetch for subscription_tier failed:', e.message);
             }
         }
 
@@ -145,6 +161,7 @@ Deno.serve(async (req) => {
             vehicles: vehiclesData,
             creatorSubscriptionPlan,
             creatorSubscriptionStatus,
+            creatorSubscriptionTier,
             userSettings: settings ? {
                 business_name: settings.business_name,
                 business_address: settings.business_address,

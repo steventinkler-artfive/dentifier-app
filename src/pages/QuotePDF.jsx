@@ -77,7 +77,7 @@ export default function QuotePDF() {
           const settings = response.data.userSettings;
 
           // Determine Professional tier from backend response (works for public links too)
-          const isPro = ['active', 'trialing'].includes(response.data.creatorSubscriptionStatus) && response.data.creatorSubscriptionPlan === 'professional';
+          const isPro = (response.data.creatorSubscriptionPlan === 'professional' || response.data.creatorSubscriptionTier === 'professional') || (['active', 'trialing'].includes(response.data.creatorSubscriptionStatus) && (response.data.creatorSubscriptionPlan === 'professional' || response.data.creatorSubscriptionTier === 'professional'));
           if (isMounted) setIsProfessionalTier(isPro);
 
           setAssessment(foundAssessment);
