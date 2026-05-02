@@ -1049,7 +1049,8 @@ export default function AssessmentDetail() {
               <span className="text-slate-400 text-sm">{assessment.status === 'completed' ? 'Total Invoice Amount' : 'Total Quote Amount'}</span>
               <span className="text-2xl font-bold text-green-400">
                 {(() => {
-                  const sub = (assessment.total_amount ?? assessment.quote_amount) || 0;
+                  const qAmt = assessment.quote_amount || 0;
+                  const sub = (assessment.total_amount ?? (qAmt - (qAmt * (assessment.discount_percentage || 0) / 100))) || 0;
                   const vat = userSettings?.is_vat_registered ? (sub * (userSettings.tax_rate || 0)) / 100 : 0;
                   return formatCurrency(sub + vat, assessment.currency || 'GBP');
                 })()}
