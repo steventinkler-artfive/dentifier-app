@@ -84,6 +84,9 @@ export default function QuoteTab({
       });
       if (response.data.success && response.data.payment_link) {
         const paymentLink = response.data.payment_link;
+        await base44.entities.Assessment.update(assessment.id, {
+          payment_link_url: paymentLink
+        });
         await loadAssessmentDetails();
         await navigator.clipboard.writeText(paymentLink);
         if (

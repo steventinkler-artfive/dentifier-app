@@ -66,14 +66,7 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Save the payment link to the assessment
     const resultData = await result.json();
-    if (resultData.success && resultData.payment_link) {
-      await base44.asServiceRole.entities.Assessment.update(assessment_id, {
-        payment_link_url: resultData.payment_link
-      });
-    }
-
     return Response.json(resultData);
 
   } catch (error) {
