@@ -269,9 +269,14 @@ export default function AssessmentDetail() {
         
         if ((preference === 'Payment Links Only' || preference === 'Both') && hasPaymentProvider) {
           try {
-            await base44.functions.invoke('generatePaymentLink', {
+            const plResponse = await base44.functions.invoke('generatePaymentLink', {
               assessment_id: assessment.id
             });
+            if (plResponse.data?.success && plResponse.data?.payment_link) {
+              await base44.entities.Assessment.update(assessment.id, {
+                payment_link_url: plResponse.data.payment_link
+              });
+            }
           } catch (error) {
             console.error('Failed to auto-generate payment link:', error);
           }
