@@ -203,7 +203,7 @@ export default function Quotes() {
             const bottomLine = getBottomLine(assessment);
             const vehicleInfo = getVehicleDisplay(assessment);
             const isPanelQuote = !assessment.vehicle_id && assessment.vehicles && assessment.vehicles.length > 0;
-            const price = formatCardPrice(assessment.quote_amount, assessment.currency || 'GBP');
+            const price = formatCardPrice(assessment.total_amount ?? assessment.quote_amount, assessment.currency || 'GBP');
 
             return (
               <Card

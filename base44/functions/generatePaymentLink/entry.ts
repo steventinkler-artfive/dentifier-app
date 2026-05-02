@@ -34,12 +34,9 @@ Deno.serve(async (req) => {
     const currency = (assessment.currency || 'GBP').toLowerCase();
 
     // Calculate the correct final amount (mirrors app-wide display logic)
-    const subtotal = assessment.total_amount || 0;
-    const discountPct = assessment.discount_percentage || 0;
-    const discountAmt = subtotal * discountPct / 100;
-    const net = subtotal - discountAmt;
-    const vatAmt = settings.is_vat_registered ? net * ((settings.tax_rate || 0) / 100) : 0;
-    const amount = net + vatAmt;
+    const subtotal = (assessment.total_amount ?? assessment.quote_amount) || 0;
+    const vatAmt = settings.is_vat_registered ? subtotal * ((settings.tax_rate || 0) / 100) : 0;
+    const amount = subtotal + vatAmt;
 
     // Get customer details for payment description
     let customerName = 'Customer';
