@@ -262,6 +262,8 @@ export default function AssessmentPage() {
         };
       } else {
         // Single vehicle assessment
+        const _qAmt = quoteData.quoteAmount || 0;
+        const _discPct = quoteData.discountPercentage || 0;
         assessmentPayload = {
           customer_id: assessmentData.customer?.id,
           is_multi_vehicle: false,
@@ -271,8 +273,9 @@ export default function AssessmentPage() {
           damage_analysis: assessmentData.currentAnalysis,
           line_items: quoteData.lineItems || [],
           calculation_breakdown: quoteData.calculationBreakdown || [], // NEW: Include breakdown
-          quote_amount: quoteData.quoteAmount || 0,
-          discount_percentage: quoteData.discountPercentage || 0,
+          quote_amount: _qAmt,
+          discount_percentage: _discPct,
+          total_amount: _qAmt - (_qAmt * _discPct / 100),
           currency: quoteData.currency || 'GBP',
           status: assessmentData.customer ? 'ready' : 'draft',
           notes: quoteData.notes || '',

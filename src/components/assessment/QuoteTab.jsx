@@ -113,8 +113,10 @@ export default function QuoteTab({
     const pct = Math.min(100, Math.max(0, parseFloat(value) || 0));
     setIsSavingDiscount(true);
     try {
+      const qAmt = assessment.quote_amount || 0;
       await base44.entities.Assessment.update(assessment.id, {
         discount_percentage: pct,
+        total_amount: qAmt - (qAmt * pct / 100),
         estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
       });
       await loadAssessmentDetails();

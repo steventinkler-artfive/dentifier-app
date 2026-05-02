@@ -55,8 +55,10 @@ export default function PerPanelQuoteView({
     const pct = Math.min(100, Math.max(0, parseFloat(value) || 0));
     setIsSavingDiscount(true);
     try {
+      const qAmt = assessment.quote_amount || 0;
       await base44.entities.Assessment.update(assessment.id, {
         discount_percentage: pct,
+        total_amount: qAmt - (qAmt * pct / 100),
         estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
       });
       await onAssessmentUpdate();
@@ -90,10 +92,13 @@ export default function PerPanelQuoteView({
     try {
       const vehicleTotal = (updatedVehicles || vehicles).reduce((s, v) => s + (v.quote_amount || 0), 0);
       const assessmentTotal = (updatedAssessmentItems || assessmentItems).reduce((s, i) => s + (i.total_price || 0), 0);
+      const qAmt = vehicleTotal + assessmentTotal;
+      const discPct = assessment.discount_percentage || 0;
       await base44.entities.Assessment.update(assessment.id, {
         vehicles: updatedVehicles || vehicles,
         line_items: updatedAssessmentItems || assessmentItems,
-        quote_amount: vehicleTotal + assessmentTotal,
+        quote_amount: qAmt,
+        total_amount: qAmt - (qAmt * discPct / 100),
         estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
       });
       onAssessmentUpdate();
