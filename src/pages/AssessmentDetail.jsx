@@ -1683,9 +1683,18 @@ export default function AssessmentDetail() {
             )}
 
             {assessment.status === 'completed' && assessment.payment_link_url && assessment.payment_status !== 'paid' && (
-              <Button onClick={handleCheckPaymentStatus} disabled={checkingPayment} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
-                {checkingPayment ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking...</> : <><CreditCard className="w-4 h-4 mr-2" />Check Payment</>}
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => navigator.clipboard.writeText(assessment.payment_link_url)}
+                  className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Copy Payment Link
+                </Button>
+                <Button onClick={handleCheckPaymentStatus} disabled={checkingPayment} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                  {checkingPayment ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking...</> : <><CreditCard className="w-4 h-4 mr-2" />Check Payment</>}
+                </Button>
+              </div>
             )}
 
             {assessment.status === 'completed' && assessment.payment_status === 'paid' && (
