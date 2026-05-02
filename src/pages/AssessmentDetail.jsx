@@ -263,6 +263,13 @@ export default function AssessmentDetail() {
       await base44.entities.Assessment.update(assessment.id, updateData);
       
       // Auto-generate payment link if preference is set
+      console.log('Auto payment link check:', { 
+        newStatus, 
+        hasUserSettings: !!userSettings, 
+        preference: userSettings?.payment_method_preference,
+        provider: userSettings?.payment_provider,
+        assessmentId: assessment.id 
+      });
       if (newStatus === 'completed' && userSettings) {
         const preference = userSettings.payment_method_preference || 'Bank Transfer Only';
         const hasPaymentProvider = userSettings.payment_provider && userSettings.payment_provider !== 'None';
