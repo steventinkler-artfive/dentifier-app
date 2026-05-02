@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     const currency = (assessment.currency || 'GBP').toLowerCase();
 
     // Calculate the correct final amount (mirrors app-wide display logic)
-    const subtotal = assessment.quote_amount || 0;
+    const subtotal = assessment.total_amount || 0;
     const discountPct = assessment.discount_percentage || 0;
     const discountAmt = subtotal * discountPct / 100;
     const net = subtotal - discountAmt;
