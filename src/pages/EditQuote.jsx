@@ -239,7 +239,8 @@ export default function EditQuotePage() {
 
         await Assessment.update(assessmentId, {
           vehicles: updatedVehicles,
-          quote_amount: newTotal
+          quote_amount: newTotal,
+          total_amount: newTotal
         });
 
         // Navigate back to the specific vehicle view
@@ -249,6 +250,7 @@ export default function EditQuotePage() {
         await Assessment.update(assessmentId, {
           line_items: items,
           quote_amount: totalPrice,
+          total_amount: totalPrice - (totalPrice * (assessment.discount_percentage || 0) / 100),
           currency: currency,
           notes: notes
         });
