@@ -105,6 +105,13 @@ export default function AssessmentDetail() {
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
+  const [copiedPaymentLink, setCopiedPaymentLink] = useState(false);
+
+  const handleCopyPaymentLink = () => {
+    navigator.clipboard.writeText(assessment.payment_link_url);
+    setCopiedPaymentLink(true);
+    setTimeout(() => setCopiedPaymentLink(false), 2000);
+  };
 
   const openImageViewer = (index) => {
     setSelectedImageIndex(index);
@@ -1250,11 +1257,11 @@ export default function AssessmentDetail() {
             {assessment.status === 'completed' && assessment.payment_link_url && assessment.payment_status !== 'paid' && (
               <div className="grid grid-cols-2 gap-3">
                 <Button
-                  onClick={() => navigator.clipboard.writeText(assessment.payment_link_url)}
+                  onClick={handleCopyPaymentLink}
                   className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
-                  Copy Payment Link
+                  {copiedPaymentLink ? 'Copied!' : 'Copy Payment Link'}
                 </Button>
                 <Button onClick={handleCheckPaymentStatus} disabled={checkingPayment} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
                   {checkingPayment ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking...</> : <><CreditCard className="w-4 h-4 mr-2" />Check Payment</>}
@@ -1685,11 +1692,11 @@ export default function AssessmentDetail() {
             {assessment.status === 'completed' && assessment.payment_link_url && assessment.payment_status !== 'paid' && (
               <div className="grid grid-cols-2 gap-3">
                 <Button
-                  onClick={() => navigator.clipboard.writeText(assessment.payment_link_url)}
+                  onClick={handleCopyPaymentLink}
                   className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
-                  Copy Payment Link
+                  {copiedPaymentLink ? 'Copied!' : 'Copy Payment Link'}
                 </Button>
                 <Button onClick={handleCheckPaymentStatus} disabled={checkingPayment} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
                   {checkingPayment ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Checking...</> : <><CreditCard className="w-4 h-4 mr-2" />Check Payment</>}
