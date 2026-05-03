@@ -214,7 +214,7 @@ export default function MySubscriptionTab({ user }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PlanCard
           title="Starter"
-          price="20"
+          price="25"
           features={STARTER_FEATURES}
           isCurrent={isOnStarter}
           isCurrentOnMobile={isOnStarter}

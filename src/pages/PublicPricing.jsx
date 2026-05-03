@@ -58,7 +58,7 @@ export default function PublicPricing() {
             <CardHeader>
               <CardTitle className="text-white text-2xl">Starter</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold text-white">£20</span>
+                <span className="text-4xl font-bold text-white">£25</span>
                 <span className="text-slate-400">/month</span>
               </div>
               <p className="text-sm text-slate-400 mt-2">
