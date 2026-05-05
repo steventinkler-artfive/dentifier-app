@@ -95,17 +95,15 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
             const isPaid = a.payment_status === "paid";
             return (
               <tr key={a.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>
-                  {date}
-                  {isPaid && (
-                    <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}>
-                      Paid: {new Date(a.updated_date).toLocaleDateString("en-GB")}
-                    </div>
-                  )}
-                </td>
+                <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>{date}</td>
                 <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>{invNo}</td>
                 <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937" }}>
                   {isPaid ? "Paid" : "Pending Payment"}
+                  {isPaid && (
+                    <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}>
+                      {new Date(a.updated_date).toLocaleDateString("en-GB")}
+                    </div>
+                  )}
                 </td>
                 <td style={{ padding: "16px 0", fontWeight: "500", color: "#1f2937", textAlign: "right" }}>{fmt(a.quote_amount || 0)}</td>
               </tr>
