@@ -488,6 +488,7 @@ export default function AssessmentDetail() {
           vehicles,
           userSettings,
           logoDisplayUrl,
+          isProfessional: userSettings?.subscription_tier === 'professional',
           includeNotes: includeNotesInQuote,
           onPaymentButtonRendered: (rect) => { paymentButtonRect = rect; },
         })
