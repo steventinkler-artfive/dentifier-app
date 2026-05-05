@@ -369,6 +369,7 @@ export default function Reports() {
       'Total Amount',
       'VAT Amount',
       'Payment Status',
+      'Payment Date',
       'Notes'
     ];
 
@@ -390,6 +391,9 @@ export default function Reports() {
       const totalAmount = assessment.quote_amount || 0;
       const vatAmount = calculateVAT(totalAmount);
       const paymentStatus = assessment.payment_status || 'pending';
+      const paymentDate = paymentStatus === 'paid' && assessment.updated_date
+        ? new Date(assessment.updated_date).toLocaleDateString('en-GB')
+        : '';
       const notes = (assessment.notes || '').replace(/,/g, ';').replace(/\n/g, ' ');
 
       return [
@@ -401,6 +405,7 @@ export default function Reports() {
         totalAmount.toFixed(2),
         vatAmount.toFixed(2),
         paymentStatus,
+        paymentDate,
         notes
       ];
     });
