@@ -106,6 +106,7 @@ export default function AssessmentDetail() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
   const [copiedPaymentLink, setCopiedPaymentLink] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const handleCopyPaymentLink = () => {
     navigator.clipboard.writeText(assessment.payment_link_url);
@@ -152,6 +153,7 @@ export default function AssessmentDetail() {
 
         const promises = [];
         const currentUser = await base44.auth.me();
+        setCurrentUser(currentUser);
 
         if (foundAssessment.customer_id) {
           promises.push(base44.entities.Customer.get(foundAssessment.customer_id));
@@ -488,7 +490,7 @@ export default function AssessmentDetail() {
           vehicles,
           userSettings,
           logoDisplayUrl,
-          isProfessional: userSettings?.subscription_tier === 'professional',
+          isProfessional: currentUser?.subscription_tier === 'professional',
           includeNotes: includeNotesInQuote,
           onPaymentButtonRendered: (rect) => { paymentButtonRect = rect; },
         })
