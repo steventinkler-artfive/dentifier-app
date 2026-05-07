@@ -740,7 +740,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       if (globalSettings?.llm_quote_instructions) {
         try {
           const damageContext = damageItems.map((item, idx) =>
-            `${idx + 1}. Panel: ${item.panel} | Type: ${item.damage_type}${item.size_range ? ` | Size: ${item.size_range}` : ''}${item.depth ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
+            `${idx + 1}. Panel: ${item.panel} | Type: ${item.damage_type}${item.size_range ? ` | Size: ${item.size_range}` : ''}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep/Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
           ).join('\n');
 
           const notesPrompt = `${globalSettings.llm_quote_instructions}
