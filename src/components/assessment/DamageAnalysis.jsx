@@ -194,8 +194,7 @@ YOUR TASK — respond in JSON with exactly these two fields:
    - If no photos: "No photos provided — analysis based on manual inputs only."
    - DO NOT repeat the full damage description. ONE sentence only.
 
-2. "photo_observation": ONE sentence of genuine AI insight from the photos that the technician did NOT enter themselves. Examples: where on the panel the damage is located, whether the edge reflects cleanly, whether the damage appears consistent with the described cause. If nothing meaningful can be observed beyond what was entered, output exactly: "No additional observations from photo analysis."
-   - DO NOT mention skill levels, PDR suitability, pricing, or anything the tech already entered.
+2. "photo_observation": ONE sentence describing what is visible in the photo — specifically where on the panel the damage is located (e.g. "The dent is located towards the front edge of the bonnet." or "Damage sits near the lower corner of the rear door."). Always describe location from the photo. Only output "No additional observations from photo analysis." if no photo was provided.
    - ONE sentence only.
 
 OUTPUT: JSON only. No other text.`;
