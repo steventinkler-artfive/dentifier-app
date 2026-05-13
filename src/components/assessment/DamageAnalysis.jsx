@@ -186,11 +186,12 @@ PHOTOS: ${photos.length} photo(s) provided.
 
 YOUR TASK — respond in JSON with exactly these two fields:
 
-1. "confidence_check": ONE short sentence (max 20 words) comparing what's visible in the photos to the entered inputs. 
+1. "confidence_check": ONE short sentence (max 20 words) comparing what's visible in the photos to the entered inputs.
    - If photos match inputs: "Photos appear consistent with the selected inputs."
-   - If photos suggest shallower AND the technician-entered depth is NOT 'Shallow': "Photos suggest the damage may be shallower than selected — worth reviewing before proceeding."
-   - If photos suggest shallower AND the technician-entered depth IS 'Shallow': "Photos appear consistent with the selected inputs."
-   - If photos suggest deeper: "Photos suggest the damage may be deeper than selected — worth reviewing before proceeding."
+   - If photos suggest shallower AND technician-entered depth is 'Deep/Sharp': "Photos suggest the damage may be shallower than selected — worth reviewing before proceeding."
+   - If photos suggest shallower AND technician-entered depth is 'Shallow' or 'Medium': "Photos appear consistent with the selected inputs."
+   - If photos suggest deeper AND technician-entered depth is 'Shallow': "Photos suggest the damage may be deeper than selected — worth reviewing before proceeding."
+   - If photos suggest deeper AND technician-entered depth is 'Medium' or 'Deep/Sharp': "Photos appear consistent with the selected inputs."
    - If no photos: "No photos provided — analysis based on manual inputs only."
    - DO NOT repeat the full damage description. ONE sentence only.
 
