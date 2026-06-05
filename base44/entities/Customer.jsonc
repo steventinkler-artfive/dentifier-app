@@ -1,0 +1,48 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "business_name": {
+      "type": "string",
+      "description": "Business name (for business clients)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Contact person name or customer full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Customer email address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Customer phone number"
+    },
+    "address": {
+      "type": "string",
+      "description": "Customer address"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional customer notes"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

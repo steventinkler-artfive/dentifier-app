@@ -1,0 +1,58 @@
+{
+  "name": "Vehicle",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "Reference to customer"
+    },
+    "make": {
+      "type": "string",
+      "description": "Vehicle manufacturer"
+    },
+    "model": {
+      "type": "string",
+      "description": "Vehicle model"
+    },
+    "year": {
+      "type": "integer",
+      "description": "Vehicle year"
+    },
+    "color": {
+      "type": "string",
+      "description": "Vehicle colour"
+    },
+    "vin": {
+      "type": "string",
+      "description": "Vehicle identification number"
+    },
+    "license_plate": {
+      "type": "string",
+      "description": "Licence plate number"
+    },
+    "dvla_data": {
+      "type": "object",
+      "description": "Full DVLA API response data (make, year, colour, fuelType, motExpiryDate, etc.)"
+    }
+  },
+  "required": [
+    "customer_id",
+    "make",
+    "year",
+    "color"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

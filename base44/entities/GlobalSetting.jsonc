@@ -1,0 +1,46 @@
+{
+  "name": "GlobalSetting",
+  "type": "object",
+  "properties": {
+    "setting_key": {
+      "type": "string",
+      "description": "Unique identifier for this settings record (should always be 'main')"
+    },
+    "llm_analysis_instructions": {
+      "type": "string",
+      "format": "text",
+      "description": "The full prompt and knowledge base for Dentifier to perform damage analysis."
+    },
+    "llm_quote_instructions": {
+      "type": "string",
+      "format": "text",
+      "description": "The full prompt for Dentifier to generate a quote based on the analysis."
+    }
+  },
+  "required": [
+    "setting_key"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "write": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
