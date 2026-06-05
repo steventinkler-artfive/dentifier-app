@@ -33,7 +33,15 @@ export default function ForgotPassword() {
   if (success) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-slate-900 border-slate-800">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-12">
+            <img
+              src="https://dentifier.b-cdn.net/logo/dentifier-logo-strap-white2.svg"
+              alt="Dentifier"
+              style={{ width: "180px", height: "auto" }}
+            />
+          </div>
+          <Card className="bg-slate-900 border-slate-800">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center">
@@ -52,14 +60,23 @@ export default function ForgotPassword() {
               </Button>
             </Link>
           </CardContent>
-        </Card>
-      </div>
-    );
-  }
+          </Card>
+          </div>
+          </div>
+          );
+          }
 
-  return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-900 border-slate-800">
+          return (
+          <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+          <div className="flex justify-center mb-12">
+          <img
+           src="https://dentifier.b-cdn.net/logo/dentifier-logo-strap-white2.svg"
+           alt="Dentifier"
+           style={{ width: "180px", height: "auto" }}
+          />
+          </div>
+          <Card className="bg-slate-900 border-slate-800">
         <CardHeader>
           <CardTitle className="text-white text-2xl">Forgot Password?</CardTitle>
           <CardDescription className="text-slate-400">
@@ -112,7 +129,8 @@ export default function ForgotPassword() {
             </div>
           </form>
         </CardContent>
-      </Card>
-    </div>
-  );
-}
+        </Card>
+        </div>
+        </div>
+        );
+        }
