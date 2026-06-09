@@ -86,7 +86,7 @@ export default function PricingQuotingForm({ formData, onChange }) {
               <Label className="text-white">Base Cost / Call-out (£)</Label>
               <Input
                 type="number"
-                value={formData.base_cost || 80}
+                value={formData.base_cost || 40}
                 onChange={e => onChange('base_cost', parseFloat(e.target.value))}
                 className="bg-slate-800 border-slate-700 text-white"
               />
@@ -98,7 +98,7 @@ export default function PricingQuotingForm({ formData, onChange }) {
             <Label className="text-white">Default Panel Price * (£)</Label>
             <Input
               type="number"
-              value={formData.default_panel_price || 120}
+              value={formData.default_panel_price || 60}
               onChange={e => onChange('default_panel_price', parseFloat(e.target.value))}
               className="bg-slate-800 border-slate-700 text-white"
               required
