@@ -46,13 +46,13 @@ const DEFAULT_PRICING_MATRIX = [
   { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
   
   // Crease - First 7 size ranges
-  { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 150 },
-  { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 220 },
-  { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 280 },
-  { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 350 },
-  { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 420 },
+  { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 130 },
+  { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 170 },
+  { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 250 },
+  { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 330 },
+  { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 415 },
   { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
-  { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 600 }
+  { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 620 }
 ];
 
 export default function PricingMatrix({ pricingMatrix, customDamageTypes, customSizeRanges = [], onChange, onCustomTypesChange, onCustomSizeRangesChange, currency, worksOnAluminum }) {

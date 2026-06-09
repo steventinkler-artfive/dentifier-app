@@ -141,7 +141,7 @@
     "default_panel_price": {
       "type": "number",
       "description": "Default price per panel for simplified pricing.",
-      "default": 120
+      "default": 60
     },
     "pricing_matrix": {
       "type": "array",

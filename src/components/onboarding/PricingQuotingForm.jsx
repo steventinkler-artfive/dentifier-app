@@ -77,7 +77,7 @@ export default function PricingQuotingForm({ formData, onChange }) {
               <Label className="text-white">Hourly Rate (£)</Label>
               <Input
                 type="number"
-                value={formData.hourly_rate || 70}
+                value={formData.hourly_rate || 60}
                 onChange={e => onChange('hourly_rate', parseFloat(e.target.value))}
                 className="bg-slate-800 border-slate-700 text-white"
               />
