@@ -599,7 +599,7 @@ export default function QuoteGeneration({
 INPUT DATA FOR THIS SINGLE DAMAGE ITEM:
 
 Panel: ${item.panel}
-Damage Type: ${item.damage_type}
+Damage Type: ${toDisplayDamageType(item.damage_type)}
 Size Range: ${item.size_range}
 Depth: ${item.depth || 'Shallow'}
 Material: ${item.material === 'Aluminum' ? 'Aluminium' : item.material || 'Steel'}
@@ -741,7 +741,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       if (globalSettings?.llm_quote_instructions) {
         try {
           const damageContext = damageItems.map((item, idx) =>
-            `${idx + 1}. Panel: ${item.panel} | Type: ${item.damage_type}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep/Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
+            `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep/Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
           ).join('\n') + (analysis?._ui?.photo_observation && analysis._ui.photo_observation !== 'No additional observations from photo analysis.' ? `\nPhoto observation: ${analysis._ui.photo_observation}` : '');
 
           const notesPrompt = `${globalSettings.llm_quote_instructions}
