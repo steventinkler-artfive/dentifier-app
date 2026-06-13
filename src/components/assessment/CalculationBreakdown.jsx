@@ -65,7 +65,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                     Damage Item {index + 1}: {item.panel || 'N/A'}
                   </h4>
                   <p className="text-slate-300 text-sm">
-                    {toDisplayDamageType(item.damageType) || 'N/A'} • {item.sizeRange || 'N/A'} • {item.material || 'N/A'}
+                    {toDisplayDamageType(item.damageType) || 'N/A'} • {item.sizeRange || 'N/A'} • {item.material === 'Aluminum' ? 'Aluminium' : (item.material || 'N/A')}
                   </p>
                 </div>
               </div>
@@ -90,7 +90,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                     </div>
                     {item.aluminumMultiplier > 1 && (
                       <div>
-                        <span className="text-slate-400">Aluminum (x1.35):</span>
+                        <span className="text-slate-400">Aluminium (x1.35):</span>
                         <span className="text-white ml-2 font-medium">
                           {getCurrencySymbol()}{item.basePrice?.toFixed(2)}
                         </span>

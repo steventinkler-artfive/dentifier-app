@@ -392,7 +392,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-slate-700">
-                              {MATERIALS.map(m => <SelectItem key={m} value={m} className="text-white hover:bg-slate-700">{m}</SelectItem>)}
+                              {MATERIALS.map(m => <SelectItem key={m} value={m} className="text-white hover:bg-slate-700">{m === 'Aluminum' ? 'Aluminium' : m}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
