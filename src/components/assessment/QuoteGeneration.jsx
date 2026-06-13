@@ -612,7 +612,7 @@ Technician's Additional Notes: ${item.notes || 'None'}
 FINAL CALCULATED PRICE: ${getCurrencySymbol()}${calculation.totalPrice.toFixed(2)} (DO NOT MODIFY)
 
 REQUIRED OUTPUT:
-Provide ONLY the line item description as a plain string. Example: "PDR Labour - Rear Door Standard Dent Repair (51mm - 80mm, Medium, Body Line Area)"
+Provide ONLY the line item description as a plain string. Example: "PDR Labour - Rear Door Round Dent Repair (51mm - 80mm, Medium, Body Line Area)"
 
 DO NOT include JSON formatting, quotes, or any other text - just the description string.`;
 
