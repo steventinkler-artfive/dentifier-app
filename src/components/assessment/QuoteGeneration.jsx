@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Plus, CheckCircle, Trash2, AlertTriangle, Settings } from "lucide-react";
 
 import { calculateEstimatedTimeRange } from "@/utils/timeEstimate";
+import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
 
 // ============================================================================
 // PROGRAMMATIC PRICING CALCULATION FUNCTIONS
@@ -637,7 +638,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
             } catch (llmError) {
               console.error('LLM description generation failed, using fallback:', llmError);
               // Fallback to programmatic description
-              let description = `PDR Labour - ${item.panel} ${item.damage_type} Repair (${item.size_range}`;
+              let description = `PDR Labour - ${item.panel} ${toDisplayDamageType(item.damage_type)} Repair (${item.size_range}`;
               if (item.depth && item.depth !== "Shallow") {
                 description += `, ${item.depth}`;
               }
@@ -658,7 +659,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
             }
           } else {
             // No global settings - use programmatic fallback
-            let description = `PDR Labour - ${item.panel} ${item.damage_type} Repair (${item.size_range}`;
+            let description = `PDR Labour - ${item.panel} ${toDisplayDamageType(item.damage_type)} Repair (${item.size_range}`;
             if (item.depth && item.depth !== "Shallow") {
               description += `, ${item.depth}`;
             }

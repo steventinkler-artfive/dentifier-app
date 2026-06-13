@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertTriangle, CheckCircle, RefreshCw, ArrowLeft, Save, ShieldCheck, Eye } from "lucide-react";
+import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
 
 const DentifierIcon = ({ className = "" }) => (
   <svg className={className} viewBox="0 0 25.24 18.12" fill="currentColor"
@@ -376,7 +377,7 @@ OUTPUT: JSON only. No other text.`;
             <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Estimated Time</p>
             <p className="text-white font-semibold">{estimatedTime}</p>
             {damageItems.length === 1 && damageItems[0].damage_type && damageItems[0].size_range && (
-              <p className="text-slate-400 text-xs mt-0.5">{damageItems[0].damage_type}, {damageItems[0].size_range}</p>
+              <p className="text-slate-400 text-xs mt-0.5">{toDisplayDamageType(damageItems[0].damage_type)}, {damageItems[0].size_range}</p>
             )}
             <p className="text-slate-500 text-xs mt-1">Faster techs typically sit at the lower end of this range.</p>
           </CardContent>

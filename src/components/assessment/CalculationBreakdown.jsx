@@ -1,5 +1,6 @@
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
+import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
 
 export default function CalculationBreakdown({ breakdownData = [], currency = 'GBP' }) {
   if (!breakdownData || breakdownData.length === 0) {
@@ -21,7 +22,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
     
     // FIXED: Prioritize showing structured data when available
     if (entry.size_range && entry.damage_type) {
-      return `${entry.damage_type} • ${entry.size_range} • ${getCurrencySymbol()}${entry.base_price?.toFixed(2) || '0.00'}`;
+      return `${toDisplayDamageType(entry.damage_type)} • ${entry.size_range} • ${getCurrencySymbol()}${entry.base_price?.toFixed(2) || '0.00'}`;
     }
     
     // Only show notes if structured data is missing
@@ -64,7 +65,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                     Damage Item {index + 1}: {item.panel || 'N/A'}
                   </h4>
                   <p className="text-slate-300 text-sm">
-                    {item.damageType || 'N/A'} • {item.sizeRange || 'N/A'} • {item.material || 'N/A'}
+                    {toDisplayDamageType(item.damageType) || 'N/A'} • {item.sizeRange || 'N/A'} • {item.material || 'N/A'}
                   </p>
                 </div>
               </div>

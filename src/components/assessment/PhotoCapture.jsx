@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Camera, Upload, X, Loader2, ChevronDown, AlertTriangle, Plus } from "lucide-react";
 import { compressMultipleImages } from "../utils/imageCompression";
 import { useAlert } from "@/components/ui/CustomAlert";
+import { toDisplayDamageType, toStoredDamageType, BASE_DAMAGE_TYPES_STORED } from "@/utils/damageTypeDisplay";
 
 const CAR_PANELS = [
   "Bonnet/Hood",
@@ -24,7 +25,7 @@ const CAR_PANELS = [
   "Other"
 ];
 
-const BASE_DAMAGE_TYPES = ["Standard Dent", "Crease"];
+const BASE_DAMAGE_TYPES = BASE_DAMAGE_TYPES_STORED;
 
 const DEFAULT_SIZE_RANGES = [
   "up to 10mm", "11mm - 25mm", "26mm - 50mm", "51mm - 80mm",
@@ -272,7 +273,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                         </p>
                         {!isExpanded && (
                           <p className="text-slate-400 text-xs truncate">
-                            {[item.damage_type, item.size_range].filter(Boolean).join(' · ') || 'Tap to expand'}
+                            {[toDisplayDamageType(item.damage_type), item.size_range].filter(Boolean).join(' · ') || 'Tap to expand'}
                           </p>
                         )}
                       </div>
@@ -362,12 +363,12 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
 
                         <div className="space-y-2">
                           <Label className="text-white">Damage Type <span className="text-red-400">*</span></Label>
-                          <Select value={item.damage_type} onValueChange={(v) => handleDamageItemChange(itemIndex, 'damage_type', v)}>
+                          <Select value={toDisplayDamageType(item.damage_type)} onValueChange={(v) => handleDamageItemChange(itemIndex, 'damage_type', toStoredDamageType(v))}>
                             <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-slate-700">
-                              {damageTypes.map(t => <SelectItem key={t} value={t} className="text-white hover:bg-slate-700">{t}</SelectItem>)}
+                              {damageTypes.map(t => <SelectItem key={t} value={toDisplayDamageType(t)} className="text-white hover:bg-slate-700">{toDisplayDamageType(t)}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>

@@ -45,6 +45,7 @@ import {
   X
 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
+import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
 import QuoteTab from "@/components/assessment/QuoteTab";
 import AddVehicleForm from "@/components/assessment/AddVehicleForm";
 import ReactDOM from "react-dom/client";
@@ -1601,7 +1602,7 @@ export default function AssessmentDetail() {
                               <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Estimated Time</p>
                               <p className="text-white text-sm font-semibold">{assessment.estimated_time_hours}</p>
                               {currentVehicleData?.damage_items?.length === 1 && currentVehicleData.damage_items[0].damage_type && currentVehicleData.damage_items[0].size_range && (
-                                <p className="text-slate-400 text-xs mt-0.5">{currentVehicleData.damage_items[0].damage_type}, {currentVehicleData.damage_items[0].size_range}</p>
+                                <p className="text-slate-400 text-xs mt-0.5">{toDisplayDamageType(currentVehicleData.damage_items[0].damage_type)}, {currentVehicleData.damage_items[0].size_range}</p>
                               )}
                               <p className="text-slate-500 text-xs mt-1">Faster techs typically sit at the lower end of this range.</p>
                             </div>

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2, AlertCircle, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
+import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
 
 const CORE_DAMAGE_TYPES = ["Standard Dent", "Crease"];
 
@@ -289,7 +290,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
                       <SelectContent className="bg-slate-800 border-slate-700">
                         {allDamageTypes.map(type => (
                           <SelectItem key={type} value={type} className="text-white hover:bg-slate-700">
-                            {type}
+                            {toDisplayDamageType(type)}
                           </SelectItem>
                         ))}
                         <SelectItem value="__add_custom__" className="text-green-400 hover:bg-slate-700 border-t border-slate-600">
@@ -446,7 +447,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
           {/* Summary */}
           <div className="text-xs text-slate-400 space-y-1 pt-2 border-t border-slate-800">
             <p>• {pricingMatrix.length} pricing {pricingMatrix.length === 1 ? 'entry' : 'entries'} configured</p>
-            <p>• {allDamageTypes.length} damage {allDamageTypes.length === 1 ? 'type' : 'types'} available ({CORE_DAMAGE_TYPES.length} core + {customDamageTypes.length} custom)</p>
+            <p>• {allDamageTypes.length} damage {allDamageTypes.length === 1 ? 'type' : 'types'} available ({CORE_DAMAGE_TYPES.length} core + {customDamageTypes.length} custom): {allDamageTypes.map(toDisplayDamageType).join(', ')}</p>
             <p>• {allSizeRanges.length} size {allSizeRanges.length === 1 ? 'range' : 'ranges'} available ({SIZE_RANGE_OPTIONS.length} standard + {customSizeRanges.length} custom)</p>
             {worksOnAluminum && <p>• Aluminum pricing: automatic 1.35x multiplier</p>}
           </div>
