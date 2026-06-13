@@ -104,6 +104,16 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                   <div className="p-3 bg-slate-900 rounded">
                     <p className="text-xs text-slate-400 font-medium mb-2">MULTIPLIERS APPLIED:</p>
                     <div className="space-y-1 text-sm">
+                      {item.material && item.material !== 'Steel' && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">
+                            Material ({item.material === 'Aluminum' ? 'Aluminium' : item.material}):
+                          </span>
+                          <span className="text-white font-medium">
+                            {item.material === 'HS Steel' ? '1.25x' : item.material === 'Aluminum' ? '1.35x' : `${item.multipliers.material?.toFixed(2)}x`}
+                          </span>
+                        </div>
+                      )}
                       {item.multipliers.repairMethod && (
                         <div className="flex justify-between">
                           <span className="text-slate-300">
