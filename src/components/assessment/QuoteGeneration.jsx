@@ -1166,7 +1166,6 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
                     {estimatedTime && (
                       <div>
                         <p><span className="font-semibold">Estimated Time (tech only):</span> {estimatedTime}</p>
-                        <p className="text-slate-500 text-xs mt-0.5">Faster techs typically sit at the lower end of this range.</p>
                       </div>
                     )}
                     <p><span className="font-semibold">Final Price:</span> {getCurrencySymbol()}{breakdown.totalPrice?.toFixed(2)}</p>

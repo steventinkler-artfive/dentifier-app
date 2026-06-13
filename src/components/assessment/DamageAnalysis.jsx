@@ -379,7 +379,6 @@ OUTPUT: JSON only. No other text.`;
             {damageItems.length === 1 && damageItems[0].damage_type && damageItems[0].size_range && (
               <p className="text-slate-400 text-xs mt-0.5">{toDisplayDamageType(damageItems[0].damage_type)}, {damageItems[0].size_range}</p>
             )}
-            <p className="text-slate-500 text-xs mt-1">Faster techs typically sit at the lower end of this range.</p>
           </CardContent>
         </Card>
       )}
