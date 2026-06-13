@@ -324,8 +324,10 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
   // If the pricing matrix uses the old 'steel_price'/'aluminum_price' fields, then lookupPricingMatrix
   // already returns the material-specific price, so no additional multiplier is needed here.
   const usingNewStructure = pricingMatrix.length > 0 && pricingMatrix[0].base_price !== undefined;
-  const aluminumMultiplier = (damageItem.material === "Aluminum" && usingNewStructure) ? 1.35 : 1.0;
-  const basePrice = safeBaseMatrixPrice * aluminumMultiplier;
+  const materialMultiplier = usingNewStructure
+    ? (damageItem.material === "Aluminum" ? 1.35 : damageItem.material === "HS Steel" ? 1.25 : 1.0)
+    : 1.0;
+  const basePrice = safeBaseMatrixPrice * materialMultiplier;
   
   // STEP 2: Calculate All Complexity Multipliers
   const repairMethodMultiplier = calculateRepairMethodMultiplier(damageItem);
@@ -389,12 +391,12 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
     matrixEntry: matrixEntry,
     isEstimate: isEstimate,
     fallbackReason: fallbackReason,
-    baseSteelPrice: safeBaseMatrixPrice, // Now represents the price from matrix before aluminum multiplier (if new structure) or after (if old structure)
-    aluminumMultiplier: aluminumMultiplier,
+    baseSteelPrice: safeBaseMatrixPrice, // Now represents the price from matrix before material multiplier (if new structure) or after (if old structure)
+    materialMultiplier: materialMultiplier,
     basePrice: basePrice,
     hourlyRate: hourlyRate,
     multipliers: {
-      aluminum: aluminumMultiplier,
+      material: materialMultiplier,
       repairMethod: repairMethodMultiplier,
       depth: depthMultiplier,
       bodyLine: bodyLineMultiplier,

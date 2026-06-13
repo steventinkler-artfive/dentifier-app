@@ -33,7 +33,7 @@ const DEFAULT_SIZE_RANGES = [
   "501mm - 750mm", "751mm - 1000mm (or larger)"
 ];
 
-const MATERIALS = ["Steel", "Aluminum", "Unsure"];
+const MATERIALS = ["Steel", "HS Steel", "Aluminum"];
 
 const REPAIR_METHODS = [
   "Good Tool Access", "Limited Tool Access", "Glue Pull Only",
