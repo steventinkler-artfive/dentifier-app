@@ -108,6 +108,11 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   const handleFileSelect = async (event) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
+    if (!navigator.onLine) {
+      showAlert("Photo upload requires a connection. Your other details have been saved.", "Offline");
+      if (event.target) event.target.value = '';
+      return;
+    }
     setUploading(true);
     try {
       const compressed = await compressMultipleImages(files);
@@ -133,6 +138,11 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   const handleItemFileSelect = async (event, itemIndex) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
+    if (!navigator.onLine) {
+      showAlert("Photo upload requires a connection. Your other details have been saved.", "Offline");
+      if (event.target) event.target.value = '';
+      return;
+    }
     setUploadingItemIndex(itemIndex);
     try {
       const compressed = await compressMultipleImages(files);

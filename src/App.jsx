@@ -16,6 +16,8 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import OfflineBanner from '@/components/ui/OfflineBanner';
+import SyncManager from '@/components/SyncManager';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -37,7 +39,10 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Routes>
+    <>
+      <OfflineBanner />
+      <SyncManager />
+      <Routes>
       {/* Public Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -68,6 +73,7 @@ const AuthenticatedApp = () => {
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </>
   );
 };
 

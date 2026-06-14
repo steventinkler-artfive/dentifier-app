@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Save, Search, Loader2 } from "lucide-react";
+import { Car, Save, Search, Loader2, WifiOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
+import { useOfflineMutation } from "@/hooks/useOfflineMutation";
 
 const VEHICLE_MAKES = [
   "Abarth", "AC", "Acura", "AK", "Alfa Romeo", "Allard", "Alpina", "Alpine", 
@@ -71,11 +72,27 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
   const [lookingUp, setLookingUp] = useState(false);
   const [vehicleMakes, setVehicleMakes] = useState(VEHICLE_MAKES);
   const [vehicleColors, setVehicleColors] = useState(VEHICLE_COLORS);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const { mutate } = useOfflineMutation();
+
+  useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline = () => setIsOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online', goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
+    };
+  }, []);
 
   const handleDvlaLookup = async () => {
     if (!formData.license_plate || formData.license_plate.length < 2) {
       toast.error('Please enter a licence plate first');
       return;
+    }
+    if (isOffline) {
+      return; // Button is disabled offline; this is just a safety guard
     }
 
     setLookingUp(true);
@@ -129,26 +146,29 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    try {
-      const vehicleData = {
-        ...formData,
-        customer_id: customer?.id || 'draft'
-      };
-      
-      let savedVehicle;
-      if (vehicle) {
-        const updatedVehicle = await base44.entities.Vehicle.update(vehicle.id, vehicleData);
-        savedVehicle = { ...vehicle, ...updatedVehicle };
-      } else {
-        savedVehicle = await base44.entities.Vehicle.create(vehicleData);
-      }
-      
-      onVehicleSubmit(savedVehicle);
-    } catch (error) {
-      console.error('Error saving vehicle:', error);
-    } finally {
-      setSaving(false);
-    }
+    const vehicleData = { ...formData, customer_id: customer?.id || 'draft' };
+
+    await mutate({
+      method: vehicle ? 'update' : 'create',
+      entityName: 'Vehicle',
+      data: vehicleData,
+      id: vehicle?.id,
+      onSuccess: (result) => {
+        const savedVehicle = vehicle ? { ...vehicle, ...result } : result;
+        onVehicleSubmit(savedVehicle);
+      },
+      onQueued: () => {
+        toast.success('Saved locally — will sync when back online.');
+        // Pass a temporary local object so the assessment flow can continue
+        onVehicleSubmit({ ...vehicleData, id: `local-${Date.now()}` });
+      },
+      onError: (err) => {
+        console.error('Error saving vehicle:', err);
+        toast.error('Failed to save vehicle. Please try again.');
+      },
+    });
+
+    setSaving(false);
   };
 
   const handleInputChange = (field, value) => {
@@ -194,7 +214,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
               <Button
                 type="button"
                 onClick={handleDvlaLookup}
-                disabled={lookingUp || !formData.license_plate || formData.license_plate.length < 2}
+                disabled={lookingUp || !formData.license_plate || formData.license_plate.length < 2 || isOffline}
                 variant="outline"
                 className="bg-blue-900 border-blue-700 text-blue-300 hover:bg-blue-800 hover:text-white hover:border-blue-600"
               >
@@ -211,7 +231,14 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
                 )}
               </Button>
             </div>
-            <p className="text-slate-400 text-xs">Enter a UK reg and click "Look Up" to auto-fill details</p>
+            {isOffline ? (
+              <p className="text-amber-400 text-xs flex items-center gap-1">
+                <WifiOff className="w-3 h-3" />
+                DVLA lookup unavailable offline — enter vehicle details manually.
+              </p>
+            ) : (
+              <p className="text-slate-400 text-xs">Enter a UK reg and click "Look Up" to auto-fill details</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
