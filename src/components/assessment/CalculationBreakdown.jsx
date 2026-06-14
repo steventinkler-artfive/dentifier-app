@@ -162,7 +162,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                         <div className="flex justify-between pt-2 border-t border-slate-700">
                           <span className="text-green-300 font-medium">Total Multiplier:</span>
                           <span className="text-green-300 font-bold">
-                            {item.multipliers.totalComplexity.toFixed(2)}x
+                            {(item.multipliers.totalComplexity * (item.multipliers.material || 1.0)).toFixed(2)}x
                           </span>
                         </div>
                       )}

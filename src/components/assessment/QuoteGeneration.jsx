@@ -355,7 +355,6 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
   
   // STEP 3: Combine All Complexity Multipliers
   let totalComplexityMultiplier = 
-    materialMultiplier *
     repairMethodMultiplier * 
     depthMultiplier * 
     bodyLineMultiplier * 
