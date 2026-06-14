@@ -34,20 +34,15 @@ function assessToolFinishingNeeded(damageItem) {
  * This is CONDITIONAL - varies based on whether tool finishing is needed
  */
 function calculateRepairMethodMultiplier(damageItem) {
-  const needsToolFinishing = assessToolFinishingNeeded(damageItem);
-  
   switch(damageItem.repair_method) {
     case "Good Tool Access":
       return 1.0;
       
-    case "Limited Tool Access":
-      return needsToolFinishing ? 1.35 : 1.1;
-      
     case "Glue Pull Only":
-      return 1.20;
+      return 1.25;
 
-    case "Glue Pull + Rod Finish":
-      return 1.15;
+    case "Limited Tool Access":
+      return 1.30;
       
     case "Unsure":
       return 1.10;
@@ -335,16 +330,15 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
   const depthMultiplier = {
     "Shallow": 1.0,
     "Medium": 1.25,
-    "Deep/Sharp": 1.5,
-    "Unsure": 1.2
-  }[damageItem.depth] || 1.1;
+    "Deep / Sharp": 1.5,
+  }[damageItem.depth] || 1.0;
   
   let bodyLineMultiplier = 1.0;
   if (damageItem.affects_body_line) {
     bodyLineMultiplier = (repairMethodMultiplier > 1.3) ? 1.1 : 1.2;
   }
   
-  const stretchedMetalMultiplier = damageItem.has_stretched_metal ? 1.15 : 1.0;
+  const stretchedMetalMultiplier = damageItem.has_stretched_metal ? 1.25 : 1.0;
   
   let notesMultiplier = 1.0;
   const notes = (damageItem.notes || "").toLowerCase();
@@ -353,10 +347,10 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
     notesMultiplier *= 1.3;
   }
   if (notes.includes("previous repair") || notes.includes("poor repair")) {
-    notesMultiplier *= 1.2;
+    notesMultiplier *= 1.25;
   }
-  if (notes.includes("double skin")) {
-    notesMultiplier *= (repairMethodMultiplier > 1.3) ? 1.3 : 1.15;
+  if (notes.includes("ppf")) {
+    notesMultiplier *= 1.30;
   }
   
   // STEP 3: Combine All Complexity Multipliers
@@ -728,7 +722,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       let assessmentNotes = '';
 
       // Determine repair method context once for use in both prompt and disclaimer
-      const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only' || i.repair_method === 'Glue Pull + Rod Finish');
+      const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only');
       const hasLimitedAccess = damageItems.some(i => i.repair_method === 'Limited Tool Access');
       const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
 
@@ -743,7 +737,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       if (globalSettings?.llm_quote_instructions) {
         try {
           const damageContext = damageItems.map((item, idx) =>
-            `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep/Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
+            `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
           ).join('\n') + (analysis?._ui?.photo_observation && analysis._ui.photo_observation !== 'No additional observations from photo analysis.' ? `\nPhoto observation: ${analysis._ui.photo_observation}` : '');
 
           const notesPrompt = `${globalSettings.llm_quote_instructions}

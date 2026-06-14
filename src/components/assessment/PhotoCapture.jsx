@@ -36,11 +36,10 @@ const DEFAULT_SIZE_RANGES = [
 const MATERIALS = ["Steel", "HS Steel", "Aluminum"];
 
 const REPAIR_METHODS = [
-  "Good Tool Access", "Limited Tool Access", "Glue Pull Only",
-  "Glue Pull + Rod Finish", "Unsure"
+  "Good Tool Access", "Glue Pull Only", "Limited Tool Access", "Unsure"
 ];
 
-const DENT_DEPTH = ["Shallow", "Medium", "Deep/Sharp", "Unsure"];
+const DENT_DEPTH = ["Shallow", "Medium", "Deep / Sharp"];
 
 const createDefaultDamageItem = () => ({
   panel: "",
@@ -392,7 +391,10 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-slate-700">
-                              {MATERIALS.map(m => <SelectItem key={m} value={m} className="text-white hover:bg-slate-700">{m === 'Aluminum' ? 'Aluminium' : m}</SelectItem>)}
+                              {MATERIALS.map(m => {
+                                const label = m === 'HS Steel' ? 'HS Steel +25%' : m === 'Aluminum' ? 'Aluminium +35%' : m;
+                                return <SelectItem key={m} value={m} className="text-white hover:bg-slate-700">{label}</SelectItem>;
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -404,7 +406,10 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-slate-700">
-                              {REPAIR_METHODS.map(m => <SelectItem key={m} value={m} className="text-white hover:bg-slate-700">{m}</SelectItem>)}
+                              {REPAIR_METHODS.map(m => {
+                                const label = m === 'Glue Pull Only' ? 'Glue Pull Only +25%' : m === 'Limited Tool Access' ? 'Limited Tool Access +30%' : m === 'Unsure' ? 'Unsure +10%' : m;
+                                return <SelectItem key={m} value={m} className="text-white hover:bg-slate-700">{label}</SelectItem>;
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -416,7 +421,10 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-slate-700">
-                              {DENT_DEPTH.map(d => <SelectItem key={d} value={d} className="text-white hover:bg-slate-700">{d}</SelectItem>)}
+                              {DENT_DEPTH.map(d => {
+                                const label = d === 'Medium' ? 'Medium +25%' : d === 'Deep / Sharp' ? 'Deep / Sharp +50%' : d;
+                                return <SelectItem key={d} value={d} className="text-white hover:bg-slate-700">{label}</SelectItem>;
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -428,13 +436,19 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                           <Switch id={`stretched-${itemIndex}`} checked={item.has_stretched_metal}
                             onCheckedChange={(c) => handleDamageItemChange(itemIndex, 'has_stretched_metal', c)}
                             className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-600" />
-                          <Label htmlFor={`stretched-${itemIndex}`} className="text-white text-sm">Stretched Metal</Label>
+                          <div>
+                            <Label htmlFor={`stretched-${itemIndex}`} className="text-white text-sm">Stretched Metal</Label>
+                            <p className="text-slate-500 text-xs">+25%</p>
+                          </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id={`bodyline-${itemIndex}`} checked={item.affects_body_line}
                             onCheckedChange={(c) => handleDamageItemChange(itemIndex, 'affects_body_line', c)}
                             className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-600" />
-                          <Label htmlFor={`bodyline-${itemIndex}`} className="text-white text-sm">Affects Body Line</Label>
+                          <div>
+                            <Label htmlFor={`bodyline-${itemIndex}`} className="text-white text-sm">Affects Body Line</Label>
+                            <p className="text-slate-500 text-xs">+20%</p>
+                          </div>
                         </div>
                       </div>
 
