@@ -40,7 +40,6 @@ const AuthenticatedApp = () => {
 
   return (
     <>
-      <OfflineBanner />
       <SyncManager />
       <Routes>
       {/* Public Auth Routes */}

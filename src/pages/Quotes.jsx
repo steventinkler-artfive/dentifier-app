@@ -185,11 +185,17 @@ export default function Quotes() {
             <CardContent className="p-8 text-center">
               <FileText className="w-16 h-16 text-slate-700 mx-auto mb-4" />
               <p className="text-slate-400 mb-2">
-                {quoteAssessments.length === 0 ? 'No quotes yet' : 'No quotes found for this filter'}
+                {!navigator.onLine && quoteAssessments.length === 0
+                  ? 'Your quotes will appear here when you\'re back online.'
+                  : quoteAssessments.length === 0
+                    ? 'No quotes yet'
+                    : 'No quotes found for this filter'}
               </p>
-              <p className="text-slate-500 text-sm mb-4">
-                {quoteAssessments.length === 0 ? 'Create an assessment to see quotes here' : 'Try selecting a different filter'}
-              </p>
+              {(navigator.onLine || quoteAssessments.length > 0) && (
+                <p className="text-slate-500 text-sm mb-4">
+                  {quoteAssessments.length === 0 ? 'Create an assessment to see quotes here' : 'Try selecting a different filter'}
+                </p>
+              )}
             </CardContent>
           </Card>
         ) : (

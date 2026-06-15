@@ -106,7 +106,11 @@ export default function CustomerSelection({ selectedCustomer, onCustomerSelect }
             ) : filteredCustomers.length === 0 ? (
               <div className="text-center py-8">
                 <User className="w-12 h-12 text-slate-700 mx-auto mb-2" />
-                <p className="text-slate-400">No customers found</p>
+                <p className="text-slate-400">
+                  {!navigator.onLine && customers.length === 0
+                    ? 'Customer list unavailable offline — you can skip and add customer details later.'
+                    : 'No customers found'}
+                </p>
               </div>
             ) : (
               filteredCustomers.map((customer) => (

@@ -6,6 +6,7 @@ import { AlertProvider } from "@/components/ui/CustomAlert";
 import InactiveUserBanner from "@/components/InactiveUserBanner";
 import UserMenu from "@/components/ui/UserMenu";
 import { base44 } from "@/api/base44Client";
+import OfflineBanner from "@/components/ui/OfflineBanner";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -213,6 +214,9 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
       )}
+
+      {/* Offline Banner — sits below header, above page content */}
+      {currentPageName !== "QuotePDF" && <OfflineBanner />}
 
       {/* Main Content */}
       <main className={currentPageName !== "QuotePDF" ? "pb-20 min-h-screen" : "min-h-screen"}>

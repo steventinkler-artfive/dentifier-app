@@ -164,11 +164,17 @@ export default function Invoices() {
             <CardContent className="p-8 text-center">
               <FileText className="w-16 h-16 text-slate-700 mx-auto mb-4" />
               <p className="text-slate-400 mb-2">
-                {assessments.length === 0 ? 'No invoices yet' : 'No invoices found for this filter'}
+                {!navigator.onLine && assessments.length === 0
+                  ? 'Your invoices will appear here when you\'re back online.'
+                  : assessments.length === 0
+                    ? 'No invoices yet'
+                    : 'No invoices found for this filter'}
               </p>
-              <p className="text-slate-500 text-sm">
-                {assessments.length === 0 ? 'Completed jobs will appear here' : 'Try selecting a different filter'}
-              </p>
+              {(navigator.onLine || assessments.length > 0) && (
+                <p className="text-slate-500 text-sm">
+                  {assessments.length === 0 ? 'Completed jobs will appear here' : 'Try selecting a different filter'}
+                </p>
+              )}
             </CardContent>
           </Card>
         ) : (

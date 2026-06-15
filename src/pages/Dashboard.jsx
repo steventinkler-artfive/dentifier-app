@@ -285,6 +285,16 @@ export default function Dashboard() {
     return <OnboardingWizard user={user} onComplete={handleOnboardingComplete} />;
   }
 
+  if (!navigator.onLine && loading) {
+    return (
+      <div className="p-4 max-w-md mx-auto space-y-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+          <p className="text-slate-400">You're offline — your dashboard will load when you reconnect.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 max-w-md mx-auto space-y-6">
       {userSettings && <BankingIncompleteBanner settings={userSettings} />}
