@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Edit2, Save, Trash2, Plus, Loader2, Check, X } from "lucide-react";
 import AddVehicleForm from "./AddVehicleForm";
+import VehicleEditModal from "./VehicleEditModal";
 import { useAlert } from "@/components/ui/CustomAlert";
 
 
@@ -48,6 +49,7 @@ export default function PerPanelQuoteView({
     assessment.discount_percentage > 0 ? String(assessment.discount_percentage) : ""
   );
   const [isSavingDiscount, setIsSavingDiscount] = useState(false);
+  const [editingVehicleIdx, setEditingVehicleIdx] = useState(null);
 
   useEffect(() => {
     setDiscountInput(assessment.discount_percentage > 0 ? String(assessment.discount_percentage) : "");
@@ -259,6 +261,16 @@ export default function PerPanelQuoteView({
     setEditingItem(null);
   };
 
+  const saveVehicleEdit = async (updatedVehicle) => {
+    const vIdx = editingVehicleIdx;
+    if (vIdx === null) return;
+    const updated = JSON.parse(JSON.stringify(vehicles));
+    updated[vIdx] = { ...updated[vIdx], ...updatedVehicle };
+    setVehicles(updated);
+    setEditingVehicleIdx(null);
+    await saveToApi(updated, assessmentItems);
+  };
+
   const vehicleTotal = vehicles.reduce((s, v) => s + (v.quote_amount || 0), 0);
   const assessmentLevelTotal = assessmentItems.reduce((s, i) => s + (i.total_price || 0), 0);
   const subtotal = vehicleTotal + assessmentLevelTotal;
@@ -306,15 +318,26 @@ export default function PerPanelQuoteView({
                     {sublabel && <p className="text-slate-400 text-xs mt-0.5">{sublabel}</p>}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeVehicle(vIdx)}
-                  disabled={saving}
-                  className="h-6 w-6 text-red-400 hover:text-red-300 flex-shrink-0"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditingVehicleIdx(vIdx)}
+                    disabled={saving}
+                    className="h-6 w-6 text-slate-400 hover:text-white"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeVehicle(vIdx)}
+                    disabled={saving}
+                    className="h-6 w-6 text-red-400 hover:text-red-300"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="text-sm space-y-1.5 pt-1">
@@ -797,6 +820,12 @@ export default function PerPanelQuoteView({
           )}
         </CardContent>
       </Card>
+      <VehicleEditModal
+        vehicle={editingVehicleIdx !== null ? vehicles[editingVehicleIdx] : null}
+        open={editingVehicleIdx !== null}
+        onSave={saveVehicleEdit}
+        onCancel={() => setEditingVehicleIdx(null)}
+      />
     </div>
   );
 }
