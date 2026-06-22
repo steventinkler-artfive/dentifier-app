@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Edit2, Save, Trash2, Plus, Loader2, Check, X } from "lucide-react";
 import AddVehicleForm from "./AddVehicleForm";
+import { useAlert } from "@/components/ui/CustomAlert";
 
 
 const CAR_PANELS = [
@@ -39,6 +40,7 @@ export default function PerPanelQuoteView({
   defaultPanelPrice,
   is_multi_vehicle,
 }) {
+  const { showConfirm } = useAlert();
   const [vehicles, setVehicles] = useState([]);
   const [assessmentItems, setAssessmentItems] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -134,6 +136,8 @@ export default function PerPanelQuoteView({
   };
 
   const removeVehicleItem = async (vIdx, liIdx) => {
+    const confirmed = await showConfirm("Remove this line item?", "Remove Line Item");
+    if (!confirmed) return;
     const updated = JSON.parse(JSON.stringify(vehicles));
     updated[vIdx].line_items = updated[vIdx].line_items.filter((_, i) => i !== liIdx);
     updated[vIdx] = recalcVehicle(updated[vIdx]);
@@ -142,6 +146,14 @@ export default function PerPanelQuoteView({
   };
 
   const removeVehicle = async (vIdx) => {
+    const label = vehicles[vIdx]?.registration
+      ? [vehicles[vIdx].registration, vehicles[vIdx].colour].filter(Boolean).join(" · ")
+      : `Vehicle ${vIdx + 1}`;
+    const confirmed = await showConfirm(
+      `Remove ${label}? This will delete all panels and line items for this vehicle.`,
+      "Remove Vehicle"
+    );
+    if (!confirmed) return;
     setSaving(true);
     try {
       const updatedVehicles = vehicles.filter((_, i) => i !== vIdx);
