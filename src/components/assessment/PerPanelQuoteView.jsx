@@ -656,10 +656,16 @@ export default function PerPanelQuoteView({
                 <div className="flex items-center gap-2">
                   <span className="text-slate-400 text-xs">{sym}</span>
                   <Input
-                    type="number"
+                    type="tel"
                     step="5"
                     value={newLineItem.price}
+                    onFocus={() => setOriginalPrice(newLineItem.price)}
                     onChange={(e) => setNewLineItem((p) => ({ ...p, price: e.target.value }))}
+                    onBlur={() => {
+                      if (newLineItem.price === '' || newLineItem.price === null || isNaN(parseFloat(newLineItem.price))) {
+                        setNewLineItem((p) => ({ ...p, price: originalPrice }));
+                      }
+                    }}
                     placeholder="0"
                     className="bg-slate-700 border-slate-600 text-white text-xs h-8 w-28"
                   />
