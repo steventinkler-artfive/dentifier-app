@@ -166,6 +166,22 @@ export default function Settings() {
     const fileInputRef = useRef(null);
     const { showAlert } = useAlert();
     const [buffer, setBuffer] = useState({ field: null, value: '', original: null });
+    const [activeTab, setActiveTab] = useState("company");
+    const [isDirtyPricing, setIsDirtyPricing] = useState(false);
+    const savedPricingRef = useRef(null);
+
+    const PRICING_FIELDS = [
+        'quote_prefix', 'next_quote_number', 'invoice_prefix', 'next_invoice_number',
+        'invoice_footer', 'hourly_rate', 'base_cost', 'default_panel_price',
+        'currency', 'is_vat_registered', 'tax_rate', 'pricing_matrix',
+        'custom_damage_types', 'custom_size_ranges'
+    ];
+
+    const getPricingSnapshot = (data) => {
+        const snapshot = {};
+        PRICING_FIELDS.forEach(f => { snapshot[f] = data?.[f]; });
+        return JSON.stringify(snapshot);
+    };
 
     const [formData, setFormData] = useState({
       business_name: '',
@@ -239,6 +255,11 @@ export default function Settings() {
             }
         }
     }, [formData.payment_method_preference]);
+
+    useEffect(() => {
+        if (savedPricingRef.current === null) return;
+        setIsDirtyPricing(getPricingSnapshot(formData) !== savedPricingRef.current);
+    }, [formData]);
 
     const loadData = async () => {
         try {
@@ -329,6 +350,8 @@ export default function Settings() {
                 }
                 
                 setFormData(tempFormData); // Set formData after applying defaults and upgrades
+                savedPricingRef.current = getPricingSnapshot(tempFormData);
+                setIsDirtyPricing(false);
 
                 if (loadedSettings.business_logo_url) {
                     setLogoPreview(loadedSettings.business_logo_url);
@@ -370,13 +393,16 @@ export default function Settings() {
                     { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 600 }
                 ];
                 
-                setFormData(prev => ({
-                    ...prev,
+                const newFormData = {
+                    ...formData,
                     contact_email: currentUser.email, // Default contact email
                     pricing_matrix: defaultPricingMatrix,
                     custom_damage_types: [], // NEW FIELD
                     custom_size_ranges: [], // NEW FIELD
-                }));
+                };
+                setFormData(newFormData);
+                savedPricingRef.current = getPricingSnapshot(newFormData);
+                setIsDirtyPricing(false);
             }
 
             // Load Global Settings (for admin users to edit AI instructions)
@@ -451,6 +477,14 @@ export default function Settings() {
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleTabChange = (newTab) => {
+        if (activeTab === 'pricing' && newTab !== 'pricing') {
+            setIsDirtyPricing(false);
+            savedPricingRef.current = getPricingSnapshot(formData);
+        }
+        setActiveTab(newTab);
     };
 
     const handleGlobalInputChange = (field, value) => {
@@ -558,7 +592,7 @@ export default function Settings() {
     // so rendering is safe if loading is false.
 
     return (
-        <div className="p-4 max-w-4xl mx-auto space-y-6">
+        <div className={`p-4 max-w-4xl mx-auto space-y-6 ${isDirtyPricing && activeTab === 'pricing' ? 'pb-44' : ''}`}>
             <div>
                 <h1 className="text-2xl font-bold text-white">Settings</h1>
                 <p className="text-slate-400 text-sm">Customise your business profile and preferences.</p>
@@ -570,7 +604,7 @@ export default function Settings() {
                 </div>
             )}
 
-            <Tabs defaultValue="company" className="w-full">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-slate-900 mb-4">
                     <TabsTrigger value="company" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">
                         Company info
@@ -1340,6 +1374,23 @@ export default function Settings() {
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 Save Settings
             </Button>
+
+            {isDirtyPricing && activeTab === 'pricing' && (
+                <div className="fixed left-0 right-0 bottom-16 z-50 px-4 max-w-4xl mx-auto">
+                    <div className="flex items-center justify-between gap-3 rounded-lg px-4 py-3 shadow-xl" style={{ backgroundColor: '#0C172F', border: '1px solid #1E293B' }}>
+                        <span className="text-white text-sm font-medium">You have unsaved changes</span>
+                        <Button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="text-white font-semibold shrink-0 hover:opacity-90"
+                            style={{ backgroundColor: '#16A34A' }}
+                        >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                            Save
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
