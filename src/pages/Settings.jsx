@@ -1015,16 +1015,16 @@ export default function Settings() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-white">Hourly Rate</Label>
-                                    <Input type="number" value={formData.hourly_rate} onChange={e => handleInputChange('hourly_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                    <Input type="tel" value={buffer.field === 'hourly_rate' ? buffer.value : formData.hourly_rate} onFocus={() => setBuffer({ field: 'hourly_rate', value: String(formData.hourly_rate ?? ''), original: formData.hourly_rate ?? 60 })} onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))} onBlur={() => { const parsed = parseFloat(buffer.value); if (buffer.value === '' || isNaN(parsed)) { handleInputChange('hourly_rate', buffer.original); } else { handleInputChange('hourly_rate', parsed); } setBuffer({ field: null, value: '', original: null }); }} className="bg-slate-800 border-slate-700 text-white" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-white">Base Cost / Call-out</Label>
-                                    <Input type="number" value={formData.base_cost} onChange={e => handleInputChange('base_cost', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                    <Input type="tel" value={buffer.field === 'base_cost' ? buffer.value : formData.base_cost} onFocus={() => setBuffer({ field: 'base_cost', value: String(formData.base_cost ?? ''), original: formData.base_cost ?? 40 })} onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))} onBlur={() => { const parsed = parseFloat(buffer.value); if (buffer.value === '' || isNaN(parsed)) { handleInputChange('base_cost', buffer.original); } else { handleInputChange('base_cost', parsed); } setBuffer({ field: null, value: '', original: null }); }} className="bg-slate-800 border-slate-700 text-white" />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-white">Default Panel Price</Label>
-                                <Input type="number" value={formData.default_panel_price} onChange={e => handleInputChange('default_panel_price', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
+                                <Input type="tel" value={buffer.field === 'default_panel_price' ? buffer.value : formData.default_panel_price} onFocus={() => setBuffer({ field: 'default_panel_price', value: String(formData.default_panel_price ?? ''), original: formData.default_panel_price ?? 60 })} onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))} onBlur={() => { const parsed = parseFloat(buffer.value); if (buffer.value === '' || isNaN(parsed)) { handleInputChange('default_panel_price', buffer.original); } else { handleInputChange('default_panel_price', parsed); } setBuffer({ field: null, value: '', original: null }); }} className="bg-slate-800 border-slate-700 text-white" />
                                 <p className="text-slate-400 text-xs">Used when "Charge Per Panel" option is selected during assessments</p>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
