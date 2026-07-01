@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function PricingQuotingForm({ formData, onChange }) {
+  const [buffer, setBuffer] = useState({ field: null, value: '', original: null });
   return (
     <div className="space-y-6">
       <div>
@@ -25,10 +26,20 @@ export default function PricingQuotingForm({ formData, onChange }) {
             <div className="space-y-2">
               <Label className="text-white">Next Quote Number</Label>
               <Input
-                type="number"
+                type="tel"
                 min="1"
-                value={formData.next_quote_number || 1}
-                onChange={e => onChange('next_quote_number', parseInt(e.target.value) || 1)}
+                value={buffer.field === 'next_quote_number' ? buffer.value : (formData.next_quote_number || 1)}
+                onFocus={() => setBuffer({ field: 'next_quote_number', value: String(formData.next_quote_number ?? ''), original: formData.next_quote_number ?? 1 })}
+                onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))}
+                onBlur={() => {
+                  const parsed = parseInt(buffer.value);
+                  if (buffer.value === '' || isNaN(parsed)) {
+                    onChange('next_quote_number', buffer.original);
+                  } else {
+                    onChange('next_quote_number', parsed);
+                  }
+                  setBuffer({ field: null, value: '', original: null });
+                }}
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>
@@ -76,18 +87,38 @@ export default function PricingQuotingForm({ formData, onChange }) {
             <div className="space-y-2">
               <Label className="text-white">Hourly Rate (£)</Label>
               <Input
-                type="number"
-                value={formData.hourly_rate || 60}
-                onChange={e => onChange('hourly_rate', parseFloat(e.target.value))}
+                type="tel"
+                value={buffer.field === 'hourly_rate' ? buffer.value : (formData.hourly_rate || 60)}
+                onFocus={() => setBuffer({ field: 'hourly_rate', value: String(formData.hourly_rate ?? ''), original: formData.hourly_rate ?? 60 })}
+                onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))}
+                onBlur={() => {
+                  const parsed = parseFloat(buffer.value);
+                  if (buffer.value === '' || isNaN(parsed)) {
+                    onChange('hourly_rate', buffer.original);
+                  } else {
+                    onChange('hourly_rate', parsed);
+                  }
+                  setBuffer({ field: null, value: '', original: null });
+                }}
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-white">Base Cost / Call-out (£)</Label>
               <Input
-                type="number"
-                value={formData.base_cost || 40}
-                onChange={e => onChange('base_cost', parseFloat(e.target.value))}
+                type="tel"
+                value={buffer.field === 'base_cost' ? buffer.value : (formData.base_cost || 40)}
+                onFocus={() => setBuffer({ field: 'base_cost', value: String(formData.base_cost ?? ''), original: formData.base_cost ?? 40 })}
+                onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))}
+                onBlur={() => {
+                  const parsed = parseFloat(buffer.value);
+                  if (buffer.value === '' || isNaN(parsed)) {
+                    onChange('base_cost', buffer.original);
+                  } else {
+                    onChange('base_cost', parsed);
+                  }
+                  setBuffer({ field: null, value: '', original: null });
+                }}
                 className="bg-slate-800 border-slate-700 text-white"
               />
               <p className="text-slate-400 text-xs">Can be removed on quote</p>
@@ -97,9 +128,19 @@ export default function PricingQuotingForm({ formData, onChange }) {
           <div className="space-y-2">
             <Label className="text-white">Default Panel Price * (£)</Label>
             <Input
-              type="number"
-              value={formData.default_panel_price || 60}
-              onChange={e => onChange('default_panel_price', parseFloat(e.target.value))}
+              type="tel"
+              value={buffer.field === 'default_panel_price' ? buffer.value : (formData.default_panel_price || 60)}
+              onFocus={() => setBuffer({ field: 'default_panel_price', value: String(formData.default_panel_price ?? ''), original: formData.default_panel_price ?? 60 })}
+              onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))}
+              onBlur={() => {
+                const parsed = parseFloat(buffer.value);
+                if (buffer.value === '' || isNaN(parsed)) {
+                  onChange('default_panel_price', buffer.original);
+                } else {
+                  onChange('default_panel_price', parsed);
+                }
+                setBuffer({ field: null, value: '', original: null });
+              }}
               className="bg-slate-800 border-slate-700 text-white"
               required
             />
@@ -136,9 +177,19 @@ export default function PricingQuotingForm({ formData, onChange }) {
             <div className="space-y-2">
               <Label className="text-white">Tax Rate (%)</Label>
               <Input
-                type="number"
-                value={formData.tax_rate || 20}
-                onChange={e => onChange('tax_rate', parseFloat(e.target.value))}
+                type="tel"
+                value={buffer.field === 'tax_rate' ? buffer.value : (formData.tax_rate || 20)}
+                onFocus={() => setBuffer({ field: 'tax_rate', value: String(formData.tax_rate ?? ''), original: formData.tax_rate ?? 20 })}
+                onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))}
+                onBlur={() => {
+                  const parsed = parseFloat(buffer.value);
+                  if (buffer.value === '' || isNaN(parsed)) {
+                    onChange('tax_rate', buffer.original);
+                  } else {
+                    onChange('tax_rate', parsed);
+                  }
+                  setBuffer({ field: null, value: '', original: null });
+                }}
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>

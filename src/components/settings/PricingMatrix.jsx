@@ -65,6 +65,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [priceBuffer, setPriceBuffer] = useState({ index: null, value: '', original: 0 });
   const { showAlert, showConfirm } = useAlert();
 
   const getCurrencySymbol = (curr) => {
@@ -348,11 +349,21 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
                         {getCurrencySymbol(currency)}
                       </span>
                       <Input
-                        type="number"
+                        type="tel"
                         min="0"
                         step="5"
-                        value={entry.base_price}
-                        onChange={(e) => handleUpdateEntry(index, 'base_price', parseFloat(e.target.value) || 0)}
+                        value={priceBuffer.index === index ? priceBuffer.value : entry.base_price}
+                        onFocus={() => setPriceBuffer({ index, value: String(entry.base_price ?? ''), original: entry.base_price ?? 0 })}
+                        onChange={(e) => setPriceBuffer(prev => ({ ...prev, value: e.target.value }))}
+                        onBlur={() => {
+                          const parsed = parseFloat(priceBuffer.value);
+                          if (priceBuffer.value === '' || isNaN(parsed)) {
+                            handleUpdateEntry(index, 'base_price', priceBuffer.original);
+                          } else {
+                            handleUpdateEntry(index, 'base_price', parsed);
+                          }
+                          setPriceBuffer({ index: null, value: '', original: 0 });
+                        }}
                         className="bg-slate-800 border-slate-700 text-white pl-6 h-9"
                       />
                     </div>

@@ -102,6 +102,7 @@ export default function AssessmentDetail() {
   const [editingMultiVehicleDetails, setEditingMultiVehicleDetails] = useState(false);
   const [editedAssessmentName, setEditedAssessmentName] = useState("");
   const [editedDiscount, setEditedDiscount] = useState(0);
+  const [discountBuffer, setDiscountBuffer] = useState({ active: false, value: '', original: 0 });
   const [detailsTab, setDetailsTab] = useState("analysis");
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -1404,11 +1405,21 @@ export default function AssessmentDetail() {
                     <div className="space-y-2">
                       <Label className="text-white text-xs">Discount (%)</Label>
                       <Input
-                        type="number"
+                        type="tel"
                         min="0"
                         max="100"
-                        value={editedDiscount}
-                        onChange={(e) => setEditedDiscount(parseFloat(e.target.value) || 0)}
+                        value={discountBuffer.active ? discountBuffer.value : editedDiscount}
+                        onFocus={() => setDiscountBuffer({ active: true, value: String(editedDiscount), original: editedDiscount })}
+                        onChange={(e) => setDiscountBuffer(prev => ({ ...prev, value: e.target.value }))}
+                        onBlur={() => {
+                          const parsed = parseFloat(discountBuffer.value);
+                          if (discountBuffer.value === '' || isNaN(parsed)) {
+                            setEditedDiscount(discountBuffer.original);
+                          } else {
+                            setEditedDiscount(parsed);
+                          }
+                          setDiscountBuffer({ active: false, value: '', original: 0 });
+                        }}
                         className="bg-slate-800 border-slate-700 text-white text-sm"
                       />
                     </div>

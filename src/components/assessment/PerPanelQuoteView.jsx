@@ -50,6 +50,7 @@ export default function PerPanelQuoteView({
   );
   const [isSavingDiscount, setIsSavingDiscount] = useState(false);
   const [editingVehicleIdx, setEditingVehicleIdx] = useState(null);
+  const [originalPrice, setOriginalPrice] = useState(null);
 
   useEffect(() => {
     setDiscountInput(assessment.discount_percentage > 0 ? String(assessment.discount_percentage) : "");
@@ -360,10 +361,16 @@ export default function PerPanelQuoteView({
                         <div className="flex items-center gap-2">
                           <span className="text-slate-400 text-xs">{sym}</span>
                           <Input
-                            type="number"
+                            type="tel"
                             step="5"
                             value={editValues.price}
+                            onFocus={() => setOriginalPrice(editValues.price)}
                             onChange={(e) => setEditValues((p) => ({ ...p, price: e.target.value }))}
+                            onBlur={() => {
+                              if (editValues.price === '' || editValues.price === null || isNaN(parseFloat(editValues.price))) {
+                                setEditValues((p) => ({ ...p, price: originalPrice }));
+                              }
+                            }}
                             className="bg-slate-700 border-slate-600 text-white text-xs h-8 w-24"
                           />
                           <Button
@@ -440,10 +447,16 @@ export default function PerPanelQuoteView({
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400 text-xs">{sym}</span>
                     <Input
-                      type="number"
+                      type="tel"
                       step="5"
                       value={newPanel.price}
+                      onFocus={() => setOriginalPrice(newPanel.price)}
                       onChange={(e) => setNewPanel((p) => ({ ...p, price: e.target.value }))}
+                      onBlur={() => {
+                        if (newPanel.price === '' || newPanel.price === null || isNaN(parseFloat(newPanel.price))) {
+                          setNewPanel((p) => ({ ...p, price: originalPrice }));
+                        }
+                      }}
                       className="bg-slate-700 border-slate-600 text-white text-xs h-8 w-28"
                     />
                   </div>
@@ -482,10 +495,16 @@ export default function PerPanelQuoteView({
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400 text-xs">{sym}</span>
                     <Input
-                      type="number"
+                      type="tel"
                       step="5"
                       value={newLineItem.price}
+                      onFocus={() => setOriginalPrice(newLineItem.price)}
                       onChange={(e) => setNewLineItem((p) => ({ ...p, price: e.target.value }))}
+                      onBlur={() => {
+                        if (newLineItem.price === '' || newLineItem.price === null || isNaN(parseFloat(newLineItem.price))) {
+                          setNewLineItem((p) => ({ ...p, price: originalPrice }));
+                        }
+                      }}
                       placeholder="0"
                       className="bg-slate-700 border-slate-600 text-white text-xs h-8 w-28"
                     />
@@ -567,10 +586,16 @@ export default function PerPanelQuoteView({
                       <div className="flex items-center gap-2">
                         <span className="text-slate-400 text-xs">{sym}</span>
                         <Input
-                          type="number"
+                          type="tel"
                           step="5"
                           value={editValues.price}
+                          onFocus={() => setOriginalPrice(editValues.price)}
                           onChange={(e) => setEditValues((p) => ({ ...p, price: e.target.value }))}
+                          onBlur={() => {
+                            if (editValues.price === '' || editValues.price === null || isNaN(parseFloat(editValues.price))) {
+                              setEditValues((p) => ({ ...p, price: originalPrice }));
+                            }
+                          }}
                           className="bg-slate-700 border-slate-600 text-white text-xs h-8 w-24"
                         />
                         <Button
@@ -705,12 +730,19 @@ export default function PerPanelQuoteView({
             <Label className="text-slate-400 text-sm w-28 shrink-0">Discount (%)</Label>
             <div className="flex items-center gap-2">
               <Input
-                type="number"
+                type="tel"
                 min="0"
                 max="100"
                 value={discountInput}
                 onChange={(e) => setDiscountInput(e.target.value)}
-                onBlur={(e) => handleSaveDiscount(e.target.value)}
+                onBlur={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || isNaN(parseFloat(val))) {
+                    setDiscountInput(assessment.discount_percentage > 0 ? String(assessment.discount_percentage) : "");
+                  } else {
+                    handleSaveDiscount(val);
+                  }
+                }}
                 placeholder="0"
                 className="w-24 bg-slate-800 border-slate-700 text-white text-sm"
               />
