@@ -487,6 +487,17 @@ export default function Settings() {
         setActiveTab(newTab);
     };
 
+    const handleDiscardPricing = () => {
+        if (savedPricingRef.current === null) return;
+        const saved = JSON.parse(savedPricingRef.current);
+        setFormData(prev => {
+            const updated = { ...prev };
+            PRICING_FIELDS.forEach(f => { updated[f] = saved[f]; });
+            return updated;
+        });
+        setIsDirtyPricing(false);
+    };
+
     const handleGlobalInputChange = (field, value) => {
         setGlobalFormData(prev => ({ ...prev, [field]: value }));
     };
@@ -1370,24 +1381,34 @@ export default function Settings() {
                 )}
             </Tabs>
             
-            <Button onClick={handleSave} disabled={saving} className="w-full pink-gradient text-white font-semibold">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                Save Settings
-            </Button>
+            {activeTab !== 'pricing' && (
+                <Button onClick={handleSave} disabled={saving} className="w-full pink-gradient text-white font-semibold">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    Save Settings
+                </Button>
+            )}
 
             {isDirtyPricing && activeTab === 'pricing' && (
                 <div className="fixed left-0 right-0 bottom-16 z-50 px-4 max-w-4xl mx-auto">
                     <div className="flex items-center justify-between gap-3 rounded-lg px-4 py-3 shadow-xl" style={{ backgroundColor: '#0C172F', border: '1px solid #1E293B' }}>
-                        <span className="text-white text-sm font-medium">You have unsaved changes</span>
-                        <Button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="text-white font-semibold shrink-0 hover:opacity-90"
-                            style={{ backgroundColor: '#16A34A' }}
+                        <button
+                            onClick={handleDiscardPricing}
+                            className="text-white text-sm font-medium hover:underline shrink-0"
                         >
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                            Save
-                        </Button>
+                            Discard
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <span className="text-white text-sm font-medium">You have unsaved changes</span>
+                            <Button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="text-white font-semibold shrink-0 hover:opacity-90"
+                                style={{ backgroundColor: '#16A34A' }}
+                            >
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                                Save
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}
