@@ -165,6 +165,7 @@ export default function Settings() {
 
     const fileInputRef = useRef(null);
     const { showAlert } = useAlert();
+    const [buffer, setBuffer] = useState({ field: null, value: '', original: null });
 
     const [formData, setFormData] = useState({
       business_name: '',
@@ -933,10 +934,20 @@ export default function Settings() {
                                 <div className="space-y-2">
                                     <Label className="text-white">Next Quote Number</Label>
                                     <Input 
-                                        type="number" 
+                                        type="tel" 
                                         min="1"
-                                        value={formData.next_quote_number} 
-                                        onChange={e => handleInputChange('next_quote_number', parseInt(e.target.value) || 1)} 
+                                        value={buffer.field === 'next_quote_number' ? buffer.value : formData.next_quote_number} 
+                                        onFocus={() => setBuffer({ field: 'next_quote_number', value: String(formData.next_quote_number ?? ''), original: formData.next_quote_number ?? 1 })}
+                                        onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))}
+                                        onBlur={() => {
+                                            const parsed = parseInt(buffer.value);
+                                            if (buffer.value === '' || isNaN(parsed)) {
+                                                handleInputChange('next_quote_number', buffer.original);
+                                            } else {
+                                                handleInputChange('next_quote_number', parsed);
+                                            }
+                                            setBuffer({ field: null, value: '', original: null });
+                                        }}
                                         className="bg-slate-800 border-slate-700 text-white" 
                                     />
                                 </div>
@@ -955,10 +966,20 @@ export default function Settings() {
                                 <div className="space-y-2">
                                     <Label className="text-white">Next Invoice Number</Label>
                                     <Input 
-                                        type="number" 
+                                        type="tel" 
                                         min="1"
-                                        value={formData.next_invoice_number} 
-                                        onChange={e => handleInputChange('next_invoice_number', parseInt(e.target.value) || 1)} 
+                                        value={buffer.field === 'next_invoice_number' ? buffer.value : formData.next_invoice_number} 
+                                        onFocus={() => setBuffer({ field: 'next_invoice_number', value: String(formData.next_invoice_number ?? ''), original: formData.next_invoice_number ?? 1 })}
+                                        onChange={(e) => setBuffer(prev => ({ ...prev, value: e.target.value }))}
+                                        onBlur={() => {
+                                            const parsed = parseInt(buffer.value);
+                                            if (buffer.value === '' || isNaN(parsed)) {
+                                                handleInputChange('next_invoice_number', buffer.original);
+                                            } else {
+                                                handleInputChange('next_invoice_number', parsed);
+                                            }
+                                            setBuffer({ field: null, value: '', original: null });
+                                        }}
                                         className="bg-slate-800 border-slate-700 text-white" 
                                     />
                                 </div>
