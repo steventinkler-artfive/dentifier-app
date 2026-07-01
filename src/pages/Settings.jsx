@@ -1391,14 +1391,16 @@ export default function Settings() {
             {isDirtyPricing && activeTab === 'pricing' && (
                 <div className="fixed left-0 right-0 bottom-16 z-50 px-4 max-w-4xl mx-auto">
                     <div className="flex items-center justify-between gap-3 rounded-lg px-4 py-3 shadow-xl" style={{ backgroundColor: '#0C172F', border: '1px solid #1E293B' }}>
-                        <button
-                            onClick={handleDiscardPricing}
-                            className="text-white text-sm font-medium hover:underline shrink-0"
-                        >
-                            Discard
-                        </button>
+                        <span className="text-white text-sm font-medium">You have unsaved changes</span>
                         <div className="flex items-center gap-3">
-                            <span className="text-white text-sm font-medium">You have unsaved changes</span>
+                            <Button
+                                onClick={handleDiscardPricing}
+                                variant="ghost"
+                                className="text-white font-semibold shrink-0 hover:opacity-90"
+                                style={{ backgroundColor: '#F2034D' }}
+                            >
+                                Discard
+                            </Button>
                             <Button
                                 onClick={handleSave}
                                 disabled={saving}
