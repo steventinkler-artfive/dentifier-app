@@ -16,6 +16,14 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
     return symbols[currency] || '£';
   };
 
+  // Helper to format multiplier as percentage
+  const formatMultiplier = (value) => {
+    if (value === undefined || value === null) return 'N/A';
+    if (value === 1.0) return 'No uplift';
+    const pct = Math.round((value - 1) * 100);
+    return `${pct > 0 ? '+' : ''}${pct}%`;
+  };
+
   // Helper function to format matrix entry as string
   const formatMatrixEntry = (entry) => {
     if (!entry) return 'N/A';
@@ -110,7 +118,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                             Material ({item.material === 'Aluminum' ? 'Aluminium' : item.material}):
                           </span>
                           <span className="text-white font-medium">
-                            {item.material === 'HS Steel' ? '1.25x' : item.material === 'Aluminum' ? '1.35x' : `${item.multipliers.material?.toFixed(2)}x`}
+                            {item.material === 'HS Steel' ? '+25%' : item.material === 'Aluminum' ? '+35%' : formatMultiplier(item.multipliers.material)}
                           </span>
                         </div>
                       )}
@@ -120,7 +128,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                             Repair Method ({item.repairMethod || 'N/A'}):
                           </span>
                           <span className="text-white font-medium">
-                            {item.multipliers.repairMethod.toFixed(2)}x
+                            {formatMultiplier(item.multipliers.repairMethod)}
                           </span>
                         </div>
                       )}
@@ -130,7 +138,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                             Depth ({item.depth || 'N/A'}):
                           </span>
                           <span className="text-white font-medium">
-                            {item.multipliers.depth.toFixed(2)}x
+                            {formatMultiplier(item.multipliers.depth)}
                           </span>
                         </div>
                       )}
@@ -138,7 +146,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                         <div className="flex justify-between">
                           <span className="text-slate-300">Body Line:</span>
                           <span className="text-white font-medium">
-                            {item.multipliers.bodyLine.toFixed(2)}x
+                            {formatMultiplier(item.multipliers.bodyLine)}
                           </span>
                         </div>
                       )}
@@ -146,7 +154,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                         <div className="flex justify-between">
                           <span className="text-slate-300">Stretched Metal:</span>
                           <span className="text-white font-medium">
-                            {item.multipliers.stretchedMetal.toFixed(2)}x
+                            {formatMultiplier(item.multipliers.stretchedMetal)}
                           </span>
                         </div>
                       )}
@@ -154,18 +162,21 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                         <div className="flex justify-between">
                           <span className="text-slate-300">Special Notes:</span>
                           <span className="text-white font-medium">
-                            {item.multipliers.notes.toFixed(2)}x
+                            {formatMultiplier(item.multipliers.notes)}
                           </span>
                         </div>
                       )}
-                      {item.multipliers.totalComplexity && (
-                        <div className="flex justify-between pt-2 border-t border-slate-700">
-                          <span className="text-green-300 font-medium">Total Multiplier:</span>
-                          <span className="text-green-300 font-bold">
-                            {(item.multipliers.totalComplexity * (item.multipliers.material || 1.0)).toFixed(2)}x
-                          </span>
-                        </div>
-                      )}
+                      {item.multipliers.totalComplexity && (() => {
+                        const total = item.multipliers.totalComplexity * (item.multipliers.material || 1.0);
+                        return total !== 1.0 ? (
+                          <div className="flex justify-between pt-2 border-t border-slate-700">
+                            <span className="text-green-300 font-medium">Total Uplift:</span>
+                            <span className="text-green-300 font-bold">
+                              {formatMultiplier(total)}
+                            </span>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 )}
