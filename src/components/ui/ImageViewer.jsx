@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, ArrowLeft, ArrowRight } from 'lucide-react';
@@ -108,6 +107,7 @@ export default function ImageViewer({ isOpen, onClose, images, startIndex = 0 })
               alt={`Slide ${currentIndex}`}
               loading="eager"
               className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+              onContextMenu={(e) => e.stopPropagation()}
             />
           </motion.div>
         </AnimatePresence>
