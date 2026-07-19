@@ -42,8 +42,7 @@ import {
   Edit2,
   CreditCard,
   Eye,
-  X,
-  Download
+  X
 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
@@ -120,23 +119,6 @@ export default function AssessmentDetail() {
   const openImageViewer = (index) => {
     setSelectedImageIndex(index);
     setIsViewerOpen(true);
-  };
-
-  const handleDownloadAllPhotos = async () => {
-    if (!currentPhotos || currentPhotos.length === 0) return;
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    for (let i = 0; i < currentPhotos.length; i++) {
-      const url = currentPhotos[i];
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `damage_photo_${i + 1}`;
-      link.target = '_blank';
-      link.rel = 'noopener';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      if (i < currentPhotos.length - 1) await sleep(500);
-    }
   };
 
   const closeImageViewer = useCallback(() => {
@@ -1529,13 +1511,6 @@ export default function AssessmentDetail() {
                     </div>
                   ))}
                 </div>
-                <Button
-                  onClick={handleDownloadAllPhotos}
-                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold mt-3"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download All Photos
-                </Button>
               </CardContent>
             </Card>
           )}
