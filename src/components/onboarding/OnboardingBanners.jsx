@@ -59,7 +59,7 @@ export function BankingIncompleteBanner({ settings, onDismiss }) {
 }
 
 export function PWAInstallBanner({ settings }) {
-  const { deferredPrompt, isStandalone, promptInstall } = useInstallPrompt();
+  const { deferredPrompt, isStandalone, isMobile, promptInstall } = useInstallPrompt();
   const [dismissed, setDismissed] = useState(false);
   const [installing, setInstalling] = useState(false);
 
@@ -74,7 +74,7 @@ export function PWAInstallBanner({ settings }) {
     }
   }, [settings]);
 
-  if (isStandalone || settings?.pwa_status === "installed" || dismissed) return null;
+  if (!isMobile || isStandalone || settings?.pwa_status === "installed" || dismissed) return null;
 
   const handleInstall = async () => {
     setInstalling(true);
@@ -107,9 +107,9 @@ export function PWAInstallBanner({ settings }) {
     <div className="bg-rose-900/20 border border-rose-800 rounded-lg p-4 mb-4 flex items-start gap-3">
       <Smartphone className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
       <div className="flex-1">
-        <p className="text-rose-200 font-medium">Add Dentifier to your Home Screen</p>
+        <p className="text-rose-200 font-medium">Get quicker access — add Dentifier to your home screen</p>
         <p className="text-rose-300 text-sm mt-1">
-          Get the full app experience — no browser bars, just like a native app.
+          Takes 10 seconds. Opens straight to your dashboard, full screen, ready when you are.
         </p>
         {deferredPrompt ? (
           <Button

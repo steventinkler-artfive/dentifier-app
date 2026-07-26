@@ -13,6 +13,10 @@ export function InstallPromptProvider({ children }) {
       (window.matchMedia("(display-mode: standalone)").matches ||
         window.navigator.standalone === true)
   );
+  const isMobile =
+    typeof window !== "undefined" &&
+    (/iPad|iPhone|iPod/.test(window.navigator.userAgent) && !window.MSStream) ||
+    /Android/i.test(window.navigator.userAgent);
 
   useEffect(() => {
     const handler = (e) => {
@@ -33,7 +37,7 @@ export function InstallPromptProvider({ children }) {
 
   return (
     <InstallPromptContext.Provider
-      value={{ deferredPrompt, isStandalone, promptInstall }}
+      value={{ deferredPrompt, isStandalone, isMobile, promptInstall }}
     >
       {children}
     </InstallPromptContext.Provider>
