@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
-import { BankingIncompleteBanner } from "@/components/onboarding/OnboardingBanners";
+import { BankingIncompleteBanner, PWAInstallBanner } from "@/components/onboarding/OnboardingBanners";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -298,6 +298,7 @@ export default function Dashboard() {
   return (
     <div className="p-4 max-w-md mx-auto space-y-6">
       {userSettings && <BankingIncompleteBanner settings={userSettings} />}
+      {userSettings && <PWAInstallBanner settings={userSettings} />}
       {/* Welcome Section */}
       <div className="bg-gradient-to-br from-rose-600 to-rose-500 rounded-2xl p-6 text-white custom-shadow">
         <h2 className="text-2xl font-bold mb-2">Welcome Back!</h2>

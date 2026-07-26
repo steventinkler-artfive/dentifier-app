@@ -18,6 +18,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import OfflineBanner from '@/components/ui/OfflineBanner';
 import SyncManager from '@/components/SyncManager';
+import { InstallPromptProvider } from '@/components/onboarding/InstallPromptProvider';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -80,12 +81,14 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <NavigationTracker />
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-        <VisualEditAgent />
+        <InstallPromptProvider>
+          <Router>
+            <NavigationTracker />
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+          <VisualEditAgent />
+        </InstallPromptProvider>
       </QueryClientProvider>
     </AuthProvider>
   )

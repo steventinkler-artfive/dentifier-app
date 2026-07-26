@@ -42,6 +42,19 @@
       "format": "date-time",
       "description": "Timestamp when banking banner was dismissed (reappears after 3 days)"
     },
+    "pwa_status": {
+      "type": "string",
+      "enum": [
+        "skipped",
+        "installed"
+      ],
+      "description": "Whether the user installed the PWA or skipped the home screen onboarding step. Unset (null) means the user never reached the step."
+    },
+    "pwa_banner_dismissed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the PWA install banner was dismissed (reappears after 3 days)"
+    },
     "business_name": {
       "type": "string",
       "description": "The name of the user's business."

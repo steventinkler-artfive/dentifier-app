@@ -11,6 +11,8 @@ import BusinessProfileForm from "./BusinessProfileForm";
 import BankingPaymentForm from "./BankingPaymentForm";
 import PricingQuotingForm from "./PricingQuotingForm";
 import TechnicianDetailsForm from "./TechnicianDetailsForm";
+import InstallInstructions from "./InstallInstructions";
+import { useInstallPrompt } from "./InstallPromptProvider";
 
 const STEPS = [
   { id: 'welcome', title: 'Welcome', section: null },
@@ -29,18 +31,9 @@ export default function OnboardingWizard({ user, onComplete }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSkipWarning, setShowSkipWarning] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const { showAlert } = useAlert();
   const dialogScrollRef = React.useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  const { isStandalone } = useInstallPrompt();
 
   useEffect(() => {
     if (dialogScrollRef.current) {
@@ -143,7 +136,17 @@ export default function OnboardingWizard({ user, onComplete }) {
     }
   };
 
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const recordPwaStatus = async (status) => {
+    try {
+      setFormData(prev => ({ ...prev, pwa_status: status }));
+      if (settings?.id) {
+        await base44.entities.UserSetting.update(settings.id, { pwa_status: status });
+        setSettings({ ...settings, pwa_status: status });
+      }
+    } catch (err) {
+      console.error("Failed to record PWA status:", err);
+    }
+  };
 
   const handleContinue = async () => {
     const step = STEPS[currentStep];
@@ -322,9 +325,6 @@ export default function OnboardingWizard({ user, onComplete }) {
         );
 
       case 5: {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isAndroid = /android/i.test(navigator.userAgent);
-
         return (
           <div className="text-center space-y-6">
             <div>
@@ -336,47 +336,24 @@ export default function OnboardingWizard({ user, onComplete }) {
             </div>
 
             <div className="max-w-sm mx-auto">
-              {isIOS ? (
-                <div className="p-4 bg-slate-800 rounded-xl space-y-3 text-left">
-                  <p className="text-white font-medium text-sm">To add to your Home Screen:</p>
-                  <ol className="text-slate-300 text-sm space-y-2 list-decimal list-inside">
-                    <li>Tap the <span className="font-semibold text-white">Share</span> button <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline-block', verticalAlign:'middle', margin:'0 2px'}}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> — it's in the toolbar at the bottom of Safari, or tap <span className="font-semibold text-white">•••</span> first if you can't see it</li>
-                    <li>Scroll down and tap <span className="font-semibold text-white">"Add to Home Screen"</span></li>
-                    <li>Tap <span className="font-semibold text-white">"Add"</span> in the top right</li>
-                  </ol>
-                </div>
-              ) : deferredPrompt ? (
-                <Button
-                  onClick={async () => {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    setDeferredPrompt(null);
-                    setCurrentStep(6);
-                  }}
-                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3"
-                >
-                  <Smartphone className="w-4 h-4 mr-2" />
-                  Add to Home Screen
-                </Button>
-              ) : (
-                <div className="p-4 bg-slate-800 rounded-xl text-left">
-                  <p className="text-slate-300 text-sm">
-                    Open Dentifier in your mobile browser and use the browser menu to find <span className="font-semibold text-white">"Add to Home Screen"</span>.
-                  </p>
-                </div>
-              )}
+              <InstallInstructions
+                onInstallSuccess={(outcome) => {
+                  if (outcome === "accepted") recordPwaStatus("installed");
+                  setCurrentStep(6);
+                }}
+              />
             </div>
 
             <div className="space-y-3">
               <Button
-                onClick={() => setCurrentStep(6)}
+                onClick={() => { recordPwaStatus("installed"); setCurrentStep(6); }}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
               >
                 I've Added It ✓
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => setCurrentStep(6)}
+                onClick={() => { recordPwaStatus("skipped"); setCurrentStep(6); }}
                 className="w-full text-slate-400 hover:text-white text-sm"
               >
                 Skip for now
