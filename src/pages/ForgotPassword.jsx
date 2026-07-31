@@ -20,7 +20,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const response = await base44.functions.invoke('sendPasswordReset', { email });
+      await base44.auth.resetPasswordRequest(email);
       setSuccess(true);
     } catch (err) {
       console.error("Password reset error:", err);

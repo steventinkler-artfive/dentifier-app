@@ -43,10 +43,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const response = await base44.functions.invoke('resetPassword', { 
-        token, 
-        newPassword 
-      });
+      await base44.auth.resetPassword({ resetToken: token, newPassword });
       setSuccess(true);
     } catch (err) {
       console.error("Reset password error:", err);
