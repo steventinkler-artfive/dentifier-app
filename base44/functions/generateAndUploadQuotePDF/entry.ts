@@ -10,11 +10,22 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Missing assessment_id' }, { status: 400 });
         }
 
-        // Fetch assessment data (unauthenticated access now allowed temporarily)
+        // Authenticate user
+        const user = await base44.auth.me();
+        if (!user) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Fetch assessment data (RLS-enforced via standard client)
         const assessment = await base44.entities.Assessment.get(assessment_id);
         
         if (!assessment) {
             return Response.json({ error: 'Assessment not found' }, { status: 404 });
+        }
+
+        // Verify ownership
+        if (assessment.created_by !== user.email) {
+            return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         // Fetch related data

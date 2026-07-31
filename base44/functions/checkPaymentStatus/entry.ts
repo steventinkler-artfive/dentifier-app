@@ -30,14 +30,22 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Get assessment with service role
-    const assessment = await base44.asServiceRole.entities.Assessment.get(assessment_id);
+    // Get assessment (RLS-enforced via standard client)
+    const assessment = await base44.entities.Assessment.get(assessment_id);
     
     if (!assessment) {
       return Response.json({ 
         success: false, 
         error: 'Assessment not found' 
       }, { status: 404 });
+    }
+
+    // Verify ownership
+    if (assessment.created_by !== user.email) {
+      return Response.json({ 
+        success: false, 
+        error: 'Forbidden' 
+      }, { status: 403 });
     }
 
     if (!assessment.payment_link_url) {
@@ -48,7 +56,7 @@ Deno.serve(async (req) => {
     }
 
     // Get user settings to access payment provider credentials
-    const userSettings = await base44.asServiceRole.entities.UserSetting.filter({ 
+    const userSettings = await base44.entities.UserSetting.filter({ 
       user_email: user.email 
     });
 
@@ -191,7 +199,7 @@ Deno.serve(async (req) => {
 
     // Update assessment if payment confirmed
     if (paymentStatus.paid && assessment.payment_status !== 'paid') {
-      await base44.asServiceRole.entities.Assessment.update(assessment_id, {
+      await base44.entities.Assessment.update(assessment_id, {
         payment_status: 'paid'
       });
     }
