@@ -220,7 +220,8 @@ export default function AssessmentPage() {
           include_notes_in_quote: true,
           estimated_time_hours: null,
           quote_number: formattedQuoteNumber,
-          job_panel_price: jobPanelPrice || userSettings?.default_panel_price || 60
+          job_panel_price: jobPanelPrice || userSettings?.default_panel_price || 60,
+          creator_email: currentUser?.email
         };
 
         const savedAssessment = await Assessment.create(assessmentPayload);
@@ -327,8 +328,9 @@ export default function AssessmentPage() {
         formattedQuoteNumber = 'Q-0001'; // The current assessment gets the first number
       }
 
-      // Now assign the generated quote number to the assessment payload
+      // Now assign the generated quote number and creator email to the assessment payload
       assessmentPayload.quote_number = formattedQuoteNumber;
+      assessmentPayload.creator_email = currentUser?.email;
 
       console.log('Creating assessment with payload:', assessmentPayload);
       const savedAssessment = await Assessment.create(assessmentPayload);

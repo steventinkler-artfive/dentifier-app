@@ -249,6 +249,10 @@
     "payment_link_url": {
       "type": "string",
       "description": "Generated payment link for this assessment/invoice"
+    },
+    "creator_email": {
+      "type": "string",
+      "description": "Email of the user who created this assessment (copied from created_by for filtering)"
     }
   },
   "required": [],
