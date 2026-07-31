@@ -29,8 +29,9 @@ Deno.serve(async (req) => {
       password_reset_expiry: resetTokenExpiry
     });
 
-    // Create reset link
-    const resetLink = `${req.headers.get('origin')}/ResetPassword?token=${resetToken}`;
+    // Create reset link — use a hardcoded trusted base URL to prevent Origin header poisoning
+    const TRUSTED_BASE_URL = 'https://app.dentifierpro.com';
+    const resetLink = `${TRUSTED_BASE_URL}/ResetPassword?token=${resetToken}`;
 
     // Send email
     const emailBody = `Hi ${user.full_name},
