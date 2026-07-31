@@ -336,6 +336,8 @@ export default function Reports() {
         business_name: bizName,
         reply_to_email: replyTo,
         pdf_base64: pdfBase64,
+        customer_id: selectedCustomerId,
+        assessment_ids: filteredAssessments.map((a) => a.id),
         quote_number: `Statement-${periodLabel}`,
         invoice_number: `Statement-${periodLabel}`,
       });

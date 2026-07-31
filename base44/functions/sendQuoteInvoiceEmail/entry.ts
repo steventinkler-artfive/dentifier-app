@@ -1,21 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-function arrayBufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user) {
+    if (!user || !user.email) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -28,15 +18,79 @@ Deno.serve(async (req) => {
       customer_name,
       business_name,
       reply_to_email,
-      pdf_url,
       pdf_base64,
       quote_number,
       invoice_number,
-      payment_link_url
+      payment_link_url,
+      assessment_id,
+      customer_id,
+      assessment_ids
     } = await req.json();
 
-    if (!type || !to || (!pdf_url && !pdf_base64)) {
-      return Response.json({ error: 'Missing required parameters' }, { status: 400 });
+    // Mandatory: PDF must be provided as base64 (no SSRF fetch path)
+    if (!pdf_base64) {
+      return Response.json({ error: 'Missing required parameter: pdf_base64' }, { status: 400 });
+    }
+
+    if (!type || !to) {
+      return Response.json({ error: 'Missing required parameters (type, to)' }, { status: 400 });
+    }
+
+    let resolvedCustomer = null;
+
+    // Ownership & recipient validation
+    if (assessment_id) {
+      // Single document (quote/invoice) flow
+      const assessment = await base44.entities.Assessment.get(assessment_id);
+      if (!assessment) {
+        return Response.json({ error: 'Assessment not found' }, { status: 404 });
+      }
+      if (assessment.created_by !== user.email) {
+        return Response.json({ error: 'Forbidden: you do not own this assessment' }, { status: 403 });
+      }
+      if (assessment.customer_id) {
+        try {
+          resolvedCustomer = await base44.entities.Customer.get(assessment.customer_id);
+        } catch (_) { resolvedCustomer = null; }
+      }
+    } else if (customer_id && Array.isArray(assessment_ids) && assessment_ids.length > 0) {
+      // Statement flow: validate the customer and every assessment in the statement
+      try {
+        resolvedCustomer = await base44.entities.Customer.get(customer_id);
+      } catch (_) {
+        return Response.json({ error: 'Customer not found' }, { status: 404 });
+      }
+      if (!resolvedCustomer) {
+        return Response.json({ error: 'Customer not found' }, { status: 404 });
+      }
+      if (resolvedCustomer.created_by !== user.email) {
+        return Response.json({ error: 'Forbidden: you do not own this customer' }, { status: 403 });
+      }
+      // Verify every assessment in the statement belongs to the caller and the target customer
+      for (const id of assessment_ids) {
+        let a;
+        try {
+          a = await base44.entities.Assessment.get(id);
+        } catch (_) {
+          a = null;
+        }
+        if (!a) {
+          return Response.json({ error: `Assessment ${id} not found` }, { status: 404 });
+        }
+        if (a.created_by !== user.email) {
+          return Response.json({ error: `Forbidden: you do not own assessment ${id}` }, { status: 403 });
+        }
+        if (a.customer_id !== customer_id) {
+          return Response.json({ error: `Assessment ${id} does not belong to this customer` }, { status: 400 });
+        }
+      }
+    } else {
+      return Response.json({ error: 'Missing ownership context: provide assessment_id (single) or customer_id + assessment_ids (statement)' }, { status: 400 });
+    }
+
+    // Enforce that the recipient matches the linked customer's email (single source of truth)
+    if (resolvedCustomer && resolvedCustomer.email && to !== resolvedCustomer.email) {
+      return Response.json({ error: 'Recipient (to) must match the email on file for this customer' }, { status: 403 });
     }
 
     const refNumber = type === 'invoice' ? invoice_number : quote_number;
@@ -52,20 +106,6 @@ Deno.serve(async (req) => {
       .toUpperCase()
       .substring(0, 20);
     const filename = `${docLabelCap}_${docNum}${bizSlug ? '_' + bizSlug : ''}.pdf`;
-
-    let pdfBase64Final;
-    if (pdf_base64) {
-      // Use the base64 content provided directly from the frontend
-      pdfBase64Final = pdf_base64;
-    } else {
-      // Fallback: fetch from URL and convert
-      const pdfResponse = await fetch(pdf_url);
-      if (!pdfResponse.ok) {
-        return Response.json({ error: 'Failed to fetch PDF for attachment' }, { status: 500 });
-      }
-      const pdfBuffer = await pdfResponse.arrayBuffer();
-      pdfBase64Final = arrayBufferToBase64(pdfBuffer);
-    }
 
     // Use the custom body from the modal, or fall back to auto-generated
     let body = customBody;
@@ -101,7 +141,7 @@ Deno.serve(async (req) => {
       attachments: [
         {
           filename,
-          content: pdfBase64Final,
+          content: pdf_base64,
           content_type: 'application/pdf'
         }
       ]

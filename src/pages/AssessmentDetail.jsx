@@ -627,6 +627,7 @@ export default function AssessmentDetail() {
         business_name: bizName,
         reply_to_email: replyTo,
         pdf_base64: pdfBase64,
+        assessment_id: assessment.id,
         quote_number: assessment.quote_number || ref,
         invoice_number: assessment.invoice_number || ref,
         payment_link_url: isInvoice ? (assessment.payment_link_url || null) : null
