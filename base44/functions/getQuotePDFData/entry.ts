@@ -1,44 +1,41 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-Deno.serve(async (req) => {
+export default async function(req) {
     try {
         const base44 = createClientFromRequest(req);
+
+        // Auth guard — QuotePDF page requires login, so a valid user must be present.
+        const user = await base44.auth.me();
+        if (!user) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const { assessment_id } = await req.json();
 
         if (!assessment_id) {
             return Response.json({ error: 'Missing assessment_id' }, { status: 400 });
         }
 
-        // Use asServiceRole to bypass RLS and fetch any assessment by created_by
-        // We need to know who created it — try fetching with service role
+        // Fetch via the authenticated (RLS-enforced) client.
+        // Assessment RLS is created_by == user.email, so a non-owner gets no result.
         let assessment;
         try {
-            // Try to get the current user to use their context
-            let createdBy = null;
-            try {
-                const user = await base44.auth.me();
-                createdBy = user?.email;
-            } catch (e) {
-                // public/unauthenticated access
-            }
-
-            // Fetch assessment using authenticated user's token (respects RLS created_by rule)
             const results = await base44.entities.Assessment.filter({ id: assessment_id });
             assessment = results.length > 0 ? results[0] : null;
-            console.log('Assessment lookup result:', !!assessment);
         } catch (error) {
             console.error('Assessment fetch error:', error.message);
-            return Response.json({ 
+            return Response.json({
                 error: 'Assessment not found',
-                details: error.message 
+                details: error.message
             }, { status: 404 });
         }
 
         if (!assessment) {
+            // Either doesn't exist or caller doesn't own it.
             return Response.json({ error: 'Assessment not found' }, { status: 404 });
         }
 
-        // Fetch related data using asServiceRole
+        // Ownership established via RLS fetch above — related data belongs to the same owner.
         let customer = null;
         let vehicle = null;
         let settings = null;
@@ -91,12 +88,11 @@ Deno.serve(async (req) => {
 
         if (assessment.created_by) {
             try {
-                const allSettings = await base44.entities.UserSetting.filter({ 
-                    user_email: assessment.created_by 
+                const allSettings = await base44.entities.UserSetting.filter({
+                    user_email: assessment.created_by
                 });
                 settings = allSettings[0] || null;
 
-                // Read subscription info directly from UserSetting (synced from User entity)
                 if (settings) {
                     creatorSubscriptionPlan = settings.subscription_plan || null;
                     creatorSubscriptionStatus = settings.subscription_status || null;
@@ -105,14 +101,11 @@ Deno.serve(async (req) => {
                 console.error('Settings fetch failed:', e.message);
             }
 
-            // Also fetch subscription_tier directly from the User entity (fallback for accounts
-            // where subscription_plan/status were never synced to UserSetting)
             try {
                 const creatorUsers = await base44.asServiceRole.entities.User.filter({ email: assessment.created_by });
                 if (creatorUsers.length > 0) {
                     const creatorUser = creatorUsers[0];
                     creatorSubscriptionTier = creatorUser.data?.subscription_tier || creatorUser.subscription_tier || null;
-                    // Also fill plan/status from User entity if not already set from UserSetting
                     if (!creatorSubscriptionPlan) creatorSubscriptionPlan = creatorUser.subscription_plan || null;
                     if (!creatorSubscriptionStatus) creatorSubscriptionStatus = creatorUser.subscription_status || null;
                 }
@@ -180,9 +173,9 @@ Deno.serve(async (req) => {
         });
     } catch (error) {
         console.error('Outer error:', error.message);
-        return Response.json({ 
+        return Response.json({
             error: error.message,
-            stack: error.stack 
+            stack: error.stack
         }, { status: 500 });
     }
-});
+}

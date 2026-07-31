@@ -1,24 +1,27 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-Deno.serve(async (req) => {
+export default async function(req) {
     try {
         const base44 = createClientFromRequest(req);
         const body = await req.json();
 
-        // Support both direct call (email, fullName) and entity automation payload (event, data)
-        let email, fullName;
-        if (body.event && body.data) {
-            // Triggered from UserSetting create automation — user_email is the identifier
-            email = body.data.user_email;
-            fullName = null; // full_name not available on UserSetting
-        } else {
-            email = body.email;
-            fullName = body.fullName;
+        // Restrict to the entity-automation payload shape only.
+        // The "Send Welcome Email on New User" automation fires on UserSetting create
+        // and sends { event: { type, entity_name, entity_id }, data: { ...UserSetting } }.
+        // Any other shape (e.g. a direct { email, fullName } call) is rejected, so the
+        // endpoint can only be exercised by that automation — not invoked arbitrarily.
+        if (
+            !body ||
+            !body.event ||
+            body.event.type !== 'create' ||
+            body.event.entity_name !== 'UserSetting' ||
+            !body.data ||
+            !body.data.user_email
+        ) {
+            return Response.json({ error: 'Forbidden: automation payload required' }, { status: 403 });
         }
 
-        if (!email) {
-            return Response.json({ error: 'Missing email' }, { status: 400 });
-        }
+        const email = body.data.user_email;
 
         const logoUrl = "https://dentifier.b-cdn.net/logo/dentifier-logo-strap-white2.svg";
         const dashboardUrl = "https://app.dentifierpro.com/dashboard";
@@ -40,7 +43,7 @@ Deno.serve(async (req) => {
                     
                     <div style="padding: 40px 30px;">
                         <h1 style="color: #E31C5F; font-size: 28px; margin: 0 0 20px 0; text-align: center;">Welcome to Dentifier! 🚀</h1>
-                        <p style="font-size: 16px; margin-bottom: 20px;">Hi ${fullName || 'there'},</p>
+                        <p style="font-size: 16px; margin-bottom: 20px;">Hi there,</p>
                         <p style="font-size: 16px; margin-bottom: 30px;">We're excited to help you streamline your PDR quoting process and grow your business.</p>
                         
                         <h2 style="color: #333; font-size: 20px; margin: 30px 0 15px 0;">Quick Start Guide:</h2>
@@ -85,4 +88,4 @@ Deno.serve(async (req) => {
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
-});
+}
