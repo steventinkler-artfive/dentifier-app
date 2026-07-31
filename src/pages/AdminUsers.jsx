@@ -241,10 +241,7 @@ export default function AdminUsers() {
 
     setResettingPassword(user.id);
     try {
-      await base44.functions.invoke('sendPasswordReset', { 
-        email: user.email,
-        isAdminReset: true 
-      });
+      await base44.auth.resetPasswordRequest(user.email);
       await showAlert(`Password reset email sent to ${user.email}`, "Success");
     } catch (error) {
       console.error("Failed to send reset email:", error);
