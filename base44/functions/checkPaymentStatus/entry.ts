@@ -40,12 +40,13 @@ Deno.serve(async (req) => {
       }, { status: 404 });
     }
 
-    // Verify ownership
+    // Verify ownership — independent secondary layer alongside RLS.
+    // Returns 404 (not 403) to avoid leaking the existence of records the caller does not own.
     if (assessment.created_by !== user.email) {
       return Response.json({ 
         success: false, 
-        error: 'Forbidden' 
-      }, { status: 403 });
+        error: 'Assessment not found' 
+      }, { status: 404 });
     }
 
     if (!assessment.payment_link_url) {
