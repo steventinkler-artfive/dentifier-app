@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
       body: customBody,
       customer_name,
       business_name,
-      reply_to_email,
       pdf_base64,
       quote_number,
       invoice_number,
@@ -94,6 +93,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Recipient (to) must match the email on file for this customer' }, { status: 403 });
     }
 
+    // Derive reply-to / BCC from the authenticated user's own UserSetting (server-side, not client-controlled)
+    let userReplyEmail = user.email;
+    try {
+      const userSettings = await base44.entities.UserSetting.filter({ user_email: user.email });
+      if (userSettings && userSettings.length > 0 && userSettings[0].contact_email) {
+        userReplyEmail = userSettings[0].contact_email;
+      }
+    } catch (_) { /* fall back to authenticated user email */ }
+
     // Validate CC addresses: max 2, basic email format
     let ccList = undefined;
     if (cc) {
@@ -139,8 +147,8 @@ Deno.serve(async (req) => {
         body += `If you have any questions or would like to proceed with the repair, please don't hesitate to get in touch.\n\n`;
       }
       body += `Best regards,\n${business_name}`;
-      if (reply_to_email) {
-        body += `\n${reply_to_email}`;
+      if (userReplyEmail) {
+        body += `\n${userReplyEmail}`;
       }
     }
 
@@ -150,8 +158,8 @@ Deno.serve(async (req) => {
       from: 'quotes@dentifierpro.com',
       to: [to],
       cc: ccList,
-      bcc: reply_to_email ? [reply_to_email] : undefined,
-      reply_to: reply_to_email || undefined,
+      bcc: [userReplyEmail],
+      reply_to: userReplyEmail,
       subject,
       text: body,
       attachments: [
