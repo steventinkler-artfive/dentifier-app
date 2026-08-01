@@ -94,6 +94,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Recipient (to) must match the email on file for this customer' }, { status: 403 });
     }
 
+    // Validate CC addresses: max 2, basic email format
+    let ccList = undefined;
+    if (cc) {
+      ccList = cc.split(',').map(e => e.trim()).filter(Boolean);
+      if (ccList.length > 2) {
+        return Response.json({ error: 'Maximum of 2 CC recipients allowed' }, { status: 400 });
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      for (const addr of ccList) {
+        if (!emailRegex.test(addr)) {
+          return Response.json({ error: `Invalid email format in CC field: ${addr}` }, { status: 400 });
+        }
+      }
+    }
+
     const refNumber = type === 'invoice' ? invoice_number : quote_number;
     const subject = customSubject || (type === 'invoice'
       ? `Invoice ${refNumber} from ${business_name}`
@@ -134,7 +149,7 @@ Deno.serve(async (req) => {
     const emailPayload = {
       from: 'quotes@dentifierpro.com',
       to: [to],
-      cc: cc ? cc.split(',').map(e => e.trim()).filter(Boolean) : undefined,
+      cc: ccList,
       bcc: reply_to_email ? [reply_to_email] : undefined,
       reply_to: reply_to_email || undefined,
       subject,
