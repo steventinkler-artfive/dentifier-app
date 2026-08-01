@@ -28,6 +28,14 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
+        // HTML-encode helper to prevent injection of user-supplied content
+        const encodeHtml = (str) => {
+            if (str == null) return '';
+            return String(str).replace(/[&<>"']/g, (ch) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[ch]));
+        };
+
         // Fetch related data
         let customer = null;
         let vehicle = null;
@@ -109,19 +117,19 @@ Deno.serve(async (req) => {
                 const vehDetails = vehiclesData[vData.vehicle_id];
                 if (!vehDetails) return;
 
-                lineItemsHTML += `<tr><td colspan="2" style="font-weight: bold; padding-top: 10px;">${vehDetails.year} ${vehDetails.make} ${vehDetails.model}</td></tr>`;
+                lineItemsHTML += `<tr><td colspan="2" style="font-weight: bold; padding-top: 10px;">${encodeHtml(vehDetails.year)} ${encodeHtml(vehDetails.make)} ${encodeHtml(vehDetails.model)}</td></tr>`;
 
                 const vehicleLineItems = vData.line_items && vData.line_items.length > 0 ? vData.line_items :
                     [{ description: 'Paintless Dent Repair Service', total_price: vData.quote_amount }];
 
                 vehicleLineItems.forEach(item => {
-                    lineItemsHTML += `<tr><td style="padding-left: 20px;">${item.description}</td><td style="text-align: right;">${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
+                    lineItemsHTML += `<tr><td style="padding-left: 20px;">${encodeHtml(item.description)}</td><td style="text-align: right;">${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
                     subtotal += item.total_price;
                 });
 
                 const vehicleNotes = vData.include_notes_in_quote ? (vData.notes || '') : '';
                 if (vehicleNotes) {
-                    lineItemsHTML += `<tr><td colspan="2" style="padding-left: 20px; font-size: 12px; color: #666; padding-top: 5px;">Vehicle Notes: ${vehicleNotes}</td></tr>`;
+                    lineItemsHTML += `<tr><td colspan="2" style="padding-left: 20px; font-size: 12px; color: #666; padding-top: 5px;">Vehicle Notes: ${encodeHtml(vehicleNotes).replace(/\n/g, '<br/>')}</td></tr>`;
                 }
             });
         } else {
@@ -129,7 +137,7 @@ Deno.serve(async (req) => {
                 [{ description: 'Paintless Dent Repair Service', total_price: assessment.quote_amount }];
 
             lineItems.forEach(item => {
-                lineItemsHTML += `<tr><td>${item.description}</td><td style="text-align: right;">${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
+                lineItemsHTML += `<tr><td>${encodeHtml(item.description)}</td><td style="text-align: right;">${currencySymbol}${item.total_price.toFixed(2)}</td></tr>`;
                 subtotal += item.total_price;
             });
         }
@@ -162,12 +170,12 @@ Deno.serve(async (req) => {
     <div class="header">
         <div>
             <img src="${businessLogo}" class="logo" alt="Logo" />
-            ${!hasCustomLogo ? `<h2>${businessName}</h2>` : ''}
-            ${businessAddress ? `<p style="font-size: 12px; color: #666; margin-top: 5px;">${businessAddress.replace(/\n/g, '<br/>')}</p>` : ''}
+            ${!hasCustomLogo ? `<h2>${encodeHtml(businessName)}</h2>` : ''}
+            ${businessAddress ? `<p style="font-size: 12px; color: #666; margin-top: 5px;">${encodeHtml(businessAddress).replace(/\n/g, '<br/>')}</p>` : ''}
         </div>
         <div class="doc-info">
             <h2>${isCompleted ? 'INVOICE' : 'QUOTE'}</h2>
-            <p>#${referenceNumber}</p>
+            <p>#${encodeHtml(referenceNumber)}</p>
             <p>Date: ${new Date(assessment.created_date).toLocaleDateString()}</p>
         </div>
     </div>
@@ -175,20 +183,20 @@ Deno.serve(async (req) => {
     <div class="section">
         <div class="section-title">BILLED TO</div>
         ${customer ? `
-            <p><strong>${customer.name}</strong></p>
-            ${customer.business_name ? `<p>(${customer.business_name})</p>` : ''}
-            ${customer.address ? `<p>${customer.address}</p>` : ''}
-            ${customer.email ? `<p>${customer.email}</p>` : ''}
-            ${customer.phone ? `<p>${customer.phone}</p>` : ''}
+            <p><strong>${encodeHtml(customer.name)}</strong></p>
+            ${customer.business_name ? `<p>(${encodeHtml(customer.business_name)})</p>` : ''}
+            ${customer.address ? `<p>${encodeHtml(customer.address)}</p>` : ''}
+            ${customer.email ? `<p>${encodeHtml(customer.email)}</p>` : ''}
+            ${customer.phone ? `<p>${encodeHtml(customer.phone)}</p>` : ''}
         ` : '<p>DRAFT - Customer TBD</p>'}
     </div>
 
     ${!isMultiVehicle && vehicle ? `
     <div class="section">
         <div class="section-title">VEHICLE</div>
-        <p>${vehicle.year} ${vehicle.make} ${vehicle.model}</p>
-        ${vehicle.color ? `<p>Color: ${vehicle.color}</p>` : ''}
-        ${vehicle.license_plate ? `<p>License: ${vehicle.license_plate}</p>` : ''}
+        <p>${encodeHtml(vehicle.year)} ${encodeHtml(vehicle.make)} ${encodeHtml(vehicle.model)}</p>
+        ${vehicle.color ? `<p>Color: ${encodeHtml(vehicle.color)}</p>` : ''}
+        ${vehicle.license_plate ? `<p>License: ${encodeHtml(vehicle.license_plate)}</p>` : ''}
     </div>
     ` : ''}
 
@@ -202,7 +210,7 @@ Deno.serve(async (req) => {
     ${notesForCustomer ? `
     <div class="notes">
         <strong>ASSESSMENT NOTES:</strong><br/>
-        ${notesForCustomer.replace(/\n/g, '<br/>')}
+        ${encodeHtml(notesForCustomer).replace(/\n/g, '<br/>')}
     </div>
     ` : ''}
 
@@ -219,7 +227,7 @@ Deno.serve(async (req) => {
       (settings.payment_method_preference === 'Payment Links Only' || settings.payment_method_preference === 'Both') ? `
     <div style="background: #e6f7ff; padding: 15px; margin: 20px 0; border: 2px solid #1890ff;">
         <strong>Pay Online:</strong><br/>
-        <a href="${assessment.payment_link_url}" style="color: #1890ff;">${assessment.payment_link_url}</a>
+        <a href="${encodeHtml(assessment.payment_link_url)}" style="color: #1890ff;">${encodeHtml(assessment.payment_link_url)}</a>
     </div>
     ` : ''}
 
@@ -228,19 +236,19 @@ Deno.serve(async (req) => {
       (settings.bank_account_name || settings.bank_account_number) ? `
     <div style="background: #f5f5f5; padding: 15px; margin: 20px 0;">
         <strong>Bank Transfer Details:</strong><br/>
-        ${settings.bank_account_name ? `Account Name: ${settings.bank_account_name}<br/>` : ''}
-        ${settings.bank_sort_code ? `Sort Code: ${settings.bank_sort_code}<br/>` : ''}
-        ${settings.bank_account_number ? `Account Number: ${settings.bank_account_number}<br/>` : ''}
-        ${settings.bank_iban ? `IBAN: ${settings.bank_iban}<br/>` : ''}
-        Reference: ${referenceNumber}
+        ${settings.bank_account_name ? `Account Name: ${encodeHtml(settings.bank_account_name)}<br/>` : ''}
+        ${settings.bank_sort_code ? `Sort Code: ${encodeHtml(settings.bank_sort_code)}<br/>` : ''}
+        ${settings.bank_account_number ? `Account Number: ${encodeHtml(settings.bank_account_number)}<br/>` : ''}
+        ${settings.bank_iban ? `IBAN: ${encodeHtml(settings.bank_iban)}<br/>` : ''}
+        Reference: ${encodeHtml(referenceNumber)}
     </div>
     ` : ''}
 
     <div class="footer">
-        <p>${businessName}</p>
-        <p>${businessAddress}</p>
-        <p>${contactEmail}</p>
-        <p style="margin-top: 10px;">${invoiceFooter}</p>
+        <p>${encodeHtml(businessName)}</p>
+        <p>${encodeHtml(businessAddress)}</p>
+        <p>${encodeHtml(contactEmail)}</p>
+        <p style="margin-top: 10px;">${encodeHtml(invoiceFooter)}</p>
         <p style="text-align: center; margin-top: 20px;">POWERED BY DENTIFIER</p>
     </div>
 </body>
