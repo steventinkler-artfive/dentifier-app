@@ -94,6 +94,9 @@ export default function Subscription() {
           <Badge className="mb-4 bg-rose-600 text-white">
             60-Day Free Trial
           </Badge>
+          <p className="text-slate-500 text-xs mb-4">
+            Limited time offer - future sign-ups will move to our standard 30-day trial.
+          </p>
           <h1 className="text-4xl font-bold text-white mb-4">
             Choose Your Plan
           </h1>
