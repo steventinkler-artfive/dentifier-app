@@ -48,11 +48,12 @@ Deno.serve(async (req) => {
       if (assessment.created_by !== user.email) {
         return Response.json({ error: 'Forbidden: you do not own this assessment' }, { status: 403 });
       }
-      if (assessment.customer_id) {
-        try {
-          resolvedCustomer = await base44.entities.Customer.get(assessment.customer_id);
-        } catch (_) { resolvedCustomer = null; }
+      if (!assessment.customer_id) {
+        return Response.json({ error: 'Cannot send email: this assessment is not linked to a customer' }, { status: 400 });
       }
+      try {
+        resolvedCustomer = await base44.entities.Customer.get(assessment.customer_id);
+      } catch (_) { resolvedCustomer = null; }
     } else if (customer_id && Array.isArray(assessment_ids) && assessment_ids.length > 0) {
       // Statement flow: validate the customer and every assessment in the statement
       try {
