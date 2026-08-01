@@ -92,16 +92,16 @@ export default function Subscription() {
         {/* Header */}
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-rose-600 text-white">
-            14-Day Free Trial
+            60-Day Free Trial
           </Badge>
           <h1 className="text-4xl font-bold text-white mb-4">
             Choose Your Plan
           </h1>
           <p className="text-slate-400 text-lg">
-            Start your 14-day free trial. No charges for 14 days. Cancel anytime.
+            Start your 60-day free trial. No charges for 60 days. Cancel anytime.
           </p>
           <p className="text-slate-500 text-sm mt-2">
-            You'll enter payment details at checkout, but won't be charged until day 15.
+            You'll enter payment details at checkout, but won't be charged until day 61.
           </p>
         </div>
 
@@ -137,7 +137,7 @@ export default function Subscription() {
                 <span className="text-slate-400">/month</span>
               </div>
               <p className="text-sm text-slate-400 mt-2">
-                after your 14-day free trial
+                after your 60-day free trial
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -152,7 +152,7 @@ export default function Subscription() {
                     Loading...
                   </>
                 ) : (
-                  'Start 14-Day Free Trial'
+                  'Start 60-Day Free Trial'
                 )}
               </Button>
               
@@ -182,7 +182,7 @@ export default function Subscription() {
                 <span className="text-slate-400">/month</span>
               </div>
               <p className="text-sm text-slate-400 mt-2">
-                after your 14-day free trial
+                after your 60-day free trial
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -197,7 +197,7 @@ export default function Subscription() {
                     Loading...
                   </>
                 ) : (
-                  'Start 14-Day Free Trial'
+                  'Start 60-Day Free Trial'
                 )}
               </Button>
               

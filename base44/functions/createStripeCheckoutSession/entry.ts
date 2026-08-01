@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
         params.append('success_url', 'https://app.dentifierpro.com/SubscriptionSuccess?session_id={CHECKOUT_SESSION_ID}');
         params.append('cancel_url', 'https://app.dentifierpro.com/Subscription');
         params.append('customer_email', user.email);
-        params.append('subscription_data[trial_period_days]', '14');
+        params.append('subscription_data[trial_period_days]', '60');
         params.append('subscription_data[metadata][email]', user.email);
 
         const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
