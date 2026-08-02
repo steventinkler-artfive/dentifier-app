@@ -197,22 +197,11 @@ export default function PricingQuotingForm({ formData, onChange }) {
         </div>
       </div>
 
-      <Card className="bg-blue-900/20 border-blue-800">
-        <CardContent className="p-4">
-          <p className="text-blue-200 text-sm">
-            💡 Matrix prices are for steel panels (market rate). Aluminium calculated at 1.5x automatically.
-          </p>
-        </CardContent>
-      </Card>
-
       <Card className="bg-slate-800/50 border-slate-700">
         <CardContent className="p-4">
           <h3 className="text-lg font-semibold text-white mb-2">Pricing Matrix Setup</h3>
-          <p className="text-slate-300 text-sm mb-4">
-            You can configure your detailed pricing matrix now or skip and set it up later in Settings.
-          </p>
-          <p className="text-slate-400 text-xs">
-            The pricing matrix allows you to set specific prices for different dent sizes and types. You can fully customize this in Settings at any time.
+          <p className="text-slate-300 text-sm">
+            Want to fine-tune your prices? You can fully customise your pricing matrix any time in Settings.
           </p>
         </CardContent>
       </Card>
