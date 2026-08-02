@@ -40,6 +40,24 @@ export default function Dashboard() {
     checkAndSendWelcomeEmail();
   }, []);
 
+  // Evaluate onboarding only after the UserSetting fetch has definitively completed.
+  // This prevents a flash of the wizard for existing users while settings are still loading.
+  useEffect(() => {
+    if (loadingUserSettings || !user) return;
+
+    const hasAccess =
+      user.role === 'admin' ||
+      user.subscription_status === 'trialing' ||
+      user.subscription_status === 'active' ||
+      user.is_beta_tester === true || user.data?.is_beta_tester === true;
+
+    if (hasAccess && (!userSettings || !userSettings.onboarding_completed)) {
+      setShowOnboarding(true);
+    } else {
+      setShowOnboarding(false);
+    }
+  }, [loadingUserSettings, userSettings, user]);
+
   const checkAndSendWelcomeEmail = async () => {
     try {
       const user = await base44.auth.me();
@@ -85,17 +103,6 @@ export default function Dashboard() {
 
       const settings = settingsData.length > 0 ? settingsData[0] : null;
       setUserSettings(settings);
-      
-      // Only show onboarding if user has an active subscription/trial
-      const hasAccess = 
-        user.role === 'admin' ||
-        user.subscription_status === 'trialing' ||
-        user.subscription_status === 'active' ||
-        user.is_beta_tester === true || user.data?.is_beta_tester === true;
-
-      if (hasAccess && (!settings || !settings.onboarding_completed)) {
-        setShowOnboarding(true);
-      }
       setLoadingUserSettings(false);
 
       const customersMap = customersData.reduce((map, customer) => {
