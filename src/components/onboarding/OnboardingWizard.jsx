@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import BusinessProfileForm from "./BusinessProfileForm";
 import BankingPaymentForm from "./BankingPaymentForm";
+import { isValidBanking, hasBankingErrors } from "@/utils/bankingValidation";
 import PricingQuotingForm from "./PricingQuotingForm";
 import TechnicianDetailsForm from "./TechnicianDetailsForm";
 import InstallInstructions from "./InstallInstructions";
@@ -151,6 +152,11 @@ export default function OnboardingWizard({ user, onComplete }) {
   const handleContinue = async () => {
     const step = STEPS[currentStep];
     
+    if (step.section === 'banking' && hasBankingErrors(formData)) {
+      await showAlert("Please enter valid banking details — account name, 8-digit account number, and 6-digit sort code (e.g. 12-34-56).", "Banking details required");
+      return;
+    }
+    
     if (step.section) {
       const isComplete = validateSection(step.section);
       await saveProgress(step.section, isComplete);
@@ -203,7 +209,7 @@ export default function OnboardingWizard({ user, onComplete }) {
       case 'business':
         return !!(formData.business_name && formData.business_address && formData.contact_email);
       case 'banking':
-        return !!(formData.bank_account_name && formData.bank_account_number && formData.bank_sort_code);
+        return isValidBanking(formData);
       case 'pricing':
         return !!(formData.default_panel_price && formData.pricing_matrix?.length > 0);
       case 'skills':

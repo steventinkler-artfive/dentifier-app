@@ -2,61 +2,14 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import BankingDetailsForm from "@/components/settings/BankingDetailsForm";
 
 export default function BankingPaymentForm({ formData, onChange }) {
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-white mb-3">Banking Details</h3>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-white">Account Name *</Label>
-            <Input
-              value={formData.bank_account_name || ''}
-              onChange={e => onChange('bank_account_name', e.target.value)}
-              placeholder="Business Account Name"
-              className="bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-white">Account Number *</Label>
-              <Input
-                value={formData.bank_account_number || ''}
-                onChange={e => onChange('bank_account_number', e.target.value)}
-                placeholder="12345678"
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-white">Sort Code *</Label>
-              <Input
-                value={formData.bank_sort_code || ''}
-                onChange={e => onChange('bank_sort_code', e.target.value)}
-                placeholder="12-34-56"
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-white">IBAN (Optional)</Label>
-            <Input
-              value={formData.bank_iban || ''}
-              onChange={e => onChange('bank_iban', e.target.value)}
-              placeholder="GB29 NWBK 6016 1331 9268 19"
-              className="bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-white">SWIFT/BIC Code (Optional)</Label>
-            <Input
-              value={formData.bank_swift_code || ''}
-              onChange={e => onChange('bank_swift_code', e.target.value)}
-              placeholder="NWBKGB2L"
-              className="bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-        </div>
+        <BankingDetailsForm formData={formData} onChange={onChange} />
       </div>
 
       <div>

@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Users, Mail } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
 import MySubscriptionTab from "../components/settings/MySubscriptionTab";
+import BankingDetailsForm from "@/components/settings/BankingDetailsForm";
+import { isValidBanking, hasBankingErrors } from "@/utils/bankingValidation";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -441,7 +443,7 @@ export default function Settings() {
     // fields via Settings also marks onboarding as complete.
     const isOnboardingComplete = (data) => {
         const business = !!(data.business_name && data.business_address && data.contact_email);
-        const banking = !!(data.bank_account_name && data.bank_account_number && data.bank_sort_code);
+        const banking = isValidBanking(data);
         const pricing = !!(data.default_panel_price && data.pricing_matrix?.length > 0);
         const configuredSkills = data.specialized_damage_skills?.filter(s => s.level !== "Don't do this type") || [];
         const skills = configuredSkills.length >= 3;
@@ -450,6 +452,10 @@ export default function Settings() {
 
     const handleSave = async () => {
         if (!user) return;
+        if (hasBankingErrors(formData)) {
+            setError("Please enter valid banking details: account name, 8-digit account number, and 6-digit sort code (e.g. 12-34-56).");
+            return;
+        }
         setSaving(true);
         setError(null);
         try {
@@ -774,28 +780,7 @@ export default function Settings() {
                             <p className="text-slate-400 text-sm">For invoice payments (will appear on completed work invoices)</p>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-white">Account Name</Label>
-                                <Input value={formData.bank_account_name} onChange={e => handleInputChange('bank_account_name', e.target.value)} placeholder="Business Account Name" className="bg-slate-800 border-slate-700 text-white" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-white">Account Number</Label>
-                                    <Input value={formData.bank_account_number} onChange={e => handleInputChange('bank_account_number', e.target.value)} placeholder="12345678" className="bg-slate-800 border-slate-700 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-white">Sort Code</Label>
-                                    <Input value={formData.bank_sort_code} onChange={e => handleInputChange('bank_sort_code', e.target.value)} placeholder="12-34-56" className="bg-slate-800 border-slate-700 text-white" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-white">IBAN (Optional)</Label>
-                                <Input value={formData.bank_iban} onChange={e => handleInputChange('bank_iban', e.target.value)} placeholder="GB29 NWBK 6016 1331 9268 19" className="bg-slate-800 border-slate-700 text-white" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-white">SWIFT/BIC Code (Optional)</Label>
-                                <Input value={formData.bank_swift_code} onChange={e => handleInputChange('bank_swift_code', e.target.value)} placeholder="NWBKGB2L" className="bg-slate-800 border-slate-700 text-white" />
-                            </div>
+                            <BankingDetailsForm formData={formData} onChange={handleInputChange} />
                         </CardContent>
                     </Card>
 
