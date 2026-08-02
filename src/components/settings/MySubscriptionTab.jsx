@@ -185,7 +185,7 @@ export default function MySubscriptionTab({ user }) {
   const [loadingCancel, setLoadingCancel] = useState(false);
 
   const hasStripe = !!user?.stripe_customer_id;
-  const currentPlan = user?.subscription_plan || "starter"; // defaults to starter
+  const currentPlan = user?.subscription_tier || "starter"; // defaults to starter
   const isOnProfessional = currentPlan === "professional";
   const isOnStarter = !isOnProfessional;
 

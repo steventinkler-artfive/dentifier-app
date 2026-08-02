@@ -5,8 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Zap, Crown, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Upgrade() {
+  const { currentUser } = useAuth();
+  const tier = currentUser?.subscription_tier || "starter";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
       <div className="max-w-4xl mx-auto">
@@ -23,7 +27,9 @@ export default function Upgrade() {
             <CardHeader>
               <div className="flex items-center justify-between mb-2">
                 <CardTitle className="text-2xl text-white">Starter</CardTitle>
-                <Badge className="bg-slate-700 text-slate-300">Current Plan</Badge>
+                {tier === "starter" && (
+                  <Badge className="bg-slate-700 text-slate-300">Current Plan</Badge>
+                )}
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-bold text-white">£20</span>
@@ -64,7 +70,11 @@ export default function Upgrade() {
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <CardTitle className="text-2xl text-white">Professional</CardTitle>
-                <Crown className="w-6 h-6 text-rose-400" />
+                {tier === "professional" ? (
+                  <Badge className="bg-slate-700 text-slate-300">Current Plan</Badge>
+                ) : (
+                  <Crown className="w-6 h-6 text-rose-400" />
+                )}
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-bold text-white">£35</span>
