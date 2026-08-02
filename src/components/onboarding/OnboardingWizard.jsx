@@ -5,8 +5,6 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CheckCircle2, AlertTriangle, Loader2, Smartphone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAlert } from "@/components/ui/CustomAlert";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import BusinessProfileForm from "./BusinessProfileForm";
 import BankingPaymentForm from "./BankingPaymentForm";
 import { isValidBanking, hasBankingErrors } from "@/utils/bankingValidation";
@@ -32,6 +30,7 @@ export default function OnboardingWizard({ user, onComplete }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSkipWarning, setShowSkipWarning] = useState(false);
+  const [returnToChecklist, setReturnToChecklist] = useState(false);
   const { showAlert } = useAlert();
   const dialogScrollRef = React.useRef(null);
   const { isStandalone } = useInstallPrompt();
@@ -150,7 +149,24 @@ export default function OnboardingWizard({ user, onComplete }) {
   };
 
   const handleBack = () => {
+    if (returnToChecklist) {
+      setReturnToChecklist(false);
+      setCurrentStep(6);
+      return;
+    }
     setCurrentStep(prev => Math.max(0, prev - 1));
+  };
+
+  // Jump from the completion checklist back to the first incomplete section,
+  // flagging the wizard to return to the checklist once that step is done/skipped.
+  const handleFinishRemainingSetup = () => {
+    const sectionsCompleted = settings?.sections_completed || {};
+    const sectionOrder = ['business', 'banking', 'pricing', 'skills'];
+    const firstIncomplete = sectionOrder.find(s => !sectionsCompleted[s]);
+    if (!firstIncomplete) return;
+    const stepIndex = STEPS.findIndex(s => s.section === firstIncomplete);
+    setReturnToChecklist(true);
+    setCurrentStep(stepIndex);
   };
 
   const handleContinue = async () => {
@@ -168,6 +184,12 @@ export default function OnboardingWizard({ user, onComplete }) {
 
     if (currentStep === 4 && !validateSection('skills')) {
       setShowSkipWarning(true);
+      return;
+    }
+
+    if (returnToChecklist) {
+      setReturnToChecklist(false);
+      setCurrentStep(6);
       return;
     }
 
@@ -190,7 +212,13 @@ export default function OnboardingWizard({ user, onComplete }) {
       setShowSkipWarning(true);
       return;
     }
-    
+
+    if (returnToChecklist) {
+      setReturnToChecklist(false);
+      setCurrentStep(6);
+      return;
+    }
+
     setCurrentStep(prev => prev + 1);
   };
 
@@ -199,6 +227,11 @@ export default function OnboardingWizard({ user, onComplete }) {
     const step = STEPS[currentStep];
     if (step.section) {
       await saveProgress(step.section, false);
+    }
+    if (returnToChecklist) {
+      setReturnToChecklist(false);
+      setCurrentStep(6);
+      return;
     }
     // Skip homescreen step if already standalone
     if (isStandalone) {
@@ -424,11 +457,13 @@ export default function OnboardingWizard({ user, onComplete }) {
                 Go to Dashboard
               </Button>
               {completionPercent < 100 && (
-                <Link to={createPageUrl('Settings')}>
-                  <Button variant="outline" className="bg-slate-800 border-slate-700 text-white w-full max-w-xs">
-                    Finish remaining setup
-                  </Button>
-                </Link>
+                <Button
+                  variant="outline"
+                  onClick={handleFinishRemainingSetup}
+                  className="bg-slate-800 border-slate-700 text-white w-full max-w-xs"
+                >
+                  Finish remaining setup
+                </Button>
               )}
             </div>
           </div>
