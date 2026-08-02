@@ -437,6 +437,17 @@ export default function Settings() {
         }
     };
 
+    // Mirrors OnboardingWizard.validateSection so that completing the required
+    // fields via Settings also marks onboarding as complete.
+    const isOnboardingComplete = (data) => {
+        const business = !!(data.business_name && data.business_address && data.contact_email);
+        const banking = !!(data.bank_account_name && data.bank_account_number && data.bank_sort_code);
+        const pricing = !!(data.default_panel_price && data.pricing_matrix?.length > 0);
+        const configuredSkills = data.specialized_damage_skills?.filter(s => s.level !== "Don't do this type") || [];
+        const skills = configuredSkills.length >= 3;
+        return business && banking && pricing && skills;
+    };
+
     const handleSave = async () => {
         if (!user) return;
         setSaving(true);
@@ -456,7 +467,9 @@ export default function Settings() {
                 quote_prefix: formData.quote_prefix || 'Q-',
                 invoice_prefix: formData.invoice_prefix || 'INV-',
                 next_quote_number: formData.next_quote_number ?? 1,
-                next_invoice_number: formData.next_invoice_number ?? 1
+                next_invoice_number: formData.next_invoice_number ?? 1,
+                // Mark onboarding complete only if all required wizard fields are present
+                onboarding_completed: isOnboardingComplete(formData)
             };
 
             if (settings && settings.id) {
