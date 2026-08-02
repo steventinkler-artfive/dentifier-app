@@ -149,6 +149,10 @@ export default function OnboardingWizard({ user, onComplete }) {
     }
   };
 
+  const handleBack = () => {
+    setCurrentStep(prev => Math.max(0, prev - 1));
+  };
+
   const handleContinue = async () => {
     const step = STEPS[currentStep];
     
@@ -460,6 +464,14 @@ export default function OnboardingWizard({ user, onComplete }) {
 
             {currentStep > 0 && currentStep < 5 && (
               <div className="flex gap-3 pt-4 border-t border-slate-800">
+                <Button
+                  onClick={handleBack}
+                  disabled={saving}
+                  variant="ghost"
+                  className="text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Back
+                </Button>
                 <Button
                   onClick={handleContinue}
                   disabled={saving}
