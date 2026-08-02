@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { CheckCircle2, Circle, AlertTriangle, Loader2, Smartphone } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Loader2, Smartphone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
@@ -276,7 +276,7 @@ export default function OnboardingWizard({ user, onComplete }) {
                 'Technician Profile'
               ].map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg">
-                  <Circle className="w-5 h-5 text-slate-500" />
+                  <span className="w-2 h-2 rounded-full bg-rose-500/60" />
                   <span className="text-slate-300">{item}</span>
                 </div>
               ))}
@@ -289,6 +289,9 @@ export default function OnboardingWizard({ user, onComplete }) {
               <button onClick={handleFinish} className="block mx-auto mt-4 text-slate-400 text-sm hover:text-white">
                 Skip for now
               </button>
+              <p className="text-slate-500 text-xs mt-4">
+                Don't worry — you can always finish this later from your account menu (top right).
+              </p>
             </div>
           </div>
         );
