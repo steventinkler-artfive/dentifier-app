@@ -3,6 +3,12 @@ import { CreditCard } from "lucide-react";
 
 const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 
+// Validate URL scheme to prevent javascript: and other dangerous schemes
+const isSafeUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return url.startsWith("http://") || url.startsWith("https://");
+};
+
 /**
  * Pure presentational component — the PDF content rendered identically
  * for both the QuotePDF page view and the off-screen html2canvas capture.
@@ -120,9 +126,9 @@ export default function QuotePDFContent({
       >
         <div>
           {isProfessional ? (
-            userSettings?.business_logo_url ? (
+            isSafeUrl(userSettings?.business_logo_url) ? (
               <img
-                src={logoDisplayUrl || userSettings.business_logo_url}
+                src={isSafeUrl(logoDisplayUrl) ? logoDisplayUrl : userSettings.business_logo_url}
                 alt="Business Logo"
                 crossOrigin="anonymous"
                 style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
@@ -418,23 +424,27 @@ export default function QuotePDFContent({
             <p style={{ fontSize: "14px", color: "#4b5563", marginBottom: "12px" }}>
               Click the button below to pay this invoice securely online:
             </p>
-            <a
-              href={assessment.payment_link_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              ref={paymentButtonRef}
-              style={{
-                display: "inline-block",
-                background: "#16a34a",
-                color: "#ffffff",
-                fontWeight: "600",
-                padding: "12px 24px",
-                borderRadius: "8px",
-                textDecoration: "none",
-              }}
-            >
-              Pay Now
-            </a>
+            {isSafeUrl(assessment.payment_link_url) ? (
+              <a
+                href={assessment.payment_link_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                ref={paymentButtonRef}
+                style={{
+                  display: "inline-block",
+                  background: "#16a34a",
+                  color: "#ffffff",
+                  fontWeight: "600",
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                }}
+              >
+                Pay Now
+              </a>
+            ) : (
+              <p style={{ fontSize: "14px", color: "#6b7280", margin: "0" }}>Payment link unavailable.</p>
+            )}
           </div>
         )}
 

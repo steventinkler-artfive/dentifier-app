@@ -31,6 +31,12 @@ Deno.serve(async (req) => {
             return new Response('Forbidden', { status: 403 });
         }
 
+        // Validate URL scheme to prevent javascript: and other dangerous schemes
+        const isSafeUrl = (url) => {
+            if (!url || typeof url !== 'string') return false;
+            return url.startsWith('http://') || url.startsWith('https://');
+        };
+
         // HTML-encode helper to prevent injection of user-supplied content
         const encodeHtml = (str) => {
             if (str == null) return '';
@@ -98,7 +104,8 @@ Deno.serve(async (req) => {
         const businessName = encodeHtml(userSettings?.business_name || "Dentifier PDR");
         const businessAddress = encodeHtml(userSettings?.business_address || "PDR Assessment & Quoting");
         const contactEmail = encodeHtml(userSettings?.contact_email || "contact@dentifier.com");
-        const businessLogo = userSettings?.business_logo_url || "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
+        const defaultLogo = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
+        const businessLogo = isSafeUrl(userSettings?.business_logo_url) ? userSettings.business_logo_url : defaultLogo;
 
         const referenceNumber = encodeHtml(isCompleted ?
             (assessment.invoice_number || `INV-${assessment.id.slice(-6)}`) :
@@ -290,7 +297,7 @@ Deno.serve(async (req) => {
     <div class="payment-box">
         <h3 style="font-weight: 600; color: #1f2937; margin: 0 0 8px 0; font-size: 14px;">Pay Online</h3>
         <p style="font-size: 14px; color: #4b5563; margin: 0 0 12px 0;">Click the link below to pay this invoice securely online:</p>
-        <a href="${encodeHtml(assessment.payment_link_url)}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Pay Now</a>
+        ${isSafeUrl(assessment.payment_link_url) ? `<a href="${encodeHtml(assessment.payment_link_url)}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Pay Now</a>` : '<p style="font-size: 14px; color: #6b7280; margin: 0;">Payment link unavailable.</p>'}
     </div>
     ` : ''}
 
