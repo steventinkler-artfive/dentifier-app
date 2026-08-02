@@ -215,7 +215,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
             <AlertCircle className="w-4 h-4 text-slate-300 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-slate-200 space-y-1">
               <p className="font-medium">Matrix prices are for steel panels (market rate)</p>
-              <p>• Aluminum repairs automatically calculated at 1.35x steel price</p>
+              <p>• Aluminum repairs automatically calculated at 35% above steel price</p>
               <p>• These are customer-facing prices, adjusted for complexity during quoting</p>
             </div>
           </div>
@@ -460,7 +460,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
             <p>• {pricingMatrix.length} pricing {pricingMatrix.length === 1 ? 'entry' : 'entries'} configured</p>
             <p>• {allDamageTypes.length} damage {allDamageTypes.length === 1 ? 'type' : 'types'} available ({CORE_DAMAGE_TYPES.length} core + {customDamageTypes.length} custom): {allDamageTypes.map(toDisplayDamageType).join(', ')}</p>
             <p>• {allSizeRanges.length} size {allSizeRanges.length === 1 ? 'range' : 'ranges'} available ({SIZE_RANGE_OPTIONS.length} standard + {customSizeRanges.length} custom)</p>
-            {worksOnAluminum && <p>• Aluminum pricing: automatic 1.35x multiplier</p>}
+            {worksOnAluminum && <p>• Aluminum pricing: automatic 35% markup</p>}
           </div>
         </CardContent>
       )}
