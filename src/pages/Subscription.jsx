@@ -118,7 +118,7 @@ export default function Subscription() {
             )}
             {currentUser.subscription_status === 'active' && (
               <Badge className="bg-green-600 text-white">
-                {currentUser.subscription_plan === 'professional' ? 'Professional' : 'Starter'} Plan Active
+                {currentUser.subscription_tier === 'professional' ? 'Professional' : 'Starter'} Plan Active
               </Badge>
             )}
             {currentUser.is_beta_tester && (
