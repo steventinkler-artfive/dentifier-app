@@ -86,9 +86,9 @@ export default function StatementPDF() {
     <div className="bg-gray-100 min-h-screen p-4 sm:p-8 print:bg-white print:p-0 print:min-h-0">
       <div className="max-w-4xl mx-auto print:max-w-none">
         {/* Action Buttons (hidden on print) */}
-        <div className="mb-6 flex justify-between gap-3 print:hidden">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between gap-3 print:hidden">
           <Link to={createPageUrl("Reports")}>
-            <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-800 px-2 py-1 h-auto">
+            <Button className="bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Reports
             </Button>
