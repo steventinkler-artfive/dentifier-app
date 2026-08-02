@@ -101,12 +101,12 @@ export default function Register() {
                 autoComplete="one-time-code"
               >
                 <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
+                  <InputOTPSlot index={0} className="bg-[#0C172F] text-white border-[#3f4a52]" />
+                  <InputOTPSlot index={1} className="bg-[#0C172F] text-white border-[#3f4a52]" />
+                  <InputOTPSlot index={2} className="bg-[#0C172F] text-white border-[#3f4a52]" />
+                  <InputOTPSlot index={3} className="bg-[#0C172F] text-white border-[#3f4a52]" />
+                  <InputOTPSlot index={4} className="bg-[#0C172F] text-white border-[#3f4a52]" />
+                  <InputOTPSlot index={5} className="bg-[#0C172F] text-white border-[#3f4a52]" />
                 </InputOTPGroup>
               </InputOTP>
             </div>
