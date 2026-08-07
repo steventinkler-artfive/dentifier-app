@@ -359,6 +359,8 @@ export default function QuotePDF() {
     );
   }
 
+  const canShareFiles = typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [new File([], 'dummy.pdf', { type: 'application/pdf' })] });
+
   const shouldIncludeNotes = includeNotesParam || assessment.include_notes_in_quote;
   const isCompleted = assessment.status === 'completed';
   const isMultiVehicle = assessment.is_multi_vehicle && assessment.vehicles && assessment.vehicles.length > 0;
@@ -396,7 +398,7 @@ export default function QuotePDF() {
               {isSharingPDF ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
               ) : (
-                <><Share2 className="w-4 h-4 mr-2" />{copied ? 'Copied!' : 'Share PDF'}</>
+                <><Share2 className="w-4 h-4 mr-2" />{copied ? 'Copied!' : (canShareFiles ? 'Share PDF' : 'Copy Quote Text')}</>
               )}
             </Button>
             <Button onClick={handlePrintPDF} className="bg-slate-800 hover:bg-white border-slate-700 text-white hover:text-black hover:border-gray-300" variant="outline">
