@@ -62,6 +62,7 @@ export default function QuoteTab({
   handleEmail,
   handleCheckPaymentStatus,
   handleStatusChange,
+  handlePaymentStatusChange,
   formatCurrency,
   getCurrencySymbol,
 }) {
@@ -522,6 +523,17 @@ export default function QuoteTab({
               )}
             </Button>
           </div>
+        )}
+
+        {assessment.status === "completed" && assessment.payment_status !== "paid" && (
+          <Button
+            onClick={() => handlePaymentStatusChange("paid")}
+            disabled={isUpdating}
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold"
+          >
+            {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+            Mark as Paid
+          </Button>
         )}
 
         {assessment.status === "completed" && assessment.payment_status === "paid" && (
