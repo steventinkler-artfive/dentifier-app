@@ -817,8 +817,8 @@ export default function AssessmentDetail() {
           text: shareText
         });
       } catch (error) {
+        console.error('Share error:', error.name, error.message);
         if (error.name !== 'AbortError') {
-          alert('Share error: ' + error.name + ' — ' + (error.message || 'no message'));
           navigator.clipboard.writeText(shareText);
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
