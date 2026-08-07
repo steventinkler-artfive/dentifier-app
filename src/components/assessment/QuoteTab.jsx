@@ -450,7 +450,7 @@ export default function QuoteTab({
               className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold"
             >
               <Share2 className="w-4 h-4 mr-2" />
-              {copied ? "Copied!" : "Share"}
+              {copied ? "Copied!" : "Share as Text"}
             </Button>
           </div>
         )}

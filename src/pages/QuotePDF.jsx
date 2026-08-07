@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Printer, ArrowLeft, Share2 } from "lucide-react";
+import { Printer, ArrowLeft, Share2, Loader2 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import { base44 } from "@/api/base44Client";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 export default function QuotePDF() {
   const [searchParams] = useSearchParams();
@@ -18,7 +20,9 @@ export default function QuotePDF() {
   const [loading, setLoading] = useState(true);
   const [logoDisplayUrl, setLogoDisplayUrl] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [isSharingPDF, setIsSharingPDF] = useState(false);
   const [isProfessionalTier, setIsProfessionalTier] = useState(false);
+  const pdfContentRef = useRef(null);
 
   const sanitizeBusinessName = (name) => {
     if (!name) return 'BUSINESS';
@@ -272,6 +276,72 @@ export default function QuotePDF() {
     }
   };
 
+  const handleSharePDF = async () => {
+    if (!assessment || !pdfContentRef.current) return;
+    setIsSharingPDF(true);
+    try {
+      const isCompletedForPdf = assessment.status === 'completed';
+      const refNum = isCompletedForPdf
+        ? (assessment.invoice_number || `INV-${assessment.id.slice(-6)}`)
+        : (assessment.quote_number || `Q-${assessment.id.slice(-6)}`);
+      const docType = isCompletedForPdf ? 'Invoice' : 'Quote';
+      const docNum = refNum.replace(/[^a-zA-Z0-9-]/g, '');
+      const bizName = sanitizeBusinessName(userSettings?.business_name);
+      const fileName = `${docType}_${docNum}_${bizName}.pdf`;
+
+      const canvas = await html2canvas(pdfContentRef.current, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        imageTimeout: 15000,
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF({ unit: "px", format: "a4", orientation: "portrait" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+      let yOffset = 0;
+      let remainingHeight = imgHeight;
+      let firstPage = true;
+      while (remainingHeight > 0) {
+        if (!firstPage) pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, -yOffset, imgWidth, imgHeight);
+        yOffset += pageHeight;
+        remainingHeight -= pageHeight;
+        firstPage = false;
+      }
+
+      const pdfBlob = pdf.output("blob");
+      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({
+            files: [pdfFile],
+            title: `${docType} ${refNum}`,
+            text: `${docType} ${refNum} from ${userSettings?.business_name || "Dentifier PDR"}`,
+          });
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            await handleShare();
+          }
+        }
+      } else {
+        await handleShare();
+      }
+    } catch (error) {
+      console.error("Error sharing PDF:", error);
+      await handleShare();
+    } finally {
+      setIsSharingPDF(false);
+    }
+  };
+
   if (loading) {
     return <div className="bg-white text-black p-8">Loading...</div>;
   }
@@ -319,11 +389,15 @@ export default function QuotePDF() {
           </Link>
           <div className="flex flex-wrap gap-2">
             <Button 
-              onClick={handleShare}
+              onClick={handleSharePDF}
+              disabled={isSharingPDF}
               className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
             >
-              <Share2 className="w-4 h-4 mr-2" />
-              {copied ? 'Copied!' : 'Share'}
+              {isSharingPDF ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+              ) : (
+                <><Share2 className="w-4 h-4 mr-2" />{copied ? 'Copied!' : 'Share PDF'}</>
+              )}
             </Button>
             <Button onClick={handlePrintPDF} className="bg-slate-800 hover:bg-white border-slate-700 text-white hover:text-black hover:border-gray-300" variant="outline">
               <Printer className="w-4 h-4 mr-2" /> Print / Save PDF
@@ -332,16 +406,18 @@ export default function QuotePDF() {
         </div>
 
         {/* PDF Content - uses the shared component */}
-        <QuotePDFContent
-          assessment={assessment}
-          customer={customer}
-          vehicle={vehicle}
-          vehicles={vehicles}
-          userSettings={userSettings}
-          logoDisplayUrl={logoDisplayUrl}
-          includeNotes={shouldIncludeNotes}
-          isProfessional={isProfessionalTier}
-        />
+        <div ref={pdfContentRef} style={{ display: "inline-block" }}>
+          <QuotePDFContent
+            assessment={assessment}
+            customer={customer}
+            vehicle={vehicle}
+            vehicles={vehicles}
+            userSettings={userSettings}
+            logoDisplayUrl={logoDisplayUrl}
+            includeNotes={shouldIncludeNotes}
+            isProfessional={isProfessionalTier}
+          />
+        </div>
       </div>
     </div>
   );
