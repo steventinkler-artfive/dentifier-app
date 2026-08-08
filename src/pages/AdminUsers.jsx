@@ -67,6 +67,7 @@ export default function AdminUsers() {
       // Batch-fetch all user settings in a single admin call to avoid N+1 per row
       try {
         const allSettings = await base44.functions.invoke('getAllUserSettings');
+        console.log('[AdminUsers] getAllUserSettings raw return ->', { type: typeof allSettings, isArray: Array.isArray(allSettings), length: Array.isArray(allSettings) ? allSettings.length : null, value: allSettings });
         const newMap = Array.isArray(allSettings)
           ? allSettings.reduce((acc, s) => {
               const key = (s.user_email || '').toLowerCase().trim();
