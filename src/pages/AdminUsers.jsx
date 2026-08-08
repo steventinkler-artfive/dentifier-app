@@ -67,15 +67,20 @@ export default function AdminUsers() {
       // Batch-fetch all user settings in a single admin call to avoid N+1 per row
       try {
         const allSettings = await base44.functions.invoke('getAllUserSettings');
-        const map = Array.isArray(allSettings)
-          ? allSettings.reduce((acc, s) => { acc[(s.user_email || '').toLowerCase().trim()] = s; return acc; }, {})
+        const newMap = Array.isArray(allSettings)
+          ? allSettings.reduce((acc, s) => {
+              const key = (s.user_email || '').toLowerCase().trim();
+              acc[key] = s;
+              return acc;
+            }, {})
           : {};
-        setSettingsMap(map);
+        setSettingsMap(newMap);
+        console.log('[AdminUsers] settingsMap updated', Object.keys(newMap).length, 'entries');
       } catch (settingsErr) {
-        console.error("Failed to load user settings:", settingsErr);
+        console.error("[AdminUsers] Error in getAllUserSettings:", settingsErr);
       }
     } catch (error) {
-      console.error("Failed to load users:", error);
+      console.error("[AdminUsers] Error in User.list():", error);
       await showAlert("Failed to load users. Please try refreshing the page.", "Error");
     } finally {
       setLoading(false);
