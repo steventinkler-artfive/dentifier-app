@@ -68,13 +68,9 @@ export default function AdminUsers() {
       try {
         const allSettings = await base44.functions.invoke('getAllUserSettings');
         const map = Array.isArray(allSettings)
-          ? allSettings.reduce((acc, s) => { acc[s.user_email] = s; return acc; }, {})
+          ? allSettings.reduce((acc, s) => { acc[(s.user_email || '').toLowerCase().trim()] = s; return acc; }, {})
           : {};
         setSettingsMap(map);
-        // TEMP DEBUG: log settingsMap keys vs user emails to diagnose matching
-        console.log('[AdminUsers] settingsMap keys:', Object.keys(map));
-        console.log('[AdminUsers] user emails:', allUsers.map(u => u.email));
-        console.log('[AdminUsers] match check:', allUsers.map(u => ({ email: u.email, matched: !!map[u.email], pwa_status: map[u.email]?.pwa_status })));
       } catch (settingsErr) {
         console.error("Failed to load user settings:", settingsErr);
       }
@@ -551,7 +547,7 @@ export default function AdminUsers() {
                     {user.subscription_tier || 'starter'}
                   </Badge>
                   {(() => {
-                    const pwaStatus = settingsMap[user.email]?.pwa_status;
+                    const pwaStatus = settingsMap[(user.email || '').toLowerCase().trim()]?.pwa_status;
                     if (pwaStatus === 'installed') {
                       return <Badge className="bg-emerald-600 text-white">PWA Installed</Badge>;
                     }
