@@ -378,6 +378,24 @@ export default function AdminUsers() {
         <p className="text-slate-400">Manage user accounts and subscription tiers</p>
       </div>
 
+      {/* TEMP DEBUG: manually trigger PWA status sync check — remove after testing */}
+      <div className="mb-4">
+        <Button
+          variant="outline"
+          className="text-xs border-dashed border-amber-500 text-amber-400 hover:bg-amber-500/10"
+          onClick={() => {
+            if (typeof window.__debugPWAStatusCheck === 'function') {
+              console.log('[AdminUsers] Manually triggering PWA status check...');
+              window.__debugPWAStatusCheck();
+            } else {
+              console.warn('[AdminUsers] window.__debugPWAStatusCheck not available — SyncManager may not be mounted.');
+            }
+          }}
+        >
+          🐞 Debug: Trigger PWA Status Check
+        </Button>
+      </div>
+
       {/* Subscription Tier Guide */}
       <Collapsible open={infoOpen} onOpenChange={setInfoOpen}>
         <CollapsibleContent>

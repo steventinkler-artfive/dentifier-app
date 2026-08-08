@@ -108,7 +108,15 @@ export default function SyncManager() {
       flushOutbox();
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[PWA Check] visibilitychange -> visible, re-running check');
+        checkAndSyncPWAStatus();
+      }
+    };
+
     window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Also attempt flush on mount in case items were queued and app was reopened with connectivity
     if (navigator.onLine) {
@@ -117,8 +125,13 @@ export default function SyncManager() {
 
     checkAndSyncPWAStatus();
 
+    // TEMP DEBUG: expose for manual trigger from console / debug button
+    window.__debugPWAStatusCheck = checkAndSyncPWAStatus;
+
     return () => {
       window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      delete window.__debugPWAStatusCheck;
     };
   }, []);
 
