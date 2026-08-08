@@ -66,6 +66,29 @@ export default function SyncManager() {
     }
   };
 
+  // Sync PWA install status on launch if running in standalone mode.
+  // Only writes when pwa_status isn't already 'installed' to avoid redundant calls.
+  const checkAndSyncPWAStatus = async () => {
+    try {
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+      if (!isStandalone) return;
+
+      const user = await base44.auth.me();
+      if (!user) return;
+
+      const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+      const userSetting = Array.isArray(settings) && settings.length > 0 ? settings[0] : null;
+
+      if (userSetting && userSetting.pwa_status !== 'installed') {
+        await base44.entities.UserSetting.update(userSetting.id, { pwa_status: 'installed' });
+      }
+    } catch (err) {
+      console.error('Failed to sync PWA status:', err);
+    }
+  };
+
   useEffect(() => {
     const handleOnline = () => {
       flushOutbox();
@@ -77,6 +100,8 @@ export default function SyncManager() {
     if (navigator.onLine) {
       flushOutbox();
     }
+
+    checkAndSyncPWAStatus();
 
     return () => {
       window.removeEventListener('online', handleOnline);

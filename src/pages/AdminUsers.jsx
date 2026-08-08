@@ -17,6 +17,7 @@ export default function AdminUsers() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
+  const [settingsMap, setSettingsMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -62,6 +63,17 @@ export default function AdminUsers() {
     try {
       const allUsers = await base44.entities.User.list();
       setUsers(allUsers);
+
+      // Batch-fetch all user settings in a single admin call to avoid N+1 per row
+      try {
+        const allSettings = await base44.functions.invoke('getAllUserSettings');
+        const map = Array.isArray(allSettings)
+          ? allSettings.reduce((acc, s) => { acc[s.user_email] = s; return acc; }, {})
+          : {};
+        setSettingsMap(map);
+      } catch (settingsErr) {
+        console.error("Failed to load user settings:", settingsErr);
+      }
     } catch (error) {
       console.error("Failed to load users:", error);
       await showAlert("Failed to load users. Please try refreshing the page.", "Error");
@@ -514,6 +526,16 @@ export default function AdminUsers() {
                   <Badge className={getTierBadgeColor(user.subscription_tier)}>
                     {user.subscription_tier || 'starter'}
                   </Badge>
+                  {(() => {
+                    const pwaStatus = settingsMap[user.email]?.pwa_status;
+                    if (pwaStatus === 'installed') {
+                      return <Badge className="bg-emerald-600 text-white">PWA Installed</Badge>;
+                    }
+                    if (pwaStatus === 'skipped') {
+                      return <Badge className="bg-amber-600 text-white">PWA Skipped</Badge>;
+                    }
+                    return <Badge className="bg-slate-700 text-slate-300">PWA: Browser</Badge>;
+                  })()}
                 </div>
               </div>
 
