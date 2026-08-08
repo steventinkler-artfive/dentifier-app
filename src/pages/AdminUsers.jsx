@@ -71,6 +71,10 @@ export default function AdminUsers() {
           ? allSettings.reduce((acc, s) => { acc[s.user_email] = s; return acc; }, {})
           : {};
         setSettingsMap(map);
+        // TEMP DEBUG: log settingsMap keys vs user emails to diagnose matching
+        console.log('[AdminUsers] settingsMap keys:', Object.keys(map));
+        console.log('[AdminUsers] user emails:', allUsers.map(u => u.email));
+        console.log('[AdminUsers] match check:', allUsers.map(u => ({ email: u.email, matched: !!map[u.email], pwa_status: map[u.email]?.pwa_status })));
       } catch (settingsErr) {
         console.error("Failed to load user settings:", settingsErr);
       }
@@ -383,10 +387,12 @@ export default function AdminUsers() {
         <Button
           variant="outline"
           className="text-xs border-dashed border-amber-500 text-amber-400 hover:bg-amber-500/10"
-          onClick={() => {
+          onClick={async () => {
             if (typeof window.__debugPWAStatusCheck === 'function') {
               console.log('[AdminUsers] Manually triggering PWA status check...');
-              window.__debugPWAStatusCheck();
+              await window.__debugPWAStatusCheck();
+              console.log('[AdminUsers] Re-fetching user settings to refresh badge...');
+              await loadUsers();
             } else {
               console.warn('[AdminUsers] window.__debugPWAStatusCheck not available — SyncManager may not be mounted.');
             }
