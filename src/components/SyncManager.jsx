@@ -69,34 +69,20 @@ export default function SyncManager() {
   // Sync PWA install status on launch if running in standalone mode.
   // Only writes when pwa_status isn't already 'installed' to avoid redundant calls.
   const checkAndSyncPWAStatus = async () => {
-    console.log('[PWA Check] checkAndSyncPWAStatus invoked');
     try {
       const isStandalone =
         window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone === true;
-      console.log('[PWA Check] isStandalone =', isStandalone, '| display-mode:', window.matchMedia('(display-mode: standalone)').matches, '| navigator.standalone:', window.navigator.standalone);
-      if (!isStandalone) {
-        console.log('[PWA Check] Not standalone, skipping.');
-        return;
-      }
+      if (!isStandalone) return;
 
       const user = await base44.auth.me();
-      console.log('[PWA Check] user =', user ? user.email : 'none');
-      if (!user) {
-        console.log('[PWA Check: No user found, skipping.');
-        return;
-      }
+      if (!user) return;
 
       const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
       const userSetting = Array.isArray(settings) && settings.length > 0 ? settings[0] : null;
-      console.log('[PWA Check] userSetting =', userSetting ? { id: userSetting.id, pwa_status: userSetting.pwa_status } : 'none');
 
       if (userSetting && userSetting.pwa_status !== 'installed') {
-        console.log('[PWA Check] Updating pwa_status to installed.');
         await base44.entities.UserSetting.update(userSetting.id, { pwa_status: 'installed' });
-        console.log('[PWA Check] Update complete.');
-      } else {
-        console.log('[PWA Check] No update needed (already installed or no setting record).');
       }
     } catch (err) {
       console.error('Failed to sync PWA status:', err);
@@ -110,7 +96,6 @@ export default function SyncManager() {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('[PWA Check] visibilitychange -> visible, re-running check');
         checkAndSyncPWAStatus();
       }
     };
@@ -125,13 +110,9 @@ export default function SyncManager() {
 
     checkAndSyncPWAStatus();
 
-    // TEMP DEBUG: expose for manual trigger from console / debug button
-    window.__debugPWAStatusCheck = checkAndSyncPWAStatus;
-
     return () => {
       window.removeEventListener('online', handleOnline);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      delete window.__debugPWAStatusCheck;
     };
   }, []);
 

@@ -74,14 +74,12 @@ export default function AdminUsers() {
           : Array.isArray(allSettingsResponse)
             ? allSettingsResponse
             : [];
-        console.log('[AdminUsers] getAllUserSettings unwrapped ->', { count: allSettings.length, sampleEmails: allSettings.slice(0, 3).map(s => s.user_email) });
         const newMap = allSettings.reduce((acc, s) => {
             const key = (s.user_email || '').toLowerCase().trim();
             acc[key] = s;
             return acc;
           }, {});
         setSettingsMap(newMap);
-        console.log('[AdminUsers] settingsMap updated', Object.keys(newMap).length, 'entries');
       } catch (settingsErr) {
         console.error("[AdminUsers] Error in getAllUserSettings:", settingsErr);
       }
@@ -387,26 +385,6 @@ export default function AdminUsers() {
           </button>
         </div>
         <p className="text-slate-400">Manage user accounts and subscription tiers</p>
-      </div>
-
-      {/* TEMP DEBUG: manually trigger PWA status sync check — remove after testing */}
-      <div className="mb-4">
-        <Button
-          variant="outline"
-          className="text-xs border-dashed border-amber-500 text-amber-400 hover:bg-amber-500/10"
-          onClick={async () => {
-            if (typeof window.__debugPWAStatusCheck === 'function') {
-              console.log('[AdminUsers] Manually triggering PWA status check...');
-              await window.__debugPWAStatusCheck();
-              console.log('[AdminUsers] Re-fetching user settings to refresh badge...');
-              await loadUsers();
-            } else {
-              console.warn('[AdminUsers] window.__debugPWAStatusCheck not available — SyncManager may not be mounted.');
-            }
-          }}
-        >
-          🐞 Debug: Trigger PWA Status Check
-        </Button>
       </div>
 
       {/* Subscription Tier Guide */}
