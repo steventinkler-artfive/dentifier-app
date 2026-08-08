@@ -66,15 +66,20 @@ export default function AdminUsers() {
 
       // Batch-fetch all user settings in a single admin call to avoid N+1 per row
       try {
-        const allSettings = await base44.functions.invoke('getAllUserSettings');
-        console.log('[AdminUsers] getAllUserSettings raw return ->', { type: typeof allSettings, isArray: Array.isArray(allSettings), length: Array.isArray(allSettings) ? allSettings.length : null, value: allSettings });
-        const newMap = Array.isArray(allSettings)
-          ? allSettings.reduce((acc, s) => {
-              const key = (s.user_email || '').toLowerCase().trim();
-              acc[key] = s;
-              return acc;
-            }, {})
-          : {};
+        // base44.functions.invoke() returns the RAW axios response; the JSON
+        // the function returned lives on `.data`, not the top-level object.
+        const allSettingsResponse = await base44.functions.invoke('getAllUserSettings');
+        const allSettings = Array.isArray(allSettingsResponse?.data)
+          ? allSettingsResponse.data
+          : Array.isArray(allSettingsResponse)
+            ? allSettingsResponse
+            : [];
+        console.log('[AdminUsers] getAllUserSettings unwrapped ->', { count: allSettings.length, sampleEmails: allSettings.slice(0, 3).map(s => s.user_email) });
+        const newMap = allSettings.reduce((acc, s) => {
+            const key = (s.user_email || '').toLowerCase().trim();
+            acc[key] = s;
+            return acc;
+          }, {});
         setSettingsMap(newMap);
         console.log('[AdminUsers] settingsMap updated', Object.keys(newMap).length, 'entries');
       } catch (settingsErr) {
