@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
+import { getPhotoObservations } from "@/utils/photoObservations";
 import QuoteTab from "@/components/assessment/QuoteTab";
 import AddVehicleForm from "@/components/assessment/AddVehicleForm";
 import ReactDOM from "react-dom/client";
@@ -1557,7 +1558,6 @@ export default function AssessmentDetail() {
                       const score = ui.confidenceScore ?? currentDamageAnalysis.confidence_assessment?.quote_confidence ?? 4;
                       const riskFlags = ui.riskFlags || 
                         (currentDamageAnalysis.risk_assessment?.technical_risks || []).map(t => ({ text: t }));
-                      const photoObs = ui.photo_observation;
                       const confidenceCheck = ui.confidence_check;
 
                       const scoreBg = score >= 5 ? 'bg-green-900/30 border-green-700' : score === 4 ? 'bg-blue-900/30 border-blue-700' : score === 3 ? 'bg-yellow-900/30 border-yellow-700' : score === 2 ? 'bg-orange-900/30 border-orange-700' : 'bg-red-900/30 border-red-700';
@@ -1635,15 +1635,26 @@ export default function AssessmentDetail() {
                           )}
 
                           {/* Photo Observation */}
-                          {photoObs && (
-                            <div className="p-3 bg-slate-800 rounded-lg flex items-start gap-2">
-                              <Eye className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-slate-400 text-xs mb-1">Photo Observation</p>
-                                <p className="text-white text-xs">{photoObs}</p>
+                          {(() => {
+                            const observations = getPhotoObservations(ui, currentVehicleData?.damage_items || assessment.damage_items || []);
+                            if (observations.length === 0) return null;
+                            return (
+                              <div className="p-3 bg-slate-800 rounded-lg space-y-2">
+                                <div className="flex items-start gap-2">
+                                  <Eye className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
+                                  <p className="text-slate-400 text-xs">Photo Observation</p>
+                                </div>
+                                {observations.map((o, i) => (
+                                  <div key={i} className="flex items-start gap-2 pl-6">
+                                    <div>
+                                      <p className="text-slate-500 text-xs">{o.panel}</p>
+                                      <p className="text-white text-xs">{o.observation}</p>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            </div>
-                          )}
+                            );
+                          })()}
                         </>
                       );
                     })() : (

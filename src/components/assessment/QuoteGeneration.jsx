@@ -12,6 +12,7 @@ import { Loader2, Plus, CheckCircle, Trash2, AlertTriangle, Settings } from "luc
 
 import { calculateEstimatedTimeRange } from "@/utils/timeEstimate";
 import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
+import { getPhotoObservations } from "@/utils/photoObservations";
 
 // ============================================================================
 // PROGRAMMATIC PRICING CALCULATION FUNCTIONS
@@ -736,9 +737,13 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
 
       if (globalSettings?.llm_quote_instructions) {
         try {
+          const observations = getPhotoObservations(analysis?._ui, damageItems);
+          const observationsText = observations.length > 0
+            ? observations.map(o => `Photo observation (${o.panel}): ${o.observation}`).join('\n')
+            : '';
           const damageContext = damageItems.map((item, idx) =>
             `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
-          ).join('\n') + (analysis?._ui?.photo_observation && analysis._ui.photo_observation !== 'No additional observations from photo analysis.' ? `\nPhoto observation: ${analysis._ui.photo_observation}` : '');
+          ).join('\n') + (observationsText ? `\n${observationsText}` : '');
 
           const notesPrompt = `${globalSettings.llm_quote_instructions}
 

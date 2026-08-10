@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertTriangle, CheckCircle, RefreshCw, ArrowLeft, Save, ShieldCheck, Eye } from "lucide-react";
 import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
+import { getPhotoObservations } from "@/utils/photoObservations";
 
 const DentifierIcon = ({ className = "" }) => (
   <svg className={className} viewBox="0 0 25.24 18.12" fill="currentColor"
@@ -161,7 +162,7 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
         : 'Vehicle details not provided';
 
       const damageDescription = damageItems.map((item, index) => {
-        const parts = [`Item ${index + 1}: ${item.panel}`];
+        const parts = [`Item ${index}: Panel = ${item.panel}`];
         if (item.damage_type) parts.push(`Type: ${item.damage_type}`);
         if (item.size_range) parts.push(`Size: ${item.size_range}`);
         parts.push(`Count: ${item.dent_count || 1} dent(s)`);
@@ -196,8 +197,20 @@ YOUR TASK — respond in JSON with exactly these two fields:
    - If no photos: "No photos provided — analysis based on manual inputs only."
    - DO NOT repeat the full damage description. ONE sentence only.
 
-2. "photo_observation": ONE sentence describing what is visible in the photo — specifically where on the panel the damage is located (e.g. "The dent is located towards the front edge of the bonnet." or "Damage sits near the lower corner of the rear door."). Always describe location from the photo. Only output "No additional observations from photo analysis." if no photo was provided.
-   - ONE sentence only.
+2. "photo_observations": An object where each key is the item index as a string (e.g. "0", "1", "2") and the value is ONE sentence describing where the damage is located in the photo for THAT specific item.
+   For EACH item, follow these rules strictly:
+   - The damage location described must be attributed to the panel selected by the technician for that item. For example: "The dent is located towards the front edge of the [SELECTED PANEL]."
+   - The damage location described in photo_observation must be attributed to [SELECTED PANEL]. You may reference an adjacent panel as a landmark to describe position (e.g. "near the leading edge, close to the wing" or "towards the boot") but must never state or imply that the damage itself is located on a panel other than [SELECTED PANEL].
+   - If you cannot confidently associate the available photos with a specific item's panel, that item's observation must be exactly: "No additional observations from photo analysis."
+   - If no photo was provided at all, set every item's observation to "No additional observations from photo analysis."
+   - ONE sentence per item only.
+
+   UK ENGLISH — use UK vehicle terminology throughout:
+   - "Bonnet" not "Hood"
+   - "Boot" not "Trunk"
+   - "Wing" not "Fender"
+   - "Windscreen" not "Windshield"
+   - "Rear quarter panel" not "Quarter panel"
 
 OUTPUT: JSON only. No other text.`;
 
@@ -208,9 +221,12 @@ OUTPUT: JSON only. No other text.`;
           type: "object",
           properties: {
             confidence_check: { type: "string" },
-            photo_observation: { type: "string" }
+            photo_observations: {
+              type: "object",
+              additionalProperties: { type: "string" }
+            }
           },
-          required: ["confidence_check", "photo_observation"]
+          required: ["confidence_check", "photo_observations"]
         }
       });
 
@@ -236,7 +252,7 @@ OUTPUT: JSON only. No other text.`;
         // UI-specific fields
         _ui: {
           confidence_check: response?.confidence_check || 'No photos provided — analysis based on manual inputs only.',
-          photo_observation: response?.photo_observation || 'No additional observations from photo analysis.',
+          photo_observations: response?.photo_observations || {},
           confidenceScore,
           riskFlags
         }
@@ -263,7 +279,7 @@ OUTPUT: JSON only. No other text.`;
         },
         _ui: {
           confidence_check: 'Could not complete photo analysis — based on manual inputs only.',
-          photo_observation: 'No additional observations from photo analysis.',
+          photo_observations: {},
           confidenceScore,
           riskFlags
         }
@@ -384,17 +400,26 @@ OUTPUT: JSON only. No other text.`;
       )}
 
       {/* 5. PHOTO OBSERVATION */}
-      <Card className="bg-slate-900 border-slate-800">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <Eye className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">Photo Observation</p>
-              <p className="text-white text-sm">{ui.photo_observation}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {(() => {
+        const observations = getPhotoObservations(ui, damageItems);
+        if (observations.length === 0) return null;
+        return (
+          <Card className="bg-slate-900 border-slate-800">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <Eye className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">Photo Observation</p>
+              </div>
+              {observations.map((o, i) => (
+                <div key={i} className="pl-7">
+                  <p className="text-slate-500 text-xs">{o.panel}</p>
+                  <p className="text-white text-sm">{o.observation}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Actions */}
       <div className="space-y-2 pt-2">
