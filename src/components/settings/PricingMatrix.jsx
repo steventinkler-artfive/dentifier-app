@@ -271,7 +271,13 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
           {/* Matrix Entries */}
           <div className="space-y-0 divide-y divide-slate-700">
             {pricingMatrix.map((entry, index) => (
-              <div key={index} className="py-5 first:pt-0 last:pb-0">
+              <div key={index} className={`py-5 first:pt-0 last:pb-0 ${(!entry.damage_type || !entry.size_range) ? 'bg-red-950/30 -mx-2 px-2 rounded-lg border border-red-800/50' : ''}`}>
+                {(!entry.damage_type || !entry.size_range) && (
+                  <p className="text-red-400 text-xs mb-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Please select a damage type and size range before saving
+                  </p>
+                )}
                 <div className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-5 space-y-1">
                     <Label className="text-slate-400 text-xs">Damage Type</Label>

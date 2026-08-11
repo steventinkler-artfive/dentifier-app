@@ -456,6 +456,16 @@ export default function Settings() {
             setError("Please enter valid banking details: account name, 8-digit account number, and 6-digit sort code (e.g. 12-34-56).");
             return;
         }
+        const hasIncompletePricingRow = (formData.pricing_matrix || []).some(
+            entry => !entry.damage_type || !entry.size_range
+        );
+        if (hasIncompletePricingRow) {
+            await showAlert(
+                "Please complete all pricing matrix rows (damage type and size range), or delete the incomplete rows, before saving.",
+                "Incomplete Pricing Entry"
+            );
+            return;
+        }
         setSaving(true);
         setError(null);
         try {

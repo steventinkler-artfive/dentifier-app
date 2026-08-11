@@ -13,6 +13,7 @@ import { Loader2, Plus, CheckCircle, Trash2, AlertTriangle, Settings } from "luc
 import { calculateEstimatedTimeRange } from "@/utils/timeEstimate";
 import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
 import { getPhotoObservations } from "@/utils/photoObservations";
+import { getValidPricingEntries } from "@/utils/pricing";
 
 // ============================================================================
 // PROGRAMMATIC PRICING CALCULATION FUNCTIONS
@@ -565,7 +566,7 @@ export default function QuoteGeneration({
 
       const hourlyRate = userSettings.hourly_rate || 70;
       const baseCost = userSettings.base_cost || 0;
-      const pricingMatrix = userSettings.pricing_matrix || [];
+      const pricingMatrix = getValidPricingEntries(userSettings.pricing_matrix || []);
       const globalSettings = userSettings._globalSettings;
 
       const calculatedLineItems = [];

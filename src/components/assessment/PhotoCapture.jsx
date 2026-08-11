@@ -10,6 +10,7 @@ import { Camera, Upload, X, Loader2, ChevronDown, AlertTriangle, Plus } from "lu
 import { compressMultipleImages } from "../utils/imageCompression";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { toDisplayDamageType, toStoredDamageType, BASE_DAMAGE_TYPES_STORED } from "@/utils/damageTypeDisplay";
+import { getValidPricingEntries } from "@/utils/pricing";
 
 const CAR_PANELS = [
   "Bonnet/Hood",
@@ -85,11 +86,12 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
           const customTypes = settings.custom_damage_types || [];
           const customSizes = settings.custom_size_ranges || [];
 
-          const matrixDamageTypes = [...new Set(pricingMatrix.map(e => e.damage_type))];
+          const validMatrix = getValidPricingEntries(pricingMatrix);
+          const matrixDamageTypes = [...new Set(validMatrix.map(e => e.damage_type))];
           const allDamageTypes = [...new Set([...BASE_DAMAGE_TYPES, ...matrixDamageTypes, ...customTypes])];
           setDamageTypes(allDamageTypes);
 
-          const matrixSizeRanges = [...new Set(pricingMatrix.map(e => e.size_range))];
+          const matrixSizeRanges = [...new Set(validMatrix.map(e => e.size_range))];
           const allSizeRanges = [...new Set([...DEFAULT_SIZE_RANGES, ...matrixSizeRanges, ...customSizes])];
           const sorted = allSizeRanges.sort((a, b) => {
             const n = s => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; };
