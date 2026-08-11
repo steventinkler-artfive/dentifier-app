@@ -68,7 +68,8 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   const [expandedItems, setExpandedItems] = useState(new Set([0]));
   const [uploadingItemIndex, setUploadingItemIndex] = useState(null);
   const [damageTypes, setDamageTypes] = useState(BASE_DAMAGE_TYPES);
-  const [sizeRanges, setSizeRanges] = useState(DEFAULT_SIZE_RANGES);
+  const [allSizeRanges, setAllSizeRanges] = useState(DEFAULT_SIZE_RANGES);
+  const [pricingMatrix, setPricingMatrix] = useState([]);
   const [additionalLineItems, setAdditionalLineItems] = useState([]);
   const [showAddLineItemForm, setShowAddLineItemForm] = useState(false);
   const [newLineItemDescription, setNewLineItemDescription] = useState('');
@@ -86,18 +87,19 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
           const customTypes = settings.custom_damage_types || [];
           const customSizes = settings.custom_size_ranges || [];
 
-          const validMatrix = getValidPricingEntries(pricingMatrix);
+          const validMatrix = getValidPricingEntries(settings.pricing_matrix);
+          setPricingMatrix(validMatrix);
           const matrixDamageTypes = [...new Set(validMatrix.map(e => e.damage_type))];
           const allDamageTypes = [...new Set([...BASE_DAMAGE_TYPES, ...matrixDamageTypes, ...customTypes])];
           setDamageTypes(allDamageTypes);
 
           const matrixSizeRanges = [...new Set(validMatrix.map(e => e.size_range))];
-          const allSizeRanges = [...new Set([...DEFAULT_SIZE_RANGES, ...matrixSizeRanges, ...customSizes])];
-          const sorted = allSizeRanges.sort((a, b) => {
+          const allRanges = [...new Set([...DEFAULT_SIZE_RANGES, ...matrixSizeRanges, ...customSizes])];
+          const sorted = allRanges.sort((a, b) => {
             const n = s => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; };
             return n(a) - n(b);
           });
-          setSizeRanges(sorted);
+          setAllSizeRanges(sorted);
         }
       } catch (error) {
         console.error("Error loading pricing options:", error);
@@ -214,6 +216,29 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
     setDamageItems(prev => {
       const updated = [...prev];
       updated[itemIndex] = { ...updated[itemIndex], [field]: value };
+      return updated;
+    });
+  };
+
+  // Size ranges available for a given damage type: only matrix entries that
+  // match, falling back to the full list when the type has no pricing at all.
+  const getAvailableSizeRanges = (damageType) => {
+    if (!damageType) return allSizeRanges;
+    const matching = pricingMatrix.filter(e => e.damage_type === damageType);
+    return matching.length > 0 ? matching.map(e => e.size_range) : allSizeRanges;
+  };
+
+  const handleDamageTypeChange = (itemIndex, displayValue) => {
+    const storedType = toStoredDamageType(displayValue);
+    const available = getAvailableSizeRanges(storedType);
+    setDamageItems(prev => {
+      const updated = [...prev];
+      const currentSize = updated[itemIndex].size_range;
+      updated[itemIndex] = {
+        ...updated[itemIndex],
+        damage_type: storedType,
+        size_range: available.includes(currentSize) ? currentSize : (available[0] || "")
+      };
       return updated;
     });
   };
@@ -374,7 +399,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
 
                         <div className="space-y-2">
                           <Label className="text-white">Damage Type <span className="text-red-400">*</span></Label>
-                          <Select value={toDisplayDamageType(item.damage_type)} onValueChange={(v) => handleDamageItemChange(itemIndex, 'damage_type', toStoredDamageType(v))}>
+                          <Select value={toDisplayDamageType(item.damage_type)} onValueChange={(v) => handleDamageTypeChange(itemIndex, v)}>
                             <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
@@ -391,7 +416,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                               <SelectValue placeholder="Select size" />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-slate-700">
-                              {sizeRanges.map(r => <SelectItem key={r} value={r} className="text-white hover:bg-slate-700">{r}</SelectItem>)}
+                              {getAvailableSizeRanges(item.damage_type).map(r => <SelectItem key={r} value={r} className="text-white hover:bg-slate-700">{r}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
