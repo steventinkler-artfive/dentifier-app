@@ -36,6 +36,8 @@ const DEFAULT_SIZE_RANGES = [
 
 const MATERIALS = ["Steel", "HS Steel", "Aluminum"];
 
+const PAINT_TYPES = ["Standard", "Matt", "PPF", "Wrap"];
+
 const REPAIR_METHODS = [
   "Good Tool Access", "Glue Pull Only", "Limited Tool Access", "Unsure"
 ];
@@ -47,6 +49,7 @@ const createDefaultDamageItem = () => ({
   damage_type: "Standard Dent",
   size_range: "26mm - 50mm",
   material: "Steel",
+  paint_type: "Standard",
   repair_method: "Good Tool Access",
   depth: "Shallow",
   has_stretched_metal: false,
@@ -385,7 +388,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
 
                       {/* Damage details grid */}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
+                        <div className="space-y-2 col-span-2">
                           <Label className="text-white">Panel <span className="text-red-400">*</span></Label>
                           <Select value={item.panel} onValueChange={(v) => handleDamageItemChange(itemIndex, 'panel', v)}>
                             <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
@@ -393,6 +396,21 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-slate-700">
                               {CAR_PANELS.map(p => <SelectItem key={p} value={p} className="text-white hover:bg-slate-700">{p}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-white">Paint Type</Label>
+                          <Select value={item.paint_type || 'Standard'} onValueChange={(v) => handleDamageItemChange(itemIndex, 'paint_type', v)}>
+                            <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-800 border-slate-700">
+                              {PAINT_TYPES.map(pt => {
+                                const label = pt === 'Matt' ? 'Matt +40%' : pt === 'PPF' ? 'PPF +30%' : pt === 'Wrap' ? 'Wrap +30%' : pt;
+                                return <SelectItem key={pt} value={pt} className="text-white hover:bg-slate-700">{label}</SelectItem>;
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -493,7 +511,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                       <div className="space-y-2">
                         <Label className="text-white">Additional Notes</Label>
                         <Input value={item.notes} onChange={(e) => handleDamageItemChange(itemIndex, 'notes', e.target.value)}
-                          placeholder="e.g., near fuel door, double skin panel, matte paint finish..."
+                          placeholder="e.g., near fuel door, double skin panel..."
                           className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500" />
                       </div>
                     </div>

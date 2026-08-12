@@ -342,17 +342,18 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
   
   const stretchedMetalMultiplier = damageItem.has_stretched_metal ? 1.25 : 1.0;
   
+  const paintTypeMultiplier = {
+    "Standard": 1.0,
+    "Matt": 1.40,
+    "PPF": 1.30,
+    "Wrap": 1.30
+  }[damageItem.paint_type] || 1.0;
+  
   let notesMultiplier = 1.0;
   const notes = (damageItem.notes || "").toLowerCase();
   
-  if (notes.includes("matte paint") || notes.includes("matte finish")) {
-    notesMultiplier *= 1.3;
-  }
   if (notes.includes("previous repair") || notes.includes("poor repair")) {
     notesMultiplier *= 1.25;
-  }
-  if (notes.includes("ppf")) {
-    notesMultiplier *= 1.30;
   }
   
   // STEP 3: Combine All Complexity Multipliers
@@ -361,9 +362,10 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
     depthMultiplier * 
     bodyLineMultiplier * 
     stretchedMetalMultiplier * 
+    paintTypeMultiplier *
     notesMultiplier;
   
-  totalComplexityMultiplier = Math.min(totalComplexityMultiplier, 2.0);
+  totalComplexityMultiplier = Math.min(totalComplexityMultiplier, 2.5);
   
   // STEP 4: Apply Multipliers to PRICE
   const adjustedPrice = basePrice * totalComplexityMultiplier;
@@ -383,6 +385,7 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
     affectsBodyLine: damageItem.affects_body_line,
     hasStretchedMetal: damageItem.has_stretched_metal,
     repairMethod: damageItem.repair_method,
+    paintType: damageItem.paint_type || 'Standard',
     notes: damageItem.notes,
     matrixEntry: matrixEntry,
     isEstimate: isEstimate,
@@ -397,6 +400,7 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
       depth: depthMultiplier,
       bodyLine: bodyLineMultiplier,
       stretchedMetal: stretchedMetalMultiplier,
+      paintType: paintTypeMultiplier,
       notes: notesMultiplier,
       totalComplexity: totalComplexityMultiplier
     },
@@ -1165,6 +1169,9 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
                 ) : (
                   <>
                     <p><span className="font-semibold">Matrix Base:</span> {breakdown.matrixEntry?.damage_type} - {breakdown.matrixEntry?.size_range} ({getCurrencySymbol()}{breakdown.matrixEntry?.base_price?.toFixed(2)})</p>
+                    {breakdown.paintType && breakdown.paintType !== 'Standard' && (
+                      <p><span className="font-semibold">Paint Type:</span> {breakdown.paintType} ({breakdown.multipliers?.paintType?.toFixed(2)}x uplift)</p>
+                    )}
                     {estimatedTime && (
                       <div>
                         <p><span className="font-semibold">Estimated Time (tech only):</span> {estimatedTime}</p>

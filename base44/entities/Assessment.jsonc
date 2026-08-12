@@ -59,6 +59,16 @@
           "material": {
             "type": "string"
           },
+          "paint_type": {
+            "type": "string",
+            "enum": [
+              "Standard",
+              "Matt",
+              "PPF",
+              "Wrap"
+            ],
+            "default": "Standard"
+          },
           "repair_method": {
             "type": "string",
             "enum": [
