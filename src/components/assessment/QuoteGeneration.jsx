@@ -606,10 +606,10 @@ Size Range: ${item.size_range}
 Depth: ${item.depth || 'Shallow'}
 Material: ${item.material === 'Aluminum' ? 'Aluminium' : item.material || 'Steel'}
 Repair Method: ${item.repair_method || 'Good Tool Access'}
+Paint Type: ${item.paint_type || 'Standard'}
 affects_body_line: ${item.affects_body_line ? 'true' : 'false'}
 has_stretched_metal: ${item.has_stretched_metal ? 'true' : 'false'}
 aluminium_panel: ${item.material === 'Aluminum' ? 'true' : 'false'}
-matte_paint: ${(item.notes || '').toLowerCase().includes('matte') ? 'true' : 'false'}
 Technician's Additional Notes: ${item.notes || 'None'}
 FINAL CALCULATED PRICE: ${getCurrencySymbol()}${calculation.totalPrice.toFixed(2)} (DO NOT MODIFY)
 
@@ -747,7 +747,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
             ? observations.map(o => `Photo observation (${o.panel}): ${o.observation}`).join('\n')
             : '';
           const damageContext = damageItems.map((item, idx) =>
-            `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
+            `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.paint_type && item.paint_type !== 'Standard' ? ` | Paint type: ${item.paint_type}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
           ).join('\n') + (observationsText ? `\n${observationsText}` : '');
 
           const notesPrompt = `${globalSettings.llm_quote_instructions}
