@@ -142,6 +142,16 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                           </span>
                         </div>
                       )}
+                      {item.paintType && item.multipliers.paintType && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">
+                            Paint Type ({item.paintType}):
+                          </span>
+                          <span className="text-white font-medium">
+                            {formatMultiplier(item.multipliers.paintType)}
+                          </span>
+                        </div>
+                      )}
                       {item.affectsBodyLine && item.multipliers.bodyLine && (
                         <div className="flex justify-between">
                           <span className="text-slate-300">Body Line:</span>
