@@ -23,6 +23,22 @@ Deno.serve(async (req) => {
 
         const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
 
+        // Trial eligibility check: admins always get a trial; otherwise check whether
+        // this account has already used a trial. Lookup is case-insensitive + trimmed.
+        let grantTrial = true;
+        if (user.role !== 'admin') {
+            const normalizedEmail = (user.email || '').toLowerCase().trim();
+            try {
+                const existing = await base44.asServiceRole.entities.User.filter({ email: normalizedEmail });
+                if (existing.length > 0 && existing[0].trial_used === true) {
+                    grantTrial = false;
+                    console.log(`Trial denied for ${normalizedEmail}: trial_used is true`);
+                }
+            } catch (e) {
+                console.error('Trial eligibility lookup failed (defaulting to trial):', e.message);
+            }
+        }
+
         const params = new URLSearchParams();
         params.append('mode', 'subscription');
         params.append('line_items[0][price]', priceId);
@@ -30,7 +46,9 @@ Deno.serve(async (req) => {
         params.append('success_url', 'https://app.dentifierpro.com/SubscriptionSuccess?session_id={CHECKOUT_SESSION_ID}');
         params.append('cancel_url', 'https://app.dentifierpro.com/Subscription');
         params.append('customer_email', user.email);
-        params.append('subscription_data[trial_period_days]', '60');
+        if (grantTrial) {
+            params.append('subscription_data[trial_period_days]', '60');
+        }
         params.append('subscription_data[metadata][email]', user.email);
 
         const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {

@@ -106,6 +106,46 @@ async function handleSubscriptionUpdate(base44, subscription) {
     updateData.trial_end_date = new Date(subscription.trial_end * 1000).toISOString();
   }
 
+  // On a genuine trial start, capture the card fingerprint, mark trial_used,
+  // and flag for manual review if the same card was used on a different account.
+  if (subscription.status === 'trialing') {
+    let cardFingerprint = null;
+    try {
+      const pmId = typeof subscription.default_payment_method === 'string'
+        ? subscription.default_payment_method
+        : subscription.default_payment_method?.id;
+      if (pmId) {
+        const pm = await stripe.paymentMethods.retrieve(pmId);
+        cardFingerprint = pm?.card?.fingerprint || null;
+      }
+    } catch (e) {
+      console.error('Failed to retrieve payment method fingerprint:', e.message);
+    }
+
+    if (cardFingerprint) {
+      updateData.trial_used = true;
+      updateData.trial_used_date = new Date().toISOString();
+      updateData.trial_card_fingerprint = cardFingerprint;
+
+      try {
+        const matched = await base44.asServiceRole.entities.User.filter({
+          trial_card_fingerprint: cardFingerprint
+        });
+        const otherMatch = matched.find(u => u.email !== email);
+        if (otherMatch) {
+          updateData.flagged_for_review = true;
+          console.log(`Flagged ${email} for review: card fingerprint matches ${otherMatch.email}`);
+        }
+      } catch (e) {
+        console.error('Fingerprint match check failed:', e.message);
+      }
+    } else {
+      // Still mark trial_used even if fingerprint unavailable
+      updateData.trial_used = true;
+      updateData.trial_used_date = new Date().toISOString();
+    }
+  }
+
   // Find and update user
   const users = await base44.asServiceRole.entities.User.filter({ email: email });
   

@@ -57,6 +57,25 @@
       "type": "string",
       "format": "date-time",
       "description": "Date the trial period ends"
+    },
+    "trial_used": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set to true the first time a trial subscription starts for this account"
+    },
+    "trial_used_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of when the trial started, UTC"
+    },
+    "trial_card_fingerprint": {
+      "type": "string",
+      "description": "Stripe's payment method fingerprint captured from the checkout session, used to spot the same card being used across different accounts"
+    },
+    "flagged_for_review": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set to true when a new trial signup's card fingerprint matches a fingerprint already stored against a different User record, for manual admin review"
     }
   },
   "required": []
