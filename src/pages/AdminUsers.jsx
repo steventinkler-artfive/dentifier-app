@@ -293,21 +293,23 @@ export default function AdminUsers() {
   };
 
   const getSubscriptionStatus = (user) => {
-    // Check subscription_status field first
     if (user.subscription_status === 'cancelled') return 'Inactive';
     if (user.subscription_status === 'past_due') return 'Past Due';
     if (user.subscription_status === 'active') return 'Active';
-    
-    // Fallback for users without subscription_status set
-    const tier = user.subscription_tier || 'starter';
-    if (tier === 'professional' || tier === 'early_bird') return 'Active';
-    return 'Active'; // All users are active by default
+    if (user.subscription_status === 'trialing') return 'On Trial';
+    // No subscription_status and no Stripe customer record → never started checkout
+    if (!user.stripe_customer_id) return 'Not Yet Subscribed';
+    return 'Inactive';
   };
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
       case 'Active':
         return 'bg-green-600';
+      case 'On Trial':
+        return 'bg-blue-600';
+      case 'Not Yet Subscribed':
+        return 'bg-amber-600';
       case 'Inactive':
         return 'bg-slate-600';
       case 'Past Due':
@@ -336,9 +338,12 @@ export default function AdminUsers() {
     // Status filter
     const status = getSubscriptionStatus(user);
     const tier = user.subscription_tier || 'starter';
+    const isPrivileged = user.role === 'admin' || user.is_beta_tester === true || user.data?.is_beta_tester === true;
     
     let matchesFilter = true;
-    if (filterOption === 'active') matchesFilter = status === 'Active';
+    if (filterOption === 'active') matchesFilter = user.subscription_status === 'active' && !isPrivileged;
+    if (filterOption === 'trialing') matchesFilter = user.subscription_status === 'trialing' && !isPrivileged;
+    if (filterOption === 'not_subscribed') matchesFilter = !user.subscription_status && !user.stripe_customer_id && !isPrivileged;
     if (filterOption === 'inactive') matchesFilter = status === 'Inactive';
     if (filterOption === 'past_due') matchesFilter = status === 'Past Due';
     if (filterOption === 'free') matchesFilter = tier === 'starter';
@@ -465,6 +470,8 @@ export default function AdminUsers() {
           <SelectContent className="bg-slate-800 border-slate-700">
             <SelectItem value="all" className="text-white">All Users</SelectItem>
             <SelectItem value="active" className="text-white">Active Subscribers</SelectItem>
+            <SelectItem value="trialing" className="text-white">On Trial</SelectItem>
+            <SelectItem value="not_subscribed" className="text-white">Not Yet Subscribed</SelectItem>
             <SelectItem value="inactive" className="text-white">Inactive</SelectItem>
             <SelectItem value="past_due" className="text-white">Past Due</SelectItem>
             <SelectItem value="free" className="text-white">Free Tier Only</SelectItem>
