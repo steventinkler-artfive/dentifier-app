@@ -479,6 +479,12 @@ export default function AdminUsers() {
             <SelectItem value="early_bird" className="text-white">Early Bird</SelectItem>
           </SelectContent>
         </Select>
+        <span className="text-xs text-slate-400 whitespace-nowrap self-center">
+          {(() => {
+            const labels = { all: 'All', active: 'Active Subscribers', trialing: 'On Trial', not_subscribed: 'Not Yet Subscribed', inactive: 'Inactive', past_due: 'Past Due', free: 'Free Tier Only', founder: 'Founder Tier', early_bird: 'Early Bird' };
+            return `${labels[filterOption] || 'Filtered'} · ${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''}`;
+          })()}
+        </span>
         <Button
           onClick={() => setShowAddDialog(true)}
           className="bg-rose-600 hover:bg-rose-700 text-white font-semibold whitespace-nowrap"
