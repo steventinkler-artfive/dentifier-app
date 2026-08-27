@@ -13,3 +13,22 @@ export function getValidPricingEntries(pricingMatrix) {
     entry => entry && entry.damage_type && entry.size_range
   );
 }
+
+/**
+ * Computes the VAT-inclusive total to display for an assessment, matching the
+ * calculation on the quote/invoice detail screen.
+ *
+ * net subtotal = total_amount (if set) otherwise quote_amount minus the discount
+ * VAT         = is_vat_registered ? net * tax_rate / 100 : 0
+ * displayed    = net + VAT
+ *
+ * @param {object} assessment - The assessment record
+ * @param {object|null} userSettings - The current user's UserSetting (may be null)
+ * @returns {number} The total amount to display (net + VAT)
+ */
+export function calcDisplayTotal(assessment, userSettings) {
+  const qAmt = assessment?.quote_amount || 0;
+  const sub = (assessment?.total_amount ?? (qAmt - (qAmt * (assessment?.discount_percentage || 0) / 100))) || 0;
+  const vat = userSettings?.is_vat_registered ? (sub * (userSettings.tax_rate || 0)) / 100 : 0;
+  return sub + vat;
+}

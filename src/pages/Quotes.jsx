@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Assessment, Customer, Vehicle } from "@/entities/all";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { calcDisplayTotal } from "@/utils/pricing";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ export default function Quotes() {
   const [assessments, setAssessments] = useState([]);
   const [customers, setCustomers] = useState({});
   const [vehicles, setVehicles] = useState({});
+  const [userSettings, setUserSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
@@ -30,12 +32,14 @@ export default function Quotes() {
   const loadQuotes = async () => {
     try {
       const user = await base44.auth.me();
-      const [assessmentData, customerData, vehicleData] = await Promise.all([
+      const [assessmentData, customerData, vehicleData, settingsData] = await Promise.all([
         Assessment.filter({ created_by: user.email }, '-created_date'),
         Customer.filter({ created_by: user.email }),
-        Vehicle.filter({ created_by: user.email })
+        Vehicle.filter({ created_by: user.email }),
+        base44.entities.UserSetting.filter({ user_email: user.email })
       ]);
 
+      setUserSettings(settingsData.length > 0 ? settingsData[0] : null);
       setAssessments(assessmentData);
 
       const customerLookup = customerData.reduce((acc, curr) => ({ ...acc, [curr.id]: curr }), {});
@@ -209,7 +213,7 @@ export default function Quotes() {
             const bottomLine = getBottomLine(assessment);
             const vehicleInfo = getVehicleDisplay(assessment);
             const isPanelQuote = !assessment.vehicle_id && assessment.vehicles && assessment.vehicles.length > 0;
-            const price = formatCardPrice(assessment.total_amount ?? assessment.quote_amount, assessment.currency || 'GBP');
+            const price = formatCardPrice(calcDisplayTotal(assessment, userSettings), assessment.currency || 'GBP');
 
             return (
               <Card
