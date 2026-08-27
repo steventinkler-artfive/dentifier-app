@@ -537,11 +537,16 @@ export default function Reports() {
     document.body.removeChild(link);
   };
 
-  // Compute the active resolver warning (for UI display) based on selected format
-  const getActiveTaxWarning = () => {
-    if (csvFormat === 'xero') return resolveXeroTaxCode(userSettings).warning;
-    if (csvFormat === 'quickbooks') return resolveQuickBooksVatCode(userSettings).warning;
-    return null;
+  // Plain-English VAT help text shown next to the format selector.
+  // Branches mirror the resolver logic (not registered / standard 20% / non-standard).
+  const getVatHelpText = (providerName) => {
+    if (!userSettings?.is_vat_registered) {
+      return "You're not VAT registered, so no VAT will be added to this export.";
+    }
+    if (Number(userSettings?.tax_rate) === 20) {
+      return `VAT will be added automatically when ${providerName} imports this file.`;
+    }
+    return `Your VAT rate doesn't match ${providerName}'s standard options — you'll need to set the VAT rate manually after importing.`;
   };
 
   const months = [
@@ -823,24 +828,15 @@ export default function Reports() {
             {/* Format-specific helper text */}
             {csvFormat === 'xero' && (
               <div className="space-y-1 text-xs text-slate-400">
-                <p>AccountCode <span className="text-slate-200">200</span> is assumed (standard Sales account). Edit in the CSV if your chart of accounts differs.</p>
-                {getActiveTaxWarning() && (
-                  <p className="text-amber-400">{getActiveTaxWarning()}</p>
-                )}
+                <p>This will be booked to your standard Sales account in Xero. If you've set your account up differently, you can change this in the file before importing.</p>
+                <p>{getVatHelpText('Xero')}</p>
               </div>
             )}
 
             {csvFormat === 'quickbooks' && (
               <div className="space-y-1 text-xs text-slate-400">
-                <p>Creating a Product/Service item named <span className="text-slate-200">PDR Repair</span> is recommended so jobs are categorised correctly (QuickBooks falls back to a generic item if missing).</p>
-                {userSettings?.is_vat_registered ? (
-                  <p className="text-amber-400">Select <span className="text-amber-300">"Exclusive of tax"</span> at the VAT step during import — the exported amounts are net.</p>
-                ) : (
-                  <p>The tax column can be set to <span className="text-slate-200">"Not applicable"</span> during mapping.</p>
-                )}
-                {getActiveTaxWarning() && (
-                  <p className="text-amber-400">{getActiveTaxWarning()}</p>
-                )}
+                <p>This will be booked to a product/service item named "PDR Repair" in QuickBooks. If you've set your account up differently, you can change this in the file before importing.</p>
+                <p>{getVatHelpText('QuickBooks')}</p>
               </div>
             )}
 
