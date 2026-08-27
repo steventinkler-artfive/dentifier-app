@@ -396,19 +396,73 @@ export default function Reports() {
   // QuickBooks item tax column header (named constant — QBO UK sample template)
   const QB_TAX_HEADER = 'Item Tax Code';
 
-  // Description for Xero/QuickBooks line items — reads as a description of work, not a count
-  const buildLineDescription = (assessment) => {
-    let desc = '';
-    if (assessment.is_multi_vehicle && assessment.vehicles) {
-      desc = `PDR repair — ${assessment.vehicles.length} vehicles`;
-    } else if (assessment.vehicle_id) {
-      const veh = vehicles[assessment.vehicle_id];
-      desc = veh ? `${veh.year} ${veh.make} ${veh.model}` : 'PDR repair';
+  // Shared vehicle label builder — used identically by Standard, Xero, and QuickBooks.
+  // vehicles[].notes holds the vehicle make/model (e.g. "Peugeot 508") for per-panel jobs
+  // where vehicle_id is null, so it's folded into the label, not the Notes column.
+  // Five explicit outputs:
+  //   1) reg+colour+notes  -> "AE14 VMT (Black) — Peugeot 508"
+  //   2) reg+notes         -> "AE14 VMT — Peugeot 508"
+  //   3) reg only          -> "AE14 VMT"
+  //   4) notes only        -> "Vehicle 1 — Peugeot 508"
+  //   5) neither           -> "Vehicle 1"
+  const buildVehicleLabel = (vehicle, index) => {
+    const reg = (vehicle.registration || '').trim();
+    const colour = (vehicle.colour || '').trim();
+    const notes = (vehicle.notes || '').trim();
+    let base;
+    if (reg && colour) {
+      base = `${reg} (${colour})`;
+    } else if (reg) {
+      base = reg;
     } else {
-      desc = 'PDR repair';
+      base = `Vehicle ${index + 1}`;
     }
-    const notes = (assessment.notes || '').replace(/\n/g, ' ').trim();
-    return notes ? `${desc} | Notes: ${notes}` : desc;
+    return notes ? `${base} — ${notes}` : base;
+  };
+
+  // Shared Description builder (Path A) — line items only, used by all three export formats.
+  const buildExportDescription = (assessment) => {
+    // Single-vehicle assessment (has vehicle_id OR no vehicles[]): join its line items.
+    if (assessment.vehicle_id || !assessment.vehicles || assessment.vehicles.length === 0) {
+      const items = (assessment.line_items || [])
+        .map(i => (i.description || '').trim())
+        .filter(Boolean);
+      return items.length > 0 ? items.join('; ') : 'PDR Repair';
+    }
+    // Per-panel: group each vehicle's line items under its label, join groups with ' | '.
+    const groups = [];
+    assessment.vehicles.forEach((vehicle, idx) => {
+      const itemDescs = (vehicle.line_items || [])
+        .map(i => (i.description || '').trim())
+        .filter(Boolean);
+      if (itemDescs.length > 0) {
+        groups.push(`${buildVehicleLabel(vehicle, idx)}: ${itemDescs.join('; ')}`);
+      }
+    });
+    // Append any assessment-level line items as a trailing segment.
+    const assessmentItems = (assessment.line_items || [])
+      .map(i => (i.description || '').trim())
+      .filter(Boolean);
+    let desc = groups.join(' | ');
+    if (assessmentItems.length > 0) {
+      desc = desc ? `${desc}; ${assessmentItems.join('; ')}` : assessmentItems.join('; ');
+    }
+    return desc || 'PDR Repair';
+  };
+
+  // Strips PDR liability boilerplate from the Standard-format Notes column.
+  // Removes everything from the earliest occurrence of either boilerplate marker
+  // through end-of-string, keeping any substantive tech note that precedes it.
+  const stripStandardNotesBoilerplate = (rawNotes) => {
+    const str = (rawNotes || '').replace(/\n/g, ' ').trim();
+    if (!str) return '';
+    const markers = ['Repair carried out using standard PDR tooling', 'PLEASE NOTE:'];
+    let cutAt = -1;
+    for (const marker of markers) {
+      const idx = str.indexOf(marker);
+      if (idx !== -1 && (cutAt === -1 || idx < cutAt)) cutAt = idx;
+    }
+    return (cutAt === -1 ? str : str.slice(0, cutAt)).trim();
   };
 
   const exportToCSV = () => {
@@ -434,7 +488,7 @@ export default function Reports() {
           csvEscape(invoiceNumber),
           invoiceDate,
           invoiceDate,
-          csvEscape(buildLineDescription(assessment)),
+          csvEscape(buildExportDescription(assessment)),
           '1',
           subtotal.toFixed(2),
           '200',
@@ -459,7 +513,7 @@ export default function Reports() {
           invoiceDate,
           'Due on receipt',
           'PDR Repair',
-          csvEscape(buildLineDescription(assessment)),
+          csvEscape(buildExportDescription(assessment)),
           '1',
           subtotal.toFixed(2),
           subtotal.toFixed(2)
@@ -503,7 +557,7 @@ export default function Reports() {
         const paymentDate = payStatus === 'paid' && assessment.updated_date
           ? new Date(assessment.updated_date).toLocaleDateString('en-GB')
           : '';
-        const notes = (assessment.notes || '').replace(/\n/g, ' ');
+        const notes = stripStandardNotesBoilerplate(assessment.notes);
 
         return [
           csvEscape(invoiceNumber),
