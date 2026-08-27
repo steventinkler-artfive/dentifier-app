@@ -33,6 +33,15 @@ export default function BusinessProfileForm({ formData, onChange, user }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
+        <Label className="text-white">Your Name</Label>
+        <Input
+          value={formData.technician_name || ''}
+          onChange={e => onChange('technician_name', e.target.value)}
+          placeholder="e.g., Jordan Smith"
+          className="bg-slate-800 border-slate-700 text-white"
+        />
+      </div>
+      <div className="space-y-2">
         <Label className="text-white">Business Name *</Label>
         <Input
           value={formData.business_name || ''}

@@ -6,6 +6,10 @@
       "type": "string",
       "description": "The email of the user these settings belong to."
     },
+    "technician_name": {
+      "type": "string",
+      "description": "The technician's own name, as distinct from the business/trading name."
+    },
     "onboarding_completed": {
       "type": "boolean",
       "default": false,

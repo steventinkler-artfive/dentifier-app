@@ -331,9 +331,12 @@ export default function AdminUsers() {
   const filteredUsers = users.filter((user) => {
     // Search filter
     const searchLower = searchQuery.toLowerCase();
+    const userSettings = settingsMap[(user.email || '').toLowerCase().trim()] || {};
     const matchesSearch = !searchQuery || 
       user.full_name?.toLowerCase().includes(searchLower) ||
-      user.email?.toLowerCase().includes(searchLower);
+      user.email?.toLowerCase().includes(searchLower) ||
+      userSettings.technician_name?.toLowerCase().includes(searchLower) ||
+      userSettings.business_name?.toLowerCase().includes(searchLower);
 
     // Status filter
     const status = getSubscriptionStatus(user);
@@ -500,6 +503,7 @@ export default function AdminUsers() {
           const authInfo = getAuthMethod(user);
           const isOAuthUser = authInfo.method === 'Google OAuth';
           const isInactive = user.subscription_status === 'cancelled';
+          const userSettings = settingsMap[(user.email || '').toLowerCase().trim()] || {};
           
           return (
           <Card key={user.id} className="bg-slate-900 border-slate-800">
@@ -510,7 +514,7 @@ export default function AdminUsers() {
                   <div className="flex items-center gap-3 mb-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-white font-semibold text-lg">{user.full_name}</p>
+                        <p className="text-white font-semibold text-lg">{user.full_name || userSettings.technician_name || user.email}</p>
                         <Badge className="bg-slate-700 text-slate-200">
                           {user.role}
                         </Badge>
@@ -524,6 +528,9 @@ export default function AdminUsers() {
                           {authInfo.method}
                         </Badge>
                       </div>
+                      {userSettings.business_name && (
+                        <p className="text-slate-400 text-xs mt-1">Business: {userSettings.business_name}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

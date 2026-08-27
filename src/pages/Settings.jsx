@@ -690,6 +690,10 @@ export default function Settings() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
+                                <Label className="text-white">Your Name</Label>
+                                <Input value={formData.technician_name || ''} onChange={e => handleInputChange('technician_name', e.target.value)} placeholder="e.g., Jordan Smith" className="bg-slate-800 border-slate-700 text-white" />
+                            </div>
+                            <div className="space-y-2">
                                 <Label className="text-white">Business Name</Label>
                                 <Input value={formData.business_name} onChange={e => handleInputChange('business_name', e.target.value)} placeholder="e.g., Acme PDR" className="bg-slate-800 border-slate-700 text-white" />
                             </div>
