@@ -1110,7 +1110,7 @@ export default function Settings() {
                             </div>
                             {formData.is_vat_registered && (
                                  <div className="space-y-2">
-                                    <Label className="text-white">Tax Rate (%)</Label>
+                                    <Label className="text-white">VAT rate you charge customers (%)</Label>
                                     <Input type="number" value={formData.tax_rate} onChange={e => handleInputChange('tax_rate', parseFloat(e.target.value))} className="bg-slate-800 border-slate-700 text-white" />
                                 </div>
                             )}
