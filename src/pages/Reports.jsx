@@ -60,6 +60,9 @@ export default function Reports() {
 
   const navigate = useNavigate();
 
+  // CSV export format selector
+  const [csvFormat, setCsvFormat] = useState('standard'); // 'standard' | 'xero' | 'quickbooks'
+
   // Statement state
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -356,76 +359,189 @@ export default function Reports() {
     }
   };
 
+  // Net subtotal after discount — matches AssessmentDetail.jsx on-screen Total Invoice Amount to the penny
+  const buildNetSubtotal = (assessment) => {
+    const qAmt = assessment.quote_amount || 0;
+    return (assessment.total_amount ?? (qAmt - (qAmt * (assessment.discount_percentage || 0) / 100))) || 0;
+  };
+
+  // Standard CSV cell escaping: double embedded quotes, leave commas/newlines intact
+  const csvEscape = (value) => {
+    const str = value == null ? '' : String(value);
+    return str.replace(/"/g, '""');
+  };
+
+  // Resolver: Xero TaxType. Returns { code, warning }.
+  // UK only for now — structured for a future international follow-up (saved tax code -> country default -> blank+warning).
+  const resolveXeroTaxCode = (settings) => {
+    if (!settings?.is_vat_registered) return { code: 'No VAT', warning: null };
+    if (Number(settings?.tax_rate) === 20) return { code: '20% (VAT on Income)', warning: null };
+    return {
+      code: 'No VAT',
+      warning: `Your VAT rate (${settings?.tax_rate}%) can't be mapped to a Xero TaxType automatically. The TaxType column is set to "No VAT" — please edit it before import.`
+    };
+  };
+
+  // Resolver: QuickBooks VAT code. Returns { code, warning }.
+  // Same UK 3-branch logic; the Item Tax Code column is omitted when not VAT-registered (handled by the row builder).
+  const resolveQuickBooksVatCode = (settings) => {
+    if (!settings?.is_vat_registered) return { code: 'NO', warning: null };
+    if (Number(settings?.tax_rate) === 20) return { code: 'S', warning: null };
+    return {
+      code: 'NO',
+      warning: `Your VAT rate (${settings?.tax_rate}%) can't be mapped to a QuickBooks VAT code automatically. The Item Tax Code column is set to "NO" — please edit it before import.`
+    };
+  };
+
+  // QuickBooks item tax column header (named constant — QBO UK sample template)
+  const QB_TAX_HEADER = 'Item Tax Code';
+
+  // Description for Xero/QuickBooks line items — reads as a description of work, not a count
+  const buildLineDescription = (assessment) => {
+    let desc = '';
+    if (assessment.is_multi_vehicle && assessment.vehicles) {
+      desc = `PDR repair — ${assessment.vehicles.length} vehicles`;
+    } else if (assessment.vehicle_id) {
+      const veh = vehicles[assessment.vehicle_id];
+      desc = veh ? `${veh.year} ${veh.make} ${veh.model}` : 'PDR repair';
+    } else {
+      desc = 'PDR repair';
+    }
+    const notes = (assessment.notes || '').replace(/\n/g, ' ').trim();
+    return notes ? `${desc} | Notes: ${notes}` : desc;
+  };
+
   const exportToCSV = () => {
     if (filteredAssessments.length === 0) {
       alert('No data to export');
       return;
     }
 
-    const headers = [
-      'Invoice Number',
-      'Date',
-      'Client Name',
-      'Client Email',
-      'Vehicle',
-      'Total Amount',
-      'VAT Amount',
-      'Payment Status',
-      'Payment Date',
-      'Notes'
-    ];
+    const dateStr = new Date().toISOString().split('T')[0];
 
-    const rows = filteredAssessments.map(assessment => {
-      const customer = customers[assessment.customer_id];
-      const invoiceNumber = assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
-      const date = new Date(assessment.created_date).toLocaleDateString();
-      const clientName = customer?.business_name || customer?.name || 'N/A';
-      const clientEmail = customer?.email || 'N/A';
-      
-      let vehicle = 'N/A';
-      if (assessment.is_multi_vehicle && assessment.vehicles) {
-        vehicle = `${assessment.vehicles.length} Vehicles`;
-      } else if (assessment.vehicle_id) {
-        const veh = vehicles[assessment.vehicle_id];
-        vehicle = veh ? `${veh.year} ${veh.make} ${veh.model}` : 'Vehicle details available';
-      }
+    let headers, rows, filename;
 
-      const totalAmount = assessment.quote_amount || 0;
-      const vatAmount = calculateVAT(totalAmount);
-      const paymentStatus = assessment.payment_status || 'pending';
-      const paymentDate = paymentStatus === 'paid' && assessment.updated_date
-        ? new Date(assessment.updated_date).toLocaleDateString('en-GB')
-        : '';
-      const notes = (assessment.notes || '').replace(/,/g, ';').replace(/\n/g, ' ');
-
-      return [
-        invoiceNumber,
-        date,
-        clientName,
-        clientEmail,
-        vehicle,
-        totalAmount.toFixed(2),
-        vatAmount.toFixed(2),
-        paymentStatus,
-        paymentDate,
-        notes
+    if (csvFormat === 'xero') {
+      const tax = resolveXeroTaxCode(userSettings);
+      headers = ['ContactName', 'InvoiceNumber', 'InvoiceDate', 'DueDate', 'Description', 'Quantity', 'UnitAmount', 'AccountCode', 'TaxType'];
+      rows = filteredAssessments.map(assessment => {
+        const customer = customers[assessment.customer_id];
+        const invoiceNumber = assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
+        const invoiceDate = new Date(assessment.created_date).toLocaleDateString('en-GB');
+        const subtotal = buildNetSubtotal(assessment);
+        return [
+          csvEscape(customer?.business_name || customer?.name || 'N/A'),
+          csvEscape(invoiceNumber),
+          invoiceDate,
+          invoiceDate,
+          csvEscape(buildLineDescription(assessment)),
+          '1',
+          subtotal.toFixed(2),
+          '200',
+          tax.code
+        ];
+      });
+      filename = `dentifier-xero-${dateStr}.csv`;
+    } else if (csvFormat === 'quickbooks') {
+      const tax = resolveQuickBooksVatCode(userSettings);
+      const includeTaxCol = !!userSettings?.is_vat_registered;
+      headers = ['Invoice No.', 'Customer', 'Invoice Date', 'Due Date', 'Terms', 'Item(Product/Service)', 'Item Description', 'Item Quantity', 'Item Rate', 'Item Amount'];
+      if (includeTaxCol) headers.push(QB_TAX_HEADER);
+      rows = filteredAssessments.map(assessment => {
+        const customer = customers[assessment.customer_id];
+        const invoiceNumber = assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
+        const invoiceDate = new Date(assessment.created_date).toLocaleDateString('en-GB');
+        const subtotal = buildNetSubtotal(assessment);
+        const row = [
+          csvEscape(invoiceNumber),
+          csvEscape(customer?.business_name || customer?.name || 'N/A'),
+          invoiceDate,
+          invoiceDate,
+          'Due on receipt',
+          'PDR Repair',
+          csvEscape(buildLineDescription(assessment)),
+          '1',
+          subtotal.toFixed(2),
+          subtotal.toFixed(2)
+        ];
+        if (includeTaxCol) row.push(tax.code);
+        return row;
+      });
+      filename = `dentifier-quickbooks-${dateStr}.csv`;
+    } else {
+      // Standard format (with defect fixes applied)
+      headers = [
+        'Invoice Number',
+        'Date',
+        'Client Name',
+        'Client Email',
+        'Vehicle',
+        'Total Amount',
+        'VAT Amount',
+        'Payment Status',
+        'Payment Date',
+        'Notes'
       ];
-    });
+      rows = filteredAssessments.map(assessment => {
+        const customer = customers[assessment.customer_id];
+        const invoiceNumber = assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
+        const date = new Date(assessment.created_date).toLocaleDateString('en-GB');
+        const clientName = customer?.business_name || customer?.name || 'N/A';
+        const clientEmail = customer?.email || 'N/A';
+
+        let vehicle = 'N/A';
+        if (assessment.is_multi_vehicle && assessment.vehicles) {
+          vehicle = `${assessment.vehicles.length} Vehicles`;
+        } else if (assessment.vehicle_id) {
+          const veh = vehicles[assessment.vehicle_id];
+          vehicle = veh ? `${veh.year} ${veh.make} ${veh.model}` : 'Vehicle details available';
+        }
+
+        const subtotal = buildNetSubtotal(assessment);
+        const vatAmount = calculateVAT(subtotal);
+        const payStatus = assessment.payment_status || 'pending';
+        const paymentDate = payStatus === 'paid' && assessment.updated_date
+          ? new Date(assessment.updated_date).toLocaleDateString('en-GB')
+          : '';
+        const notes = (assessment.notes || '').replace(/\n/g, ' ');
+
+        return [
+          csvEscape(invoiceNumber),
+          date,
+          csvEscape(clientName),
+          csvEscape(clientEmail),
+          csvEscape(vehicle),
+          subtotal.toFixed(2),
+          vatAmount.toFixed(2),
+          payStatus,
+          paymentDate,
+          csvEscape(notes)
+        ];
+      });
+      filename = `dentifier-reports-${dateStr}.csv`;
+    }
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map(row => row.map(cell => `"${csvEscape(cell)}"`).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `dentifier-reports-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Compute the active resolver warning (for UI display) based on selected format
+  const getActiveTaxWarning = () => {
+    if (csvFormat === 'xero') return resolveXeroTaxCode(userSettings).warning;
+    if (csvFormat === 'quickbooks') return resolveQuickBooksVatCode(userSettings).warning;
+    return null;
   };
 
   const months = [
@@ -676,6 +792,55 @@ export default function Reports() {
                     <><Mail className="w-4 h-4 mr-2" />Email Statement</>
                   )}
                 </Button>
+              </div>
+            )}
+
+            {/* Export Format Selector */}
+            <div className="space-y-2">
+              <Label className="text-white">Export Format</Label>
+              <div className="grid grid-cols-3 gap-1 bg-slate-800 border border-slate-700 rounded-lg p-1">
+                {[
+                  { value: 'standard', label: 'Standard' },
+                  { value: 'xero', label: 'Xero' },
+                  { value: 'quickbooks', label: 'QuickBooks' }
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCsvFormat(opt.value)}
+                    className={`px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      csvFormat === opt.value
+                        ? 'bg-green-600 text-white'
+                        : 'text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Format-specific helper text */}
+            {csvFormat === 'xero' && (
+              <div className="space-y-1 text-xs text-slate-400">
+                <p>AccountCode <span className="text-slate-200">200</span> is assumed (standard Sales account). Edit in the CSV if your chart of accounts differs.</p>
+                {getActiveTaxWarning() && (
+                  <p className="text-amber-400">{getActiveTaxWarning()}</p>
+                )}
+              </div>
+            )}
+
+            {csvFormat === 'quickbooks' && (
+              <div className="space-y-1 text-xs text-slate-400">
+                <p>Creating a Product/Service item named <span className="text-slate-200">PDR Repair</span> is recommended so jobs are categorised correctly (QuickBooks falls back to a generic item if missing).</p>
+                {userSettings?.is_vat_registered ? (
+                  <p className="text-amber-400">Select <span className="text-amber-300">"Exclusive of tax"</span> at the VAT step during import — the exported amounts are net.</p>
+                ) : (
+                  <p>The tax column can be set to <span className="text-slate-200">"Not applicable"</span> during mapping.</p>
+                )}
+                {getActiveTaxWarning() && (
+                  <p className="text-amber-400">{getActiveTaxWarning()}</p>
+                )}
               </div>
             )}
 
