@@ -186,6 +186,7 @@ export default function Settings() {
     };
 
     const [formData, setFormData] = useState({
+      technician_name: '',
       business_name: '',
       business_address: '',
       contact_email: '', // Will be set to user.email or loaded
@@ -304,6 +305,7 @@ export default function Settings() {
                 }
 
                 const tempFormData = {
+                    technician_name: loadedSettings.technician_name || '',
                     business_name: loadedSettings.business_name || '',
                     business_address: loadedSettings.business_address || '',
                     contact_email: loadedSettings.contact_email || currentUser.email,
