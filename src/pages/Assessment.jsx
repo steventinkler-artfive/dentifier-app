@@ -220,8 +220,8 @@ export default function AssessmentPage() {
           include_notes_in_quote: true,
           estimated_time_hours: null,
           quote_number: formattedQuoteNumber,
-          job_panel_price: jobPanelPrice || userSettings?.default_panel_price || 60,
-          creator_email: currentUser?.email
+          job_panel_price: jobPanelPrice || userSettingsData?.default_panel_price || 60,
+          creator_email: currentUserData?.email
         };
 
         const savedAssessment = await Assessment.create(assessmentPayload);
