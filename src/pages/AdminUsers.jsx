@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2, Key, Mail, Ban, CheckCircle } from "lucide-react";
+import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2, Key, Mail, Ban, CheckCircle, ClipboardList } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,11 @@ export default function AdminUsers() {
   const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
   const [isDeletingUser, setIsDeletingUser] = useState(false);
   const { showAlert, showConfirm } = useAlert();
+  const [period, setPeriod] = useState('today');
+  const [assessmentCounts, setAssessmentCounts] = useState({});
+  const [loadingCounts, setLoadingCounts] = useState(false);
+  const [countsError, setCountsError] = useState(false);
+  const [sortByCount, setSortByCount] = useState(false);
 
   useEffect(() => {
     checkAccess();
@@ -90,6 +95,26 @@ export default function AdminUsers() {
       setLoading(false);
     }
   };
+
+  const fetchCounts = async (selectedPeriod) => {
+    setLoadingCounts(true);
+    try {
+      const res = await base44.functions.invoke('getAssessmentCountsByUser', { period: selectedPeriod });
+      const counts = res?.data?.counts ?? res?.counts ?? {};
+      setAssessmentCounts(counts);
+      setCountsError(false);
+    } catch (err) {
+      console.error('[AdminUsers] Error fetching assessment counts:', err);
+      setAssessmentCounts({});
+      setCountsError(true);
+    } finally {
+      setLoadingCounts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser?.role === 'admin') fetchCounts(period);
+  }, [period, currentUser]);
 
   const handleTierChange = (userId, newTier) => {
     setPendingChanges(prev => ({ ...prev, [userId]: newTier }));
@@ -356,6 +381,14 @@ export default function AdminUsers() {
     return matchesSearch && matchesFilter;
   });
 
+  if (sortByCount) {
+    filteredUsers.sort((a, b) => {
+      const ca = assessmentCounts[(a.email || '').toLowerCase().trim()] || 0;
+      const cb = assessmentCounts[(b.email || '').toLowerCase().trim()] || 0;
+      return cb - ca;
+    });
+  }
+
   if (loading || !currentUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -482,6 +515,20 @@ export default function AdminUsers() {
             <SelectItem value="early_bird" className="text-white">Early Bird</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={period} onValueChange={setPeriod}>
+          <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700 text-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectItem value="today" className="text-white">Today</SelectItem>
+            <SelectItem value="7d" className="text-white">Last 7 days</SelectItem>
+            <SelectItem value="30d" className="text-white">Last 30 days</SelectItem>
+          </SelectContent>
+        </Select>
+        <label className="flex items-center gap-2 text-xs text-slate-300 whitespace-nowrap self-center cursor-pointer">
+          <input type="checkbox" checked={sortByCount} onChange={(e) => setSortByCount(e.target.checked)} className="w-4 h-4 rounded border-slate-600 bg-slate-800 accent-rose-500" />
+          Sort by count
+        </label>
         <span className="text-xs text-slate-400 whitespace-nowrap self-center">
           {(() => {
             const labels = { all: 'All', active: 'Active Subscribers', trialing: 'On Trial', not_subscribed: 'Not Yet Subscribed', inactive: 'Inactive', past_due: 'Past Due', free: 'Free Tier Only', founder: 'Founder Tier', early_bird: 'Early Bird' };
@@ -537,6 +584,10 @@ export default function AdminUsers() {
                     <div className="flex items-center gap-2 text-sm text-slate-400">
                       <Calendar className="w-4 h-4" />
                       <span>Joined: {formatDate(user.created_date)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <ClipboardList className="w-4 h-4" />
+                      <span>{loadingCounts ? '...' : countsError ? 'Count unavailable' : `${assessmentCounts[(user.email || '').toLowerCase().trim()] || 0} assessment${(assessmentCounts[(user.email || '').toLowerCase().trim()] || 0) !== 1 ? 's' : ''} ${period === 'today' ? 'today' : period === '7d' ? 'this week' : 'this month'}`}</span>
                     </div>
                     <button
                       onClick={() => setExpandedUsers(prev => ({ ...prev, [user.id]: !prev[user.id] }))}
