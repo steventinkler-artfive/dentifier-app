@@ -23,6 +23,27 @@ export default async function(req) {
 
         const email = body.data.user_email;
 
+        // Fail-closed verification: confirm a real UserSetting record exists for
+        // this entity_id and that its stored user_email matches the payload's.
+        // asServiceRole bypasses the per-user RLS here (see getAllUserSettings).
+        // If the record can't be read or the email doesn't match, reject and
+        // send nothing — a forged payload cannot trigger a welcome email to an
+        // arbitrary address.
+        let setting;
+        try {
+            setting = await base44.asServiceRole.entities.UserSetting.get(body.event.entity_id);
+        } catch (e) {
+            return Response.json({ error: 'Forbidden: unverifiable entity' }, { status: 403 });
+        }
+        if (!setting) {
+            return Response.json({ error: 'Forbidden: entity not found' }, { status: 403 });
+        }
+        const storedEmail = (setting.user_email || '').toString().toLowerCase().trim();
+        const payloadEmail = (email || '').toString().toLowerCase().trim();
+        if (!storedEmail || storedEmail !== payloadEmail) {
+            return Response.json({ error: 'Forbidden: email mismatch' }, { status: 403 });
+        }
+
         const logoUrl = "https://dentifier.b-cdn.net/logo/dentifier-logo-strap-white2.svg";
         const dashboardUrl = "https://app.dentifierpro.com/dashboard";
         const supportEmail = "hello@dentifierpro.com";
