@@ -40,24 +40,6 @@ export default function Dashboard() {
     checkAndSendWelcomeEmail();
   }, []);
 
-  // Evaluate onboarding only after the UserSetting fetch has definitively completed.
-  // This prevents a flash of the wizard for existing users while settings are still loading.
-  useEffect(() => {
-    if (loadingUserSettings || !user) return;
-
-    const hasAccess =
-      user.role === 'admin' ||
-      user.subscription_status === 'trialing' ||
-      user.subscription_status === 'active' ||
-      user.is_beta_tester === true || user.data?.is_beta_tester === true;
-
-    if (hasAccess && (!userSettings || !userSettings.onboarding_completed)) {
-      setShowOnboarding(true);
-    } else {
-      setShowOnboarding(false);
-    }
-  }, [loadingUserSettings, userSettings, user]);
-
   const checkAndSendWelcomeEmail = async () => {
     try {
       const user = await base44.auth.me();
@@ -104,6 +86,34 @@ export default function Dashboard() {
       const settings = settingsData.length > 0 ? settingsData[0] : null;
       setUserSettings(settings);
       setLoadingUserSettings(false);
+
+      // Onboarding modal shows only for genuinely new users: onboarding incomplete
+      // AND no assessments yet. Established users with an incomplete section defer
+      // to the existing banners (BankingIncompleteBanner / PWAInstallBanner).
+      const hasAccess =
+        user.role === 'admin' ||
+        user.subscription_status === 'trialing' ||
+        user.subscription_status === 'active' ||
+        user.is_beta_tester === true || user.data?.is_beta_tester === true;
+      const onboardingIncomplete = !settings || !settings.onboarding_completed;
+      const isEstablished = assessmentsData.length > 0;
+      setShowOnboarding(hasAccess && onboardingIncomplete && !isEstablished);
+
+      // If the modal is suppressed for an established user whose incomplete section
+      // isn't one a Dashboard banner covers, surface it server-side so it isn't
+      // silently lost. Fire-and-forget; a logging failure must never break the page.
+      if (hasAccess && onboardingIncomplete && isEstablished) {
+        const BANNER_COVERED_SECTIONS = ['banking'];
+        const sections = (settings && settings.sections_completed) || {};
+        const uncovered = ['business', 'banking', 'pricing', 'skills']
+          .filter((s) => !sections[s])
+          .filter((s) => !BANNER_COVERED_SECTIONS.includes(s));
+        if (uncovered.length > 0) {
+          base44.functions
+            .invoke('logUncoveredIncompleteSection', { uncovered_sections: uncovered })
+            .catch(() => {});
+        }
+      }
 
       const customersMap = customersData.reduce((map, customer) => {
         map[customer.id] = customer;
