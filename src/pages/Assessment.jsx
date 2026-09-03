@@ -192,7 +192,7 @@ export default function AssessmentPage() {
           colour: card.colour || '',
           notes: card.notes || '',
           panels: card.panels || [],
-          photo_urls: card.photo_urls || [],
+          damage_photos: card.damage_photos || [],
           line_items: vehicleSections[idx]?.items || [],
           quote_amount: vehicleSections[idx]?.subtotal || 0
         }));

@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { compressMultipleImages } from "../utils/imageCompression";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getColourOptions } from "@/utils/vehicleColours";
 import { Save, X, ImageOff, Camera, Upload, Loader2 } from "lucide-react";
 
 export default function VehicleEditModal({ vehicle, open, onSave, onCancel }) {
@@ -118,12 +120,21 @@ export default function VehicleEditModal({ vehicle, open, onSave, onCancel }) {
 
           <div className="space-y-1.5">
             <Label className="text-slate-300 text-sm">Colour</Label>
-            <Input
+            <Select
               value={form.colour}
-              onChange={(e) => update("colour", e.target.value)}
-              placeholder="e.g. Silver"
-              className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
-            />
+              onValueChange={(v) => update("colour", v)}
+            >
+              <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                <SelectValue placeholder="Select colour" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                {getColourOptions(form.colour).map((c) => (
+                  <SelectItem key={c} value={c} className="text-white hover:bg-slate-700">
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

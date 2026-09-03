@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Upload, X, Plus, Loader2 } from "lucide-react";
 import { compressMultipleImages } from "../utils/imageCompression";
+import ImageViewer from "@/components/ui/ImageViewer";
+import { getColourOptions } from "@/utils/vehicleColours";
 
 const CAR_PANELS = [
   "Bonnet/Hood",
@@ -23,13 +25,14 @@ const CAR_PANELS = [
 ];
 
 const createEmptyPanel = () => ({ panel: '', notes: '' });
-const createEmptyCard = () => ({ registration: '', colour: '', notes: '', panels: [createEmptyPanel()], photo_urls: [] });
+const createEmptyCard = () => ({ registration: '', colour: '', notes: '', panels: [createEmptyPanel()], damage_photos: [] });
 
 export default function VehicleFormMultiPanel({ customer, onComplete, defaultPanelPrice = 60 }) {
   const [vehicleCards, setVehicleCards] = useState([createEmptyCard()]);
   const [jobPanelPrice, setJobPanelPrice] = useState(defaultPanelPrice);
   const [uploadingIdx, setUploadingIdx] = useState(null);
   const [error, setError] = useState('');
+  const [photoViewer, setPhotoViewer] = useState({ open: false, cardIdx: null, index: 0 });
 
   const updateCard = (cardIdx, field, value) => {
     setVehicleCards(prev => {
@@ -81,7 +84,7 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
       const urls = await Promise.all(compressed.map(f => uploadImageToS3(f, 'photo')));
       setVehicleCards(prev => {
         const updated = [...prev];
-        updated[cardIdx] = { ...updated[cardIdx], photo_urls: [...updated[cardIdx].photo_urls, ...urls] };
+        updated[cardIdx] = { ...updated[cardIdx], damage_photos: [...updated[cardIdx].damage_photos, ...urls] };
         return updated;
       });
     } catch (e) {
@@ -94,7 +97,7 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
   const removePhoto = (cardIdx, photoIdx) => {
     setVehicleCards(prev => {
       const updated = [...prev];
-      updated[cardIdx] = { ...updated[cardIdx], photo_urls: updated[cardIdx].photo_urls.filter((_, i) => i !== photoIdx) };
+      updated[cardIdx] = { ...updated[cardIdx], damage_photos: updated[cardIdx].damage_photos.filter((_, i) => i !== photoIdx) };
       return updated;
     });
   };
@@ -168,20 +171,27 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
 
               <div className="space-y-1.5">
                 <Label className="text-white text-sm">Colour</Label>
-                <Input
+                <Select
                   value={card.colour}
-                  onChange={e => updateCard(cardIdx, 'colour', e.target.value)}
-                  placeholder="e.g. Silver, White, Black"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-                />
+                  onValueChange={v => updateCard(cardIdx, 'colour', v)}
+                >
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                    <SelectValue placeholder="Select colour" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {getColourOptions(card.colour).map(c => (
+                      <SelectItem key={c} value={c} className="text-white hover:bg-slate-700">{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-white text-sm">Notes</Label>
+                <Label className="text-white text-sm">Make &amp; Model</Label>
                 <Input
                   value={card.notes}
                   onChange={e => updateCard(cardIdx, 'notes', e.target.value)}
-                  placeholder="e.g. Silver Astra — nearside rear door, light crease"
+                  placeholder="e.g. Peugeot 508, or fleet vehicle with tow bar"
                   className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
                 />
               </div>
@@ -254,11 +264,16 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
             <div className="space-y-2">
               <p className="text-slate-400 text-sm">📷 Add Photos (optional)</p>
 
-              {card.photo_urls.length > 0 && (
+              {card.damage_photos.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
-                  {card.photo_urls.map((url, photoIdx) => (
+                  {card.damage_photos.map((url, photoIdx) => (
                     <div key={photoIdx} className="relative group">
-                      <img src={url} alt={`Photo ${photoIdx + 1}`} className="w-full aspect-square object-cover rounded-lg" />
+                      <img
+                        src={url}
+                        alt={`Photo ${photoIdx + 1}`}
+                        className="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setPhotoViewer({ open: true, cardIdx, index: photoIdx })}
+                      />
                       <button
                         onClick={() => removePhoto(cardIdx, photoIdx)}
                         className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -338,6 +353,13 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
       >
         Continue to Quote
       </Button>
+
+      <ImageViewer
+        isOpen={photoViewer.open}
+        onClose={() => setPhotoViewer(v => ({ ...v, open: false }))}
+        images={photoViewer.cardIdx !== null ? (vehicleCards[photoViewer.cardIdx]?.damage_photos || []) : []}
+        startIndex={photoViewer.index}
+      />
     </div>
   );
 }

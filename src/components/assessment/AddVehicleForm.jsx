@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Loader2, X, Camera, Upload } from "lucide-react";
 import { compressMultipleImages } from "../utils/imageCompression";
+import ImageViewer from "@/components/ui/ImageViewer";
+import { getColourOptions } from "@/utils/vehicleColours";
 
 const CAR_PANELS = [
   "Bonnet/Hood", "Front Wing/Fender (Left)", "Front Wing/Fender (Right)",
@@ -23,10 +25,11 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
     colour: '',
     notes: '',
     panels: [createEmptyPanel()],
-    photo_urls: []
+    damage_photos: []
   });
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [photoViewer, setPhotoViewer] = useState({ open: false, index: 0 });
   const [error, setError] = useState('');
 
   const updateNewVehicle = (field, value) => {
@@ -57,7 +60,7 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
       const urls = await Promise.all(compressed.map(f => uploadImageToS3(f, 'photo')));
       setNewVehicle(prev => ({
         ...prev,
-        photo_urls: [...prev.photo_urls, ...urls]
+        damage_photos: [...prev.damage_photos, ...urls]
       }));
     } catch (e) {
       console.error('Upload failed:', e);
@@ -69,7 +72,7 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
   const removePhoto = (photoIdx) => {
     setNewVehicle(prev => ({
       ...prev,
-      photo_urls: prev.photo_urls.filter((_, i) => i !== photoIdx)
+      damage_photos: prev.damage_photos.filter((_, i) => i !== photoIdx)
     }));
   };
 
@@ -95,7 +98,7 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
         colour: newVehicle.colour || '',
         notes: newVehicle.notes || '',
         panels: validPanels,
-        photo_urls: newVehicle.photo_urls,
+        damage_photos: newVehicle.damage_photos,
         line_items: lineItems,
         quote_amount: defaultPanelPrice * validPanels.length
       };
@@ -110,7 +113,8 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-700">
+    <>
+      <Card className="bg-slate-900 border-slate-700">
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-white font-semibold">Add New Vehicle</h3>
@@ -138,20 +142,27 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
 
           <div className="space-y-1.5">
             <Label className="text-white text-sm">Colour</Label>
-            <Input
+            <Select
               value={newVehicle.colour}
-              onChange={e => updateNewVehicle('colour', e.target.value)}
-              placeholder="e.g. Silver, White, Black"
-              className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
-            />
+              onValueChange={v => updateNewVehicle('colour', v)}
+            >
+              <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                <SelectValue placeholder="Select colour" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                {getColourOptions(newVehicle.colour).map(c => (
+                  <SelectItem key={c} value={c} className="text-white hover:bg-slate-700">{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-white text-sm">Notes</Label>
+            <Label className="text-white text-sm">Make &amp; Model</Label>
             <Input
               value={newVehicle.notes}
               onChange={e => updateNewVehicle('notes', e.target.value)}
-              placeholder="e.g. Silver Astra — nearside rear door, light crease"
+              placeholder="e.g. Peugeot 508, or fleet vehicle with tow bar"
               className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
             />
           </div>
@@ -222,11 +233,16 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
         <div className="space-y-2">
           <p className="text-slate-400 text-sm">📷 Add Photos (optional)</p>
 
-          {newVehicle.photo_urls.length > 0 && (
+          {newVehicle.damage_photos.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
-              {newVehicle.photo_urls.map((url, photoIdx) => (
+              {newVehicle.damage_photos.map((url, photoIdx) => (
                 <div key={photoIdx} className="relative group">
-                  <img src={url} alt={`Photo ${photoIdx + 1}`} className="w-full aspect-square object-cover rounded-lg" />
+                  <img
+                    src={url}
+                    alt={`Photo ${photoIdx + 1}`}
+                    className="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setPhotoViewer({ open: true, index: photoIdx })}
+                  />
                   <button
                     onClick={() => removePhoto(photoIdx)}
                     className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -301,5 +317,13 @@ export default function AddVehicleForm({ customerId, onSave, onCancel, defaultPa
         </Button>
       </CardContent>
     </Card>
+
+      <ImageViewer
+        isOpen={photoViewer.open}
+        onClose={() => setPhotoViewer(v => ({ ...v, open: false }))}
+        images={newVehicle.damage_photos}
+        startIndex={photoViewer.index}
+      />
+    </>
   );
 }

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Car, Edit2, Save, Trash2, Plus, Loader2, Check, X } from "lucide-react";
 import AddVehicleForm from "./AddVehicleForm";
 import VehicleEditModal from "./VehicleEditModal";
+import ImageViewer from "@/components/ui/ImageViewer";
 import { useAlert } from "@/components/ui/CustomAlert";
 
 
@@ -51,6 +52,7 @@ export default function PerPanelQuoteView({
   const [isSavingDiscount, setIsSavingDiscount] = useState(false);
   const [editingVehicleIdx, setEditingVehicleIdx] = useState(null);
   const [originalPrice, setOriginalPrice] = useState(null);
+  const [photoViewer, setPhotoViewer] = useState({ open: false, vIdx: null, index: 0 });
 
   useEffect(() => {
     setDiscountInput(assessment.discount_percentage > 0 ? String(assessment.discount_percentage) : "");
@@ -297,16 +299,7 @@ export default function PerPanelQuoteView({
           ? [v.registration, v.colour].filter(Boolean).join(" · ")
           : `Vehicle ${vIdx + 1}`;
         const sublabel = v.notes;
-        // Fall back to raw panels array if line_items weren't generated (e.g. new user with incomplete onboarding)
-        const lineItems = (v.line_items && v.line_items.length > 0)
-          ? v.line_items
-          : (v.panels || []).map(p => ({
-              description: `PDR Labour - ${p.panel || p}${p.notes ? `: ${p.notes}` : ''}`,
-              quantity: 1,
-              unit_price: assessment.job_panel_price || 60,
-              total_price: assessment.job_panel_price || 60,
-              _fromPanels: true
-            }));
+        const lineItems = v.line_items || [];
 
         return (
           <Card key={vIdx} className="bg-slate-900 border-slate-800">
@@ -342,6 +335,21 @@ export default function PerPanelQuoteView({
               </div>
             </CardHeader>
             <CardContent className="text-sm space-y-1.5 pt-1">
+              {/* Photo strip */}
+              {(v.damage_photos || []).length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {(v.damage_photos || []).map((url, pIdx) => (
+                    <img
+                      key={pIdx}
+                      src={url}
+                      alt={`Vehicle photo ${pIdx + 1}`}
+                      className="w-16 h-16 flex-shrink-0 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setPhotoViewer({ open: true, vIdx, index: pIdx })}
+                    />
+                  ))}
+                </div>
+              )}
+
               {/* Line items */}
               {lineItems.map((item, liIdx) => {
                 const isEditing =
@@ -863,6 +871,12 @@ export default function PerPanelQuoteView({
         open={editingVehicleIdx !== null}
         onSave={saveVehicleEdit}
         onCancel={() => setEditingVehicleIdx(null)}
+      />
+      <ImageViewer
+        isOpen={photoViewer.open}
+        onClose={() => setPhotoViewer((p) => ({ ...p, open: false }))}
+        images={photoViewer.vIdx !== null ? (vehicles[photoViewer.vIdx]?.damage_photos || []) : []}
+        startIndex={photoViewer.index}
       />
     </div>
   );

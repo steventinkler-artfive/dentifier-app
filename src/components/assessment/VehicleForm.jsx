@@ -8,6 +8,7 @@ import { Car, Save, Search, Loader2, WifiOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 import { useOfflineMutation } from "@/hooks/useOfflineMutation";
+import { VEHICLE_COLOURS } from "@/utils/vehicleColours";
 
 const VEHICLE_MAKES = [
   "Abarth", "AC", "Acura", "AK", "Alfa Romeo", "Allard", "Alpina", "Alpine", 
@@ -41,12 +42,6 @@ const VEHICLE_MAKES = [
 
 VEHICLE_MAKES.push("OTHER");
 
-const VEHICLE_COLORS = [
-  "Beige", "Black", "Blue", "Brown", "Bronze", "Burgundy", "Charcoal", "Cream",
-  "Gold", "Grey", "Green", "Maroon", "Navy", "Orange", "Pink", "Purple", 
-  "Red", "Silver", "Tan", "Turquoise", "White", "Yellow"
-].sort();
-
 // Generate years from 1950 to current year + 1
 const generateYears = () => {
   const currentYear = new Date().getFullYear();
@@ -71,7 +66,7 @@ export default function VehicleForm({ customer, vehicle, onVehicleSubmit }) {
   const [saving, setSaving] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
   const [vehicleMakes, setVehicleMakes] = useState(VEHICLE_MAKES);
-  const [vehicleColors, setVehicleColors] = useState(VEHICLE_COLORS);
+  const [vehicleColors, setVehicleColors] = useState(VEHICLE_COLOURS);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const { mutate } = useOfflineMutation();
 
