@@ -18,8 +18,7 @@ import { Save, X, ImageOff, Camera, Upload, Loader2 } from "lucide-react";
 export default function VehicleEditModal({ vehicle, open, onSave, onCancel }) {
   const [form, setForm] = useState({
     registration: "",
-    make: "",
-    model: "",
+    notes: "",
     colour: "",
   });
   const [localPhotos, setLocalPhotos] = useState([]);
@@ -29,8 +28,7 @@ export default function VehicleEditModal({ vehicle, open, onSave, onCancel }) {
     if (vehicle) {
       setForm({
         registration: vehicle.registration || "",
-        make: vehicle.make || "",
-        model: vehicle.model || "",
+        notes: vehicle.notes || "",
         colour: vehicle.colour || "",
       });
       setLocalPhotos(vehicle.damage_photos || []);
@@ -71,8 +69,7 @@ export default function VehicleEditModal({ vehicle, open, onSave, onCancel }) {
     onSave({
       ...vehicle,
       registration: form.registration.toUpperCase().trim(),
-      make: form.make.trim(),
-      model: form.model.trim(),
+      notes: form.notes.trim(),
       colour: form.colour.trim(),
       damage_photos: localPhotos,
     });
@@ -97,25 +94,14 @@ export default function VehicleEditModal({ vehicle, open, onSave, onCancel }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-slate-300 text-sm">Make</Label>
-              <Input
-                value={form.make}
-                onChange={(e) => update("make", e.target.value)}
-                placeholder="e.g. Vauxhall"
-                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-slate-300 text-sm">Model</Label>
-              <Input
-                value={form.model}
-                onChange={(e) => update("model", e.target.value)}
-                placeholder="e.g. Astra"
-                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label className="text-slate-300 text-sm">Make &amp; Model</Label>
+            <Input
+              value={form.notes}
+              onChange={(e) => update("notes", e.target.value)}
+              placeholder="e.g. Peugeot 508, or fleet vehicle with tow bar"
+              className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+            />
           </div>
 
           <div className="space-y-1.5">

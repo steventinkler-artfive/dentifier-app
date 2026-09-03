@@ -137,14 +137,6 @@
           "registration": {
             "type": "string"
           },
-          "make": {
-            "type": "string",
-            "description": "Vehicle manufacturer"
-          },
-          "model": {
-            "type": "string",
-            "description": "Vehicle model"
-          },
           "colour": {
             "type": "string"
           },
