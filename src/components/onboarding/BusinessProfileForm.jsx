@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { uploadImageToS3 } from "@/utils/uploadImageToS3";
 
 export default function BusinessProfileForm({ formData, onChange, user }) {
   const fileInputRef = useRef(null);
@@ -16,7 +16,7 @@ export default function BusinessProfileForm({ formData, onChange, user }) {
 
     setLogoUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const file_url = await uploadImageToS3(file, "logo");
       onChange('business_logo_url', file_url);
     } catch (err) {
       console.error("Logo upload failed:", err);

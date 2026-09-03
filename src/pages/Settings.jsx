@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { User } from "@/entities/User";
 import { UserSetting } from "@/entities/UserSetting";
 import { GlobalSetting } from "@/entities/GlobalSetting";
-import { UploadFile } from "@/integrations/Core";
+import { uploadImageToS3 } from "@/utils/uploadImageToS3";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -566,7 +566,7 @@ export default function Settings() {
         setError(null);
         try {
             console.log("Uploading logo file:", file.name);
-            const { file_url } = await UploadFile({ file });
+            const file_url = await uploadImageToS3(file, "logo");
             console.log("Logo uploaded successfully. URL:", file_url);
             handleInputChange('business_logo_url', file_url);
             setLogoPreview(file_url); // Set logo preview

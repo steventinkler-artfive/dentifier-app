@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { uploadImageToS3 } from "@/utils/uploadImageToS3";
 import {
   Dialog,
   DialogContent,
@@ -50,12 +50,7 @@ export default function VehicleEditModal({ vehicle, open, onSave, onCancel }) {
     setUploading(true);
     try {
       const compressed = await compressMultipleImages(files);
-      const urls = await Promise.all(
-        compressed.map(async (f) => {
-          const r = await base44.integrations.Core.UploadFile({ file: f });
-          return r.file_url;
-        })
-      );
+      const urls = await Promise.all(compressed.map(f => uploadImageToS3(f, 'photo')));
       setLocalPhotos((prev) => [...prev, ...urls]);
     } catch (error) {
       console.error("Upload failed:", error);

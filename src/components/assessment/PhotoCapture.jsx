@@ -11,6 +11,7 @@ import { compressMultipleImages } from "../utils/imageCompression";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { toDisplayDamageType, toStoredDamageType, BASE_DAMAGE_TYPES_STORED } from "@/utils/damageTypeDisplay";
 import { getValidPricingEntries } from "@/utils/pricing";
+import { uploadImageToS3 } from "@/utils/uploadImageToS3";
 
 const CAR_PANELS = [
   "Bonnet/Hood",
@@ -123,10 +124,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
     setUploading(true);
     try {
       const compressed = await compressMultipleImages(files);
-      const urls = await Promise.all(compressed.map(async f => {
-        const r = await base44.integrations.Core.UploadFile({ file: f });
-        return r.file_url;
-      }));
+      const urls = await Promise.all(compressed.map(f => uploadImageToS3(f, 'photo')));
       setUploadedPhotos(prev => [...prev, ...urls]);
     } catch (error) {
       console.error("Upload failed:", error);
@@ -153,10 +151,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
     setUploadingItemIndex(itemIndex);
     try {
       const compressed = await compressMultipleImages(files);
-      const urls = await Promise.all(compressed.map(async f => {
-        const r = await base44.integrations.Core.UploadFile({ file: f });
-        return r.file_url;
-      }));
+      const urls = await Promise.all(compressed.map(f => uploadImageToS3(f, 'photo')));
       setDamageItems(prev => {
         const updated = [...prev];
         updated[itemIndex] = {

@@ -5,6 +5,9 @@
  * @param {number} maxHeight - Maximum height in pixels
  * @param {number} quality - JPEG quality (0-1)
  * @returns {Promise<File>} - Compressed image file
+ *
+ * Note: the canvas round-trip strips EXIF metadata (including any embedded
+ * GPS location) from photos before they are uploaded.
  */
 export async function compressImage(file, maxWidth = 1920, maxHeight = 1920, quality = 0.8) {
   return new Promise((resolve, reject) => {

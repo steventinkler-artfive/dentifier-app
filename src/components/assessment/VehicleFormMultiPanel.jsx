@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { uploadImageToS3 } from "@/utils/uploadImageToS3";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,7 +78,7 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
     setUploadingIdx(cardIdx);
     try {
       const compressed = await compressMultipleImages(files);
-      const urls = await Promise.all(compressed.map(f => base44.integrations.Core.UploadFile({ file: f }).then(r => r.file_url)));
+      const urls = await Promise.all(compressed.map(f => uploadImageToS3(f, 'photo')));
       setVehicleCards(prev => {
         const updated = [...prev];
         updated[cardIdx] = { ...updated[cardIdx], photo_urls: [...updated[cardIdx].photo_urls, ...urls] };
