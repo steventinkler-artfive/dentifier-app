@@ -126,6 +126,7 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
   const [userSettings, setUserSettings] = useState(null);
   const [globalSettings, setGlobalSettings] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [slowWarning, setSlowWarning] = useState(false);
 
   useEffect(() => { loadSettings(); }, []);
 
@@ -149,6 +150,16 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
       performAnalysis();
     }
   }, [userSettings, globalSettings, analysis, analyzing, error]);
+
+  // After 10s of analysing, reassure the user the call is still in flight
+  useEffect(() => {
+    if (!analyzing) {
+      setSlowWarning(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowWarning(true), 10000);
+    return () => clearTimeout(timer);
+  }, [analyzing]);
 
   const performAnalysis = async () => {
     setAnalyzing(true);
@@ -305,6 +316,11 @@ OUTPUT: JSON only. No other text.`;
           <h3 className="text-xl font-semibold text-white mb-2">Dentifier Analysing...</h3>
           <p className="text-slate-400 mb-4">Cross-referencing photos with your inputs</p>
           <Loader2 className="w-6 h-6 text-rose-400 animate-spin mx-auto" />
+          {slowWarning && (
+            <p className="text-amber-400 text-sm mt-4 animate-pulse">
+              Taking longer than usual — still working on it, this can occasionally take up to a minute.
+            </p>
+          )}
         </CardContent>
       </Card>
     );
