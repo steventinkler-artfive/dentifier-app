@@ -78,6 +78,7 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
 
   const handlePhotoUpload = async (cardIdx, files) => {
     if (!files || files.length === 0) return;
+    setError('');
     setUploadingIdx(cardIdx);
     try {
       const compressed = await compressMultipleImages(files);
@@ -89,6 +90,7 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
       });
     } catch (e) {
       console.error('Upload failed:', e);
+      setError(`Photo upload failed for Vehicle ${cardIdx + 1} — the photo was not added. Please try again.`);
     } finally {
       setUploadingIdx(null);
     }
@@ -103,6 +105,12 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
   };
 
   const handleContinue = () => {
+    // Don't advance while a photo upload is in flight — the pending state
+    // update would be discarded on unmount (silent photo loss).
+    if (uploadingIdx !== null) {
+      setError('Photos are still uploading — please wait a moment.');
+      return;
+    }
     setError('');
     for (let card of vehicleCards) {
       const validPanels = (card.panels || []).filter(p => p.panel);
@@ -349,9 +357,17 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
 
       <Button
         onClick={handleContinue}
+        disabled={uploadingIdx !== null}
         className="w-full pink-gradient text-white font-semibold h-12"
       >
-        Continue to Quote
+        {uploadingIdx !== null ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            Uploading photos…
+          </>
+        ) : (
+          'Continue to Quote'
+        )}
       </Button>
 
       <ImageViewer
