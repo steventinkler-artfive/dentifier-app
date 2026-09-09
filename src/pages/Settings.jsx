@@ -22,6 +22,7 @@ import { isValidBanking, hasBankingErrors } from "@/utils/bankingValidation";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { deleteS3ObjectsBestEffort } from "@/utils/s3Cleanup";
 
 const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 
@@ -738,7 +739,18 @@ export default function Settings() {
                                         {logoPreview && (
                                             <Button
                                             type="button"
-                                            onClick={() => { handleInputChange('business_logo_url', ''); setLogoPreview(null); }}
+                                            onClick={() => {
+                                                const removedUrl = formData.business_logo_url;
+                                                handleInputChange('business_logo_url', '');
+                                                setLogoPreview(null);
+                                                if (removedUrl) {
+                                                    deleteS3ObjectsBestEffort([removedUrl], {
+                                                        triggerPath: 'logo_removal',
+                                                        recordType: 'UserSetting',
+                                                        recordId: settings?.id || null
+                                                    });
+                                                }
+                                            }}
                                             variant="outline"
                                             className="bg-red-900 border-red-700 text-red-300 hover:bg-red-800 hover:text-white hover:border-red-600"
                                             >

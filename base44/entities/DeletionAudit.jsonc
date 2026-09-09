@@ -1,0 +1,121 @@
+{
+  "name": "DeletionAudit",
+  "type": "object",
+  "properties": {
+    "trigger_path": {
+      "type": "string",
+      "enum": [
+        "assessment_delete",
+        "account_delete",
+        "photo_removal",
+        "logo_removal"
+      ],
+      "description": "Which deletion path fired this attempt"
+    },
+    "record_type": {
+      "type": "string",
+      "enum": [
+        "Assessment",
+        "UserSetting",
+        "User"
+      ],
+      "description": "Parent record the targeted S3 objects belong to"
+    },
+    "record_id": {
+      "type": "string",
+      "description": "ID of the parent record (null for pre-save photo/logo removals)"
+    },
+    "target_user_id": {
+      "type": "string",
+      "description": "User whose S3 prefix was targeted (the account owner, not necessarily the caller)"
+    },
+    "performed_by_email": {
+      "type": "string",
+      "description": "Email of the authenticated user who triggered the deletion"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "deleted",
+              "skipped_not_s3",
+              "rejected_cross_user",
+              "failed"
+            ]
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Per-key deletion outcomes"
+    },
+    "deleted_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "How many S3 objects were deleted (or already absent)"
+    },
+    "failed_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "How many S3 deletes failed"
+    },
+    "skipped_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "How many URLs were skipped (not S3-hosted) or rejected (cross-user)"
+    },
+    "overall_status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "partial",
+        "failed",
+        "blocked"
+      ],
+      "description": "Outcome of the deletion attempt"
+    },
+    "context": {
+      "type": "string",
+      "description": "Free-form context (e.g. associated-data flag, blocking failure summary)"
+    }
+  },
+  "required": [
+    "trigger_path",
+    "target_user_id",
+    "performed_by_email",
+    "overall_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -16,6 +16,7 @@ import CalculationBreakdown from "../components/assessment/CalculationBreakdown"
 import ImageViewer from '../components/ui/ImageViewer';
 import PerPanelQuoteView from "../components/assessment/PerPanelQuoteView";
 import { useAlert } from "@/components/ui/CustomAlert";
+import { collectAssessmentImageUrls, deleteS3ObjectsBestEffort } from "@/utils/s3Cleanup";
 import {
   ArrowLeft,
   User as UserIcon,
@@ -338,6 +339,13 @@ export default function AssessmentDetail() {
     
     setIsDeleting(true);
     try {
+      // Best-effort S3 cleanup: photos are attempted first; the record is
+      // deleted regardless of the S3 outcome (logged to DeletionAudit).
+      await deleteS3ObjectsBestEffort(collectAssessmentImageUrls(assessment), {
+        triggerPath: 'assessment_delete',
+        recordType: 'Assessment',
+        recordId: assessment.id
+      });
       await base44.entities.Assessment.delete(assessment.id);
       navigate(backUrl);
     } catch (error) {

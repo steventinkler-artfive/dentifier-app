@@ -12,6 +12,7 @@ import { useAlert } from "@/components/ui/CustomAlert";
 import { toDisplayDamageType, toStoredDamageType, BASE_DAMAGE_TYPES_STORED } from "@/utils/damageTypeDisplay";
 import { getValidPricingEntries } from "@/utils/pricing";
 import { uploadImageToS3 } from "@/utils/uploadImageToS3";
+import { deleteS3ObjectsBestEffort } from "@/utils/s3Cleanup";
 
 const CAR_PANELS = [
   "Bonnet/Hood",
@@ -136,7 +137,16 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   };
 
   const handleRemovePhoto = (idx) => {
+    const removedUrl = uploadedPhotos[idx];
     setUploadedPhotos(prev => prev.filter((_, i) => i !== idx));
+    // Best-effort S3 delete — only if no damage item still references the photo.
+    if (removedUrl && !damageItems.some(item => (item.associated_photos_urls || []).includes(removedUrl))) {
+      deleteS3ObjectsBestEffort([removedUrl], {
+        triggerPath: 'photo_removal',
+        recordType: 'Assessment',
+        context: 'global photo pool'
+      });
+    }
   };
 
   // ── Per-item photo upload ─────────────────────────────────────────────────
@@ -180,6 +190,21 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
       };
       return updated;
     });
+    // Best-effort S3 delete — only once the photo is gone from every
+    // reference: other items and the global pool (item photos are
+    // mirrored there at upload time).
+    const stillReferenced =
+      uploadedPhotos.includes(photoUrl) ||
+      damageItems.some((item, i) =>
+        i !== itemIndex && (item.associated_photos_urls || []).includes(photoUrl)) ||
+      (damageItems[itemIndex]?.associated_photos_urls || []).filter(u => u !== photoUrl).includes(photoUrl);
+    if (!stillReferenced) {
+      deleteS3ObjectsBestEffort([photoUrl], {
+        triggerPath: 'photo_removal',
+        recordType: 'Assessment',
+        context: 'damage item photo'
+      });
+    }
   };
 
   // ── Card expand/collapse ──────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import { Camera, Upload, X, Plus, Loader2 } from "lucide-react";
 import { compressMultipleImages } from "../utils/imageCompression";
 import ImageViewer from "@/components/ui/ImageViewer";
 import { getColourOptions } from "@/utils/vehicleColours";
+import { deleteS3ObjectsBestEffort } from "@/utils/s3Cleanup";
 
 const CAR_PANELS = [
   "Bonnet/Hood",
@@ -97,11 +98,20 @@ export default function VehicleFormMultiPanel({ customer, onComplete, defaultPan
   };
 
   const removePhoto = (cardIdx, photoIdx) => {
+    const removedUrl = vehicleCards[cardIdx].damage_photos[photoIdx];
     setVehicleCards(prev => {
       const updated = [...prev];
       updated[cardIdx] = { ...updated[cardIdx], damage_photos: updated[cardIdx].damage_photos.filter((_, i) => i !== photoIdx) };
       return updated;
     });
+    // Best-effort S3 delete — only if no other vehicle card still references it.
+    if (removedUrl && !vehicleCards.some((card, i) => i !== cardIdx && (card.damage_photos || []).includes(removedUrl))) {
+      deleteS3ObjectsBestEffort([removedUrl], {
+        triggerPath: 'photo_removal',
+        recordType: 'Assessment',
+        context: 'vehicle form photo'
+      });
+    }
   };
 
   const handleContinue = () => {
