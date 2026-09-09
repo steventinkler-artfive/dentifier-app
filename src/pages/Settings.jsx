@@ -633,6 +633,12 @@ export default function Settings() {
     // settings could be null if no record exists yet, but formData will have defaults
     // so rendering is safe if loading is false.
 
+    // Logo upload gate — tier-based, mirrors Reports.jsx; beta testers keep free access
+    const isProfessionalOrBeta =
+        ['professional', 'founder', 'early_bird'].includes(user?.subscription_tier) ||
+        user?.is_beta_tester === true ||
+        user?.data?.is_beta_tester === true;
+
     return (
         <div className={`p-4 max-w-4xl mx-auto space-y-6 ${isDirtyPricing && activeTab === 'pricing' ? 'pb-44' : ''}`}>
             <div>
@@ -702,7 +708,7 @@ export default function Settings() {
 
                             <div className="space-y-2">
                                 <Label className="text-white">Business Logo</Label>
-                                {user?.subscription_plan === 'professional' || user?.subscription_plan === 'founder' || user?.subscription_plan === 'early_bird' || user?.subscription_status === 'active' || user?.subscription_status === 'trialing' || localStorage.getItem('selected_plan_tier') === 'professional' || localStorage.getItem('just_subscribed') || user?.is_beta_tester === true || user?.data?.is_beta_tester === true ? (
+                                {isProfessionalOrBeta ? (
                                     <div className="flex flex-col gap-3">
                                         {logoPreview && (
                                         <div className="relative w-48 h-24 bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
