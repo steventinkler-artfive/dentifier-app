@@ -883,6 +883,15 @@ export default function AdminUsers() {
               </div>
             )}
 
+            {/* Stripe cancellation warning — shown whenever the target has a live subscription */}
+            {selectedUserToDelete?.stripe_subscription_id &&
+              ['active', 'trialing', 'past_due'].includes(selectedUserToDelete?.subscription_status) && (
+              <div className="rounded-lg border border-amber-700 bg-amber-900/20 p-4 space-y-2">
+                <p className="text-amber-400 font-semibold text-sm">⚠️ Subscription will be cancelled</p>
+                <p className="text-slate-300 text-sm">This user has an active Stripe subscription. Deleting their account will immediately cancel it with no refund for the current billing period. Their billing history will be retained in Stripe.</p>
+              </div>
+            )}
+
             {/* Confirm input */}
             <div className="space-y-2">
               <Label className="text-slate-300 text-sm">Type <span className="font-mono font-bold text-white">DELETE</span> to confirm</Label>

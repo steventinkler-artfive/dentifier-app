@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import Stripe from 'npm:stripe@17.5.0';
 
 Deno.serve(async (req) => {
   try {
@@ -34,6 +35,46 @@ Deno.serve(async (req) => {
         console.error('Failed to write DeletionAudit record:', auditError);
       }
     };
+
+    // --- Stripe subscription cancellation ---
+    // Runs on BOTH deletion paths (with or without associated data), before
+    // any S3 or database deletion. If the tech has an active subscription it
+    // is cancelled immediately (no proration/refund); the Stripe customer
+    // record is retained for billing history. On failure we block the whole
+    // deletion so no subscription is left uncancelled and uncontactable.
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+    const targetUser = await base44.asServiceRole.entities.User.get(userId);
+    const subscriptionId = targetUser?.stripe_subscription_id;
+
+    if (subscriptionId) {
+      try {
+        let stripeContext;
+        try {
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          if (sub.status === 'canceled') {
+            stripeContext = `Stripe subscription ${subscriptionId} already cancelled in Stripe — skipped`;
+          } else {
+            await stripe.subscriptions.cancel(subscriptionId, { prorate: false });
+            stripeContext = `Stripe subscription ${subscriptionId} cancelled immediately (no proration, customer record retained)`;
+          }
+        } catch (stripeError) {
+          // Subscription no longer exists in Stripe (e.g. cancelled there directly)
+          if (stripeError?.code === 'resource_missing') {
+            stripeContext = `Stripe subscription ${subscriptionId} no longer exists in Stripe — skipped`;
+          } else {
+            throw stripeError;
+          }
+        }
+        await writeAudit([], 'success', stripeContext);
+      } catch (stripeError) {
+        await writeAudit([], 'blocked', `Stripe cancellation failed for subscription ${subscriptionId}: ${stripeError.message}`);
+        return Response.json({
+          error: 'Stripe subscription could not be cancelled — nothing was deleted. Please retry.'
+        }, { status: 502 });
+      }
+    } else {
+      await writeAudit([], 'success', 'No Stripe subscription on record — Stripe step skipped');
+    }
 
     if (deleteAssociatedData) {
       const [assessments, customers, vehicles, userSettings] = await Promise.all([
