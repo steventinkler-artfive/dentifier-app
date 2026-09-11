@@ -411,6 +411,19 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
   };
 }
 
+/**
+ * Determines the outcome-caveat type for a damage item.
+ * Computed in code so the notes LLM never infers hedging from depth or
+ * repair method on its own — the prompt consumes this value verbatim.
+ */
+function getCaveatType(damageItem) {
+  if (damageItem.has_stretched_metal) return 'stretched_metal';
+  if (damageItem.repair_method === 'Limited Tool Access') return 'limited_access';
+  if (damageItem.depth === 'Deep / Sharp') return 'deep_depth';
+  if (damageItem.depth === 'Medium') return 'medium_depth';
+  return 'none';
+}
+
 // ============================================================================
 // REACT COMPONENT
 // ============================================================================
@@ -747,7 +760,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
             ? observations.map(o => `Photo observation (${o.panel}): ${o.observation}`).join('\n')
             : '';
           const damageContext = damageItems.map((item, idx) =>
-            `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.paint_type && item.paint_type !== 'Standard' ? ` | Paint type: ${item.paint_type}` : ''}${item.notes ? ` | Notes: ${item.notes}` : ''}`
+            `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.paint_type && item.paint_type !== 'Standard' ? ` | Paint type: ${item.paint_type}` : ''} | Caveat type: ${getCaveatType(item)}${item.notes ? ` | Notes: ${item.notes}` : ''}`
           ).join('\n') + (observationsText ? `\n${observationsText}` : '');
 
           const notesPrompt = `${globalSettings.llm_quote_instructions}
