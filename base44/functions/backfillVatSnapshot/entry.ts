@@ -103,7 +103,15 @@ export default async function(req) {
     // schema-coerced payload (legacy vehicles[].estimated_time_hours types).
     const stampRecord = async (r) => {
       const payloads = [{ vat_snapshot: r.snapshot }];
-      if (r.record.vehicles) payloads.push({ vat_snapshot: r.snapshot, vehicles: sanitizeVehicles(r.record) });
+      // Coerced fallback: legacy non-string vehicles[].estimated_time_hours AND
+      // top-level estimated_time_hours values fail schema validation on write —
+      // null omitted, numbers stringified (semantic no-op).
+      const fallback = { vat_snapshot: r.snapshot };
+      if (r.record.vehicles) fallback.vehicles = sanitizeVehicles(r.record);
+      if (r.record.estimated_time_hours != null && typeof r.record.estimated_time_hours !== 'string') {
+        fallback.estimated_time_hours = String(r.record.estimated_time_hours);
+      }
+      payloads.push(fallback);
 
       let lastError = null;
       for (const payload of payloads) {
