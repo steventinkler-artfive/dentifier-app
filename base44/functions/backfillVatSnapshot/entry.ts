@@ -87,20 +87,32 @@ export default async function(req) {
       return { ...v, estimated_time_hours: String(v.estimated_time_hours) };
     });
 
+    const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+    const isRateLimit = (msg) => /rate limit/i.test(msg || '');
+
+    // Throttled write: retries rate limits with backoff, then falls back to a
+    // schema-coerced payload (legacy vehicles[].estimated_time_hours types).
     const stampRecord = async (r) => {
-      try {
-        await svc.entities.Assessment.update(r.id, { vat_snapshot: r.snapshot });
-        return { ok: true, coerced: false };
-      } catch (e) {
-        try {
-          const retry = { vat_snapshot: r.snapshot };
-          if (r.record.vehicles) retry.vehicles = sanitizeVehicles(r.record);
-          await svc.entities.Assessment.update(r.id, retry);
-          return { ok: true, coerced: true };
-        } catch (e2) {
-          return { ok: false, error: e2.message };
+      const payloads = [{ vat_snapshot: r.snapshot }];
+      if (r.record.vehicles) payloads.push({ vat_snapshot: r.snapshot, vehicles: sanitizeVehicles(r.record) });
+
+      let lastError = null;
+      for (const payload of payloads) {
+        for (let attempt = 0; attempt < 5; attempt++) {
+          try {
+            await svc.entities.Assessment.update(r.id, payload);
+            return { ok: true, coerced: payload.vehicles !== undefined };
+          } catch (e) {
+            lastError = e.message;
+            if (isRateLimit(e.message)) {
+              await sleep(3000);
+              continue;
+            }
+            break; // non-rate-limit error → try next payload
+          }
         }
       }
+      return { ok: false, error: lastError };
     };
 
     let stamped = 0;
@@ -120,6 +132,7 @@ export default async function(req) {
           } else {
             failures.push({ id: r.id, error: outcome.error });
           }
+          await sleep(300); // throttle per-record writes under rate limits
         }
       }
     }
