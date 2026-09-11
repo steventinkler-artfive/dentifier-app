@@ -167,8 +167,13 @@ export default async function(req) {
                 bank_sort_code: settings.bank_sort_code,
                 bank_account_number: settings.bank_account_number,
                 bank_iban: settings.bank_iban,
-                is_vat_registered: settings.is_vat_registered,
-                tax_rate: settings.tax_rate,
+                // Frozen VAT snapshot when present; drafts fall back to live settings
+                is_vat_registered: assessment.vat_snapshot
+                    ? !!assessment.vat_snapshot.is_vat_registered
+                    : settings.is_vat_registered,
+                tax_rate: assessment.vat_snapshot
+                    ? (assessment.vat_snapshot.tax_rate ?? 20)
+                    : settings.tax_rate,
             } : null,
         });
     } catch (error) {

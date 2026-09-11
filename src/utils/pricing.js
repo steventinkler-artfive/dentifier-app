@@ -7,6 +7,8 @@
  * @param {Array} pricingMatrix - The raw pricing_matrix array from UserSetting
  * @returns {Array} Only entries with a non-empty damage_type and size_range
  */
+import { getVatContext } from "@/utils/vatSnapshot";
+
 export function getValidPricingEntries(pricingMatrix) {
   if (!Array.isArray(pricingMatrix)) return [];
   return pricingMatrix.filter(
@@ -29,6 +31,7 @@ export function getValidPricingEntries(pricingMatrix) {
 export function calcDisplayTotal(assessment, userSettings) {
   const qAmt = assessment?.quote_amount || 0;
   const sub = (assessment?.total_amount ?? (qAmt - (qAmt * (assessment?.discount_percentage || 0) / 100))) || 0;
-  const vat = userSettings?.is_vat_registered ? (sub * (userSettings.tax_rate || 0)) / 100 : 0;
+  const { isVatRegistered, vatRate } = getVatContext(assessment, userSettings);
+  const vat = isVatRegistered ? (sub * vatRate) / 100 : 0;
   return sub + vat;
 }

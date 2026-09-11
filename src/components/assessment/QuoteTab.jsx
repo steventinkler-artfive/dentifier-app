@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getVatContext } from "@/utils/vatSnapshot";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -135,8 +136,7 @@ export default function QuoteTab({
   const discountPct = assessment.discount_percentage || 0;
   const discountAmt = (subtotal * discountPct) / 100;
   const netTotal = subtotal - discountAmt;
-  const isVat = userSettings?.is_vat_registered;
-  const vatRate = userSettings?.tax_rate || 0;
+  const { isVatRegistered: isVat, vatRate } = getVatContext(assessment, userSettings);
   const vatAmt = isVat ? (netTotal * vatRate) / 100 : 0;
   const grandTotal = netTotal + vatAmt;
 

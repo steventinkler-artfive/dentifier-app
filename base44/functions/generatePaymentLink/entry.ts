@@ -35,7 +35,11 @@ Deno.serve(async (req) => {
 
     // Calculate the correct final amount (mirrors app-wide display logic)
     const subtotal = (assessment.total_amount ?? assessment.quote_amount) || 0;
-    const vatAmt = settings.is_vat_registered ? subtotal * ((settings.tax_rate || 0) / 100) : 0;
+    // Charge the assessment's frozen VAT snapshot when present; drafts use live settings
+    const vatSnap = assessment.vat_snapshot;
+    const isVat = vatSnap ? !!vatSnap.is_vat_registered : !!settings.is_vat_registered;
+    const vatRate = (vatSnap ? vatSnap.tax_rate : settings.tax_rate) || 0;
+    const vatAmt = isVat ? subtotal * (vatRate / 100) : 0;
     const amount = subtotal + vatAmt;
 
     // Get customer details for payment description

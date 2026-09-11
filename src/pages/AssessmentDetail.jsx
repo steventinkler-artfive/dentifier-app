@@ -17,6 +17,7 @@ import ImageViewer from '../components/ui/ImageViewer';
 import PerPanelQuoteView from "../components/assessment/PerPanelQuoteView";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { collectAssessmentImageUrls, deleteS3ObjectsBestEffort } from "@/utils/s3Cleanup";
+import { buildVatSnapshot, getVatContext } from "@/utils/vatSnapshot";
 import {
   ArrowLeft,
   User as UserIcon,
@@ -257,6 +258,14 @@ export default function AssessmentDetail() {
         estimated_time_hours: assessment.estimated_time_hours ? String(assessment.estimated_time_hours) : null
       };
 
+      // Freeze the VAT snapshot when the quote first leaves draft status;
+      // clear it when returning to draft so live settings apply again
+      if (assessment.status === 'draft' && newStatus !== 'draft') {
+        updateData.vat_snapshot = buildVatSnapshot(userSettings);
+      } else if (newStatus === 'draft') {
+        updateData.vat_snapshot = null;
+      }
+
       // Record sent_date when status moves to 'sent'
       if (newStatus === 'sent' && !assessment.sent_date) {
         updateData.sent_date = new Date().toISOString();
@@ -363,6 +372,7 @@ export default function AssessmentDetail() {
       // Auto-advance draft → ready when customer is assigned
       if (assessment.status === 'draft') {
         updateData.status = 'ready';
+        updateData.vat_snapshot = buildVatSnapshot(userSettings);
       }
       await base44.entities.Assessment.update(assessment.id, updateData);
       await loadAssessmentDetails();
@@ -648,7 +658,8 @@ export default function AssessmentDetail() {
         if (!isInvoice && assessment.status !== 'sent' && assessment.status !== 'approved' && assessment.status !== 'completed') {
           await base44.entities.Assessment.update(assessment.id, {
             status: 'sent',
-            sent_date: new Date().toISOString()
+            sent_date: new Date().toISOString(),
+            ...(assessment.status === 'draft' ? { vat_snapshot: buildVatSnapshot(userSettings) } : {})
           });
           await loadAssessmentDetails();
         }
@@ -763,7 +774,8 @@ export default function AssessmentDetail() {
       }
     }
 
-    const _dp = assessment.discount_percentage || 0, _iv = userSettings?.is_vat_registered, _vr = userSettings?.tax_rate || 0;
+    const _dp = assessment.discount_percentage || 0;
+    const { isVatRegistered: _iv, vatRate: _vr } = getVatContext(assessment, userSettings);
     const _sub = (assessment.is_multi_vehicle || isPerPanelShare) && assessment.vehicles?.length
       ? assessment.vehicles.reduce((s, v) => {
           const vTotal = v.quote_amount || (v.line_items || []).reduce((ls, i) => ls + ((i.quantity || 1) * (i.unit_price || 0)), 0);
@@ -1067,7 +1079,8 @@ export default function AssessmentDetail() {
                 {(() => {
                   const qAmt = assessment.quote_amount || 0;
                   const sub = (assessment.total_amount ?? (qAmt - (qAmt * (assessment.discount_percentage || 0) / 100))) || 0;
-                  const vat = userSettings?.is_vat_registered ? (sub * (userSettings.tax_rate || 0)) / 100 : 0;
+                  const { isVatRegistered, vatRate } = getVatContext(assessment, userSettings);
+                  const vat = isVatRegistered ? (sub * vatRate) / 100 : 0;
                   return formatCurrency(sub + vat, assessment.currency || 'GBP');
                 })()}
               </span>

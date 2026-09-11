@@ -263,6 +263,19 @@
     "creator_email": {
       "type": "string",
       "description": "Email of the user who created this assessment (copied from created_by for filtering)"
+    },
+    "vat_snapshot": {
+      "type": "object",
+      "description": "Permanent snapshot of VAT registration and rate, frozen when the quote first leaves draft status. Null while still a draft (live settings are read instead).",
+      "properties": {
+        "is_vat_registered": {
+          "type": "boolean"
+        },
+        "tax_rate": {
+          "type": "number",
+          "description": "VAT rate as a percentage (e.g. 20 for 20%)"
+        }
+      }
     }
   },
   "required": [],

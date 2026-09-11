@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { CreditCard } from "lucide-react";
+import { getVatContext } from "@/utils/vatSnapshot";
 
 const DEFAULT_DENTIFIER_LOGO = "https://art-five-cdn.b-cdn.net/dentifier-full-colour-straphi-res.png";
 
@@ -86,8 +87,7 @@ export default function QuotePDFContent({
   );
 
   const discountPct = assessment.discount_percentage || 0;
-  const isVatRegistered = userSettings?.is_vat_registered || false;
-  const vatRate = userSettings?.tax_rate || 0;
+  const { isVatRegistered, vatRate } = getVatContext(assessment, userSettings);
 
   let subtotal = 0;
   if (isMultiVehicle || isPerPanelSingleVehicle) {

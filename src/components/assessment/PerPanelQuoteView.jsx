@@ -12,6 +12,7 @@ import AddVehicleForm from "./AddVehicleForm";
 import VehicleEditModal from "./VehicleEditModal";
 import ImageViewer from "@/components/ui/ImageViewer";
 import { useAlert } from "@/components/ui/CustomAlert";
+import { getVatContext } from "@/utils/vatSnapshot";
 
 
 const CAR_PANELS = [
@@ -280,8 +281,7 @@ export default function PerPanelQuoteView({
   const discountPct = assessment.discount_percentage || 0;
   const discountAmt = (subtotal * discountPct) / 100;
   const netTotal = subtotal - discountAmt;
-  const isVat = userSettings?.is_vat_registered;
-  const vatRate = userSettings?.tax_rate || 0;
+  const { isVatRegistered: isVat, vatRate } = getVatContext(assessment, userSettings);
   const vatAmt = isVat ? (netTotal * vatRate) / 100 : 0;
   const grandTotal = netTotal + vatAmt;
 

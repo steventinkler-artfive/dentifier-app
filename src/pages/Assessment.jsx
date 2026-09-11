@@ -18,6 +18,7 @@ import DamageAnalysis from "../components/assessment/DamageAnalysis";
 import QuoteGeneration from "../components/assessment/QuoteGeneration";
 import { SkillsIncompleteBanner } from "@/components/onboarding/OnboardingBanners";
 import { calculateEstimatedTimeRange } from "@/utils/timeEstimate";
+import { buildVatSnapshot } from "@/utils/vatSnapshot";
 
 const DentifierIcon = ({ className = "" }) => (
   <svg 
@@ -224,6 +225,11 @@ export default function AssessmentPage() {
           creator_email: currentUserData?.email
         };
 
+        // Freeze VAT status at creation when the quote is born finalised
+        if (assessmentPayload.status === 'ready') {
+          assessmentPayload.vat_snapshot = buildVatSnapshot(userSettingsData);
+        }
+
         const savedAssessment = await Assessment.create(assessmentPayload);
         navigate(createPageUrl(`AssessmentDetail?id=${savedAssessment.id}`));
         return;
@@ -331,6 +337,11 @@ export default function AssessmentPage() {
       // Now assign the generated quote number and creator email to the assessment payload
       assessmentPayload.quote_number = formattedQuoteNumber;
       assessmentPayload.creator_email = currentUser?.email;
+
+      // Freeze VAT status at creation when the quote is born finalised
+      if (assessmentPayload.status === 'ready') {
+        assessmentPayload.vat_snapshot = buildVatSnapshot(userSettings);
+      }
 
       console.log('Creating assessment with payload:', assessmentPayload);
       const savedAssessment = await Assessment.create(assessmentPayload);

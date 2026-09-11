@@ -29,6 +29,7 @@ import { jsPDF } from "jspdf";
 import { base44 } from "@/api/base44Client";
 import ClientStatementPDF from "@/components/reports/ClientStatementPDF";
 import EmailModal from "@/components/EmailModal";
+import { getVatContext } from "@/utils/vatSnapshot";
 
 export default function Reports() {
   const [assessments, setAssessments] = useState([]);
@@ -200,9 +201,11 @@ export default function Reports() {
     return `${symbol}${Math.round(amount).toLocaleString()}`;
   };
 
-  const calculateVAT = (amount) => {
-    if (!stats.isVatRegistered) return 0;
-    return (amount * stats.taxRate) / 100;
+  // Per-record VAT: uses the record's own frozen snapshot when present,
+  // falling back to live settings for records without one.
+  const calculateVAT = (assessment, amount) => {
+    const { isVatRegistered, vatRate } = getVatContext(assessment, userSettings);
+    return isVatRegistered ? (amount * vatRate) / 100 : 0;
   };
 
   const getPeriodLabel = () => {
@@ -476,13 +479,14 @@ export default function Reports() {
     let headers, rows, filename;
 
     if (csvFormat === 'xero') {
-      const tax = resolveXeroTaxCode(userSettings);
       headers = ['ContactName', 'InvoiceNumber', 'InvoiceDate', 'DueDate', 'Description', 'Quantity', 'UnitAmount', 'AccountCode', 'TaxType'];
       rows = filteredAssessments.map(assessment => {
         const customer = customers[assessment.customer_id];
         const invoiceNumber = assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
         const invoiceDate = new Date(assessment.created_date).toLocaleDateString('en-GB');
         const subtotal = buildNetSubtotal(assessment);
+        const vatCtx = getVatContext(assessment, userSettings);
+        const tax = resolveXeroTaxCode({ is_vat_registered: vatCtx.isVatRegistered, tax_rate: vatCtx.vatRate });
         return [
           csvEscape(customer?.business_name || customer?.name || 'N/A'),
           csvEscape(invoiceNumber),
@@ -497,8 +501,7 @@ export default function Reports() {
       });
       filename = `dentifier-xero-${dateStr}.csv`;
     } else if (csvFormat === 'quickbooks') {
-      const tax = resolveQuickBooksVatCode(userSettings);
-      const includeTaxCol = !!userSettings?.is_vat_registered;
+      const includeTaxCol = filteredAssessments.some(a => getVatContext(a, userSettings).isVatRegistered);
       headers = ['Invoice No.', 'Customer', 'Invoice Date', 'Due Date', 'Terms', 'Item(Product/Service)', 'Item Description', 'Item Quantity', 'Item Rate', 'Item Amount'];
       if (includeTaxCol) headers.push(QB_TAX_HEADER);
       rows = filteredAssessments.map(assessment => {
@@ -506,6 +509,8 @@ export default function Reports() {
         const invoiceNumber = assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
         const invoiceDate = new Date(assessment.created_date).toLocaleDateString('en-GB');
         const subtotal = buildNetSubtotal(assessment);
+        const vatCtx = getVatContext(assessment, userSettings);
+        const tax = resolveQuickBooksVatCode({ is_vat_registered: vatCtx.isVatRegistered, tax_rate: vatCtx.vatRate });
         const row = [
           csvEscape(invoiceNumber),
           csvEscape(customer?.business_name || customer?.name || 'N/A'),
@@ -553,7 +558,7 @@ export default function Reports() {
         }
 
         const subtotal = buildNetSubtotal(assessment);
-        const vatAmount = calculateVAT(subtotal);
+        const vatAmount = calculateVAT(assessment, subtotal);
         const payStatus = assessment.payment_status || 'pending';
         const paymentDate = payStatus === 'paid' && assessment.updated_date
           ? new Date(assessment.updated_date).toLocaleDateString('en-GB')
@@ -597,10 +602,10 @@ export default function Reports() {
   // Branches mirror the resolver logic (not registered / standard 20% / non-standard).
   const getVatHelpText = (providerName) => {
     if (!userSettings?.is_vat_registered) {
-      return "You're not VAT registered, so no VAT will be added to this export.";
+      return "Each invoice is exported with the VAT status recorded when it was finalised, so invoices from before you registered won't have VAT added.";
     }
     if (Number(userSettings?.tax_rate) === 20) {
-      return `VAT will be added automatically when ${providerName} imports this file.`;
+      return `Each invoice is exported with the VAT status recorded when it was finalised, and ${providerName} will add VAT where applicable.`;
     }
     return `Your VAT rate doesn't match ${providerName}'s standard options — you'll need to set the VAT rate manually after importing.`;
   };
@@ -952,7 +957,7 @@ export default function Reports() {
             const customer = customers[assessment.customer_id];
             const invoiceNumber = assessment.invoice_number || assessment.quote_number || `#${assessment.id.slice(-6)}`;
             const amount = assessment.quote_amount || 0;
-            const vatAmount = calculateVAT(amount);
+            const vatAmount = calculateVAT(assessment, amount);
             const isPaid = assessment.payment_status === 'paid';
             const customerName = customer ? (customer.business_name || customer.name) : 'Unknown Customer';
 
@@ -989,7 +994,7 @@ export default function Reports() {
                       <p className="text-green-400 font-semibold text-lg">
                         {formatCurrency(amount, stats.currency)}
                       </p>
-                      {stats.isVatRegistered && (
+                      {getVatContext(assessment, userSettings).isVatRegistered && (
                         <p className="text-slate-400 text-xs">
                           VAT: {formatCurrency(vatAmount, stats.currency)}
                         </p>
