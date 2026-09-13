@@ -113,6 +113,17 @@ export default function AssessmentDetail() {
   const [copiedPaymentLink, setCopiedPaymentLink] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
+  // Vehicle deep-link guard: a ?vehicle= param that is absent, non-numeric or
+  // out of range for this record is ignored — the whole record opens normally.
+  const getValidVehicleIndex = () => {
+    if (vehicleIndex === null || !assessment) return null;
+    const idx = parseInt(vehicleIndex, 10);
+    if (Number.isNaN(idx) || idx < 0 || !Array.isArray(assessment.vehicles) || idx >= assessment.vehicles.length) {
+      return null;
+    }
+    return idx;
+  };
+
   const handleCopyPaymentLink = () => {
     navigator.clipboard.writeText(assessment.payment_link_url);
     setCopiedPaymentLink(true);
@@ -470,7 +481,8 @@ export default function AssessmentDetail() {
 
   const handleViewPDF = async () => {
     if (!assessment) return;
-    navigate(createPageUrl(`QuotePDF?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`));
+    const vi = getValidVehicleIndex();
+    navigate(createPageUrl(`QuotePDF?id=${assessment.id}${vi !== null ? `&vehicle=${vi}` : ''}&include_notes=${includeNotesInQuote ? 'true' : 'false'}`));
   };
 
   /**
@@ -924,26 +936,28 @@ export default function AssessmentDetail() {
     );
   }
 
-  const currentVehicleData = assessment.is_multi_vehicle && vehicleIndex !== null
-    ? assessment.vehicles[parseInt(vehicleIndex)]
+  const validVehicleIndex = getValidVehicleIndex();
+
+  const currentVehicleData = assessment.is_multi_vehicle && validVehicleIndex !== null
+    ? assessment.vehicles[validVehicleIndex]
     : assessment;
 
-  const currentPhotos = assessment.is_multi_vehicle && vehicleIndex !== null
+  const currentPhotos = assessment.is_multi_vehicle && validVehicleIndex !== null
     ? currentVehicleData?.damage_photos || []
     : assessment.damage_photos || [];
 
   const isPerPanelQuote = assessment.vehicles && assessment.vehicles.length > 0 && !assessment.vehicle_id;
-  const currentLineItems = (assessment.is_multi_vehicle || isPerPanelQuote) && vehicleIndex !== null
+  const currentLineItems = (assessment.is_multi_vehicle || isPerPanelQuote) && validVehicleIndex !== null
     ? currentVehicleData?.line_items || []
     : isPerPanelQuote
       ? assessment.vehicles.flatMap(v => v.line_items || [])
       : assessment.line_items || [];
 
-  const currentDamageAnalysis = assessment.is_multi_vehicle && vehicleIndex !== null
+  const currentDamageAnalysis = assessment.is_multi_vehicle && validVehicleIndex !== null
     ? currentVehicleData?.damage_analysis
     : assessment.damage_analysis;
 
-  const currentCalculationBreakdown = assessment.is_multi_vehicle && vehicleIndex !== null
+  const currentCalculationBreakdown = assessment.is_multi_vehicle && validVehicleIndex !== null
     ? currentVehicleData?.calculation_breakdown || []
     : assessment.calculation_breakdown || [];
 
@@ -1328,7 +1342,7 @@ export default function AssessmentDetail() {
             assessment={assessment}
             customer={customer}
             userSettings={userSettings}
-            vehicleIndex={vehicleIndex}
+            vehicleIndex={validVehicleIndex}
             currentLineItems={currentLineItems}
             loadAssessmentDetails={loadAssessmentDetails}
             isUpdating={isUpdating}
@@ -1779,7 +1793,7 @@ export default function AssessmentDetail() {
             )}
 
             {(assessment.status === 'draft' || assessment.status === 'ready') && currentLineItems.length === 0 && !isPerPanelQuote && (
-              <Link to={createPageUrl(`EditQuote?id=${assessment.id}${vehicleIndex !== null ? `&vehicle=${vehicleIndex}` : ''}`)}>
+              <Link to={createPageUrl(`EditQuote?id=${assessment.id}${validVehicleIndex !== null ? `&vehicle=${validVehicleIndex}` : ''}`)}>
                 <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold">
                   <Plus className="w-4 h-4 mr-2" />Add Quote Details
                 </Button>
