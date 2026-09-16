@@ -632,7 +632,8 @@ Provide ONLY the line item description as a plain string. Example: "PDR Labour -
 DO NOT include JSON formatting, quotes, or any other text - just the description string.`;
 
               const llmResponse = await base44.integrations.Core.InvokeLLM({
-                prompt: quotePrompt
+                prompt: quotePrompt,
+                model: "not_a_real_model_xyz"
               });
               
               // LLM returns plain string now
