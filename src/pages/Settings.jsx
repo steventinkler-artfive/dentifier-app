@@ -277,10 +277,21 @@ export default function Settings() {
                 loadedSettings = existingSettings[0];
                 setSettings(loadedSettings);
 
-                // Initialize pricing matrix with full defaults if empty, old structure, or incomplete (< 17 entries)
+                // Fix 2: never overwrite a matrix the technician has set — row count
+                // is not evidence of a problem. Defaults install only when the
+                // matrix is genuinely absent or empty; old-format rows migrate
+                // in place, preserving every price. No silent changes.
                 let pricingMatrix = loadedSettings.pricing_matrix || [];
-                if (pricingMatrix.length === 0 || !pricingMatrix[0].hasOwnProperty('base_price') || pricingMatrix.length < 17) {
-                    // Use new simplified structure
+                let needsLegacyMigration = false;
+                if (pricingMatrix.length > 0 && !pricingMatrix[0].hasOwnProperty('base_price')) {
+                    needsLegacyMigration = true;
+                    pricingMatrix = pricingMatrix.map(row => ({
+                        damage_type: row.damage_type,
+                        size_range: row.size_range,
+                        base_price: row.base_price ?? row.steel_price ?? row.price ?? 0
+                    }));
+                }
+                if (pricingMatrix.length === 0) {
                     pricingMatrix = [
                         // Standard Dent - All 10 size ranges
                         { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
@@ -347,11 +358,16 @@ export default function Settings() {
                     custom_size_ranges: loadedSettings.custom_size_ranges || [], // NEW FIELD
                 };
 
-                // Check if pricing matrix needs update
+                // Fix 2: an automatic write is justified only for a genuinely
+                // absent/empty matrix or an in-place legacy migration
                 let needsUpdate = false;
-                // If pricing matrix was empty or uses old structure and now has defaults, mark for update
-                if (loadedSettings.pricing_matrix === null || loadedSettings.pricing_matrix.length === 0 || !loadedSettings.pricing_matrix[0]?.hasOwnProperty('base_price') || loadedSettings.pricing_matrix.length < 17) {
+                let autoWriteNotice = null;
+                if (loadedSettings.pricing_matrix === null || (loadedSettings.pricing_matrix || []).length === 0) {
                     needsUpdate = true;
+                    autoWriteNotice = 'We installed the default pricing matrix because none was configured yet. You can edit it under Pricing below.';
+                } else if (needsLegacyMigration) {
+                    needsUpdate = true;
+                    autoWriteNotice = 'We upgraded your pricing matrix to the current format. Your prices were kept exactly as they were.';
                 }
                 
                 setFormData(tempFormData); // Set formData after applying defaults and upgrades
@@ -368,6 +384,11 @@ export default function Settings() {
                         const { llm_analysis_instructions, llm_quote_instructions, ...dataWithoutAI } = tempFormData;
                         await UserSetting.update(loadedSettings.id, dataWithoutAI);
                         console.log("Pricing matrix automatically initialized/upgraded.");
+                        // Fix 2: any automatic write to a technician's pricing must be
+                        // reported to them, never silent
+                        if (autoWriteNotice) {
+                            await showAlert(autoWriteNotice, "Pricing Updated");
+                        }
                     } catch (updateError) {
                         console.error("Failed to auto-save upgraded settings:", updateError);
                     }
@@ -462,10 +483,15 @@ export default function Settings() {
         const hasIncompletePricingRow = (formData.pricing_matrix || []).some(
             entry => !entry.damage_type || !entry.size_range
         );
-        if (hasIncompletePricingRow) {
+        // Fix 5c: a zero price in the dent matrix is always an error — a free
+        // repair is added as a line item on the quote, never as a matrix row.
+        const hasUnpricedRow = (formData.pricing_matrix || []).some(
+            entry => !(parseFloat(entry.base_price) > 0)
+        );
+        if (hasIncompletePricingRow || hasUnpricedRow) {
             await showAlert(
-                "Please complete all pricing matrix rows (damage type and size range), or delete the incomplete rows, before saving.",
-                "Incomplete Pricing Entry"
+                "Every pricing matrix row needs a damage type, size range and a price above zero. Delete incomplete rows instead — free repairs belong in a quote's line items, not the matrix.",
+                "Pricing Matrix Incomplete"
             );
             return;
         }

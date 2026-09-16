@@ -94,9 +94,21 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
 
           const validMatrix = getValidPricingEntries(settings.pricing_matrix);
           setPricingMatrix(validMatrix);
-          const matrixDamageTypes = [...new Set(validMatrix.map(e => e.damage_type))];
-          const allDamageTypes = [...new Set([...BASE_DAMAGE_TYPES, ...matrixDamageTypes, ...customTypes])];
-          setDamageTypes(allDamageTypes);
+          // Fix 5a: only damage types that can be priced — at least one matrix
+          // row with a real, non-zero price — are offered. This single rule
+          // covers orphaned custom types, zero-priced rows and missing rows.
+          const pricedTypes = [
+            ...new Set(
+              validMatrix
+                .filter(e => (parseFloat(e.base_price ?? e.steel_price ?? e.price) || 0) > 0)
+                .map(e => e.damage_type)
+            )
+          ];
+          const pricedOrder = [
+            ...BASE_DAMAGE_TYPES.filter(t => pricedTypes.includes(t)),
+            ...pricedTypes.filter(t => !BASE_DAMAGE_TYPES.includes(t))
+          ];
+          setDamageTypes(pricedOrder);
 
           const matrixSizeRanges = [...new Set(validMatrix.map(e => e.size_range))];
           const allRanges = [...new Set([...DEFAULT_SIZE_RANGES, ...matrixSizeRanges, ...customSizes])];
@@ -437,6 +449,14 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
 
                         <div className="space-y-2">
                           <Label className="text-white">Damage Type <span className="text-red-400">*</span></Label>
+                          {damageTypes.length === 0 ? (
+                            <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 flex items-start gap-2">
+                              <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                              <p className="text-yellow-300 text-xs">
+                                No damage types have prices yet. Add prices for at least one damage type in Settings before quoting.
+                              </p>
+                            </div>
+                          ) : (
                           <Select value={toDisplayDamageType(item.damage_type)} onValueChange={(v) => handleDamageTypeChange(itemIndex, v)}>
                             <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
                               <SelectValue placeholder="Select type" />
@@ -445,6 +465,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
                               {damageTypes.map(t => <SelectItem key={t} value={toDisplayDamageType(t)} className="text-white hover:bg-slate-700">{toDisplayDamageType(t)}</SelectItem>)}
                             </SelectContent>
                           </Select>
+                          )}
                         </div>
 
                         <div className="space-y-2">

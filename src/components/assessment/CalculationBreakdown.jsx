@@ -39,6 +39,14 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
     return 'Matrix entry data unavailable';
   };
 
+  // Historical invented-price markers (pre-fix records). These breakdowns carry
+  // a fabricated matrix entry, so they must render the warning branch — never
+  // the green-ticked "MATRIX ENTRY USED" display. Data is untouched.
+  const INVENTED_PRICE_MARKERS = [
+    "No specific matrix data for this damage type",
+    "Generic fallback - no suitable matrix data found"
+  ];
+
   return (
     <div className="space-y-4">
       <p className="text-slate-400 text-sm mb-4">
@@ -47,7 +55,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
 
       {breakdownData.map((item, index) => (
         <div key={index} className="p-4 rounded-lg border bg-slate-800 border-slate-700">
-          {item.fallbackUsed ? (
+          {item.fallbackUsed || item.error || INVENTED_PRICE_MARKERS.includes(item.fallbackReason) ? (
             <div className="space-y-2">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
@@ -55,9 +63,15 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                   <h4 className="font-semibold text-yellow-300">
                     Damage Item {index + 1}: {item.panel || 'N/A'}
                   </h4>
-                  <p className="text-yellow-200 text-sm mt-1">
-                    Fallback pricing used: {item.error || 'Unknown error'}
-                  </p>
+                  {INVENTED_PRICE_MARKERS.includes(item.fallbackReason) ? (
+                    <p className="text-yellow-200 text-sm mt-1">
+                      No matrix price existed for this item — the price shown was estimated from the hourly rate, not your pricing matrix.
+                    </p>
+                  ) : (
+                    <p className="text-yellow-200 text-sm mt-1">
+                      Fallback pricing used: {item.error || 'Unknown error'}
+                    </p>
+                  )}
                   {item.notes && (
                     <p className="text-yellow-200 text-xs mt-1">{item.notes}</p>
                   )}

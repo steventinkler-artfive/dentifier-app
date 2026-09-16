@@ -14,6 +14,7 @@ import { calculateEstimatedTimeRange } from "@/utils/timeEstimate";
 import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
 import { getPhotoObservations } from "@/utils/photoObservations";
 import { getValidPricingEntries } from "@/utils/pricing";
+import UnpricedItemsCard from "@/components/assessment/UnpricedItemsCard";
 
 // ============================================================================
 // PROGRAMMATIC PRICING CALCULATION FUNCTIONS
@@ -143,16 +144,11 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
   }));
   
   if (normalizedTypeEntries.length === 0) {
-    return {
-      price: hourlyRate * 2,
-      matrixEntry: { 
-        damage_type: damageType, 
-        size_range: sizeRange, 
-        base_price: hourlyRate * 2
-      },
-      isEstimate: true,
-      fallbackReason: "No specific matrix data for this damage type"
-    };
+    // Fix 1: never invent a price or fabricate a matrix entry. Pre-generation
+    // validation blocks this case before any calculation; this throw is the
+    // defensive backstop and surfaces through the per-item warning path
+    // (fallbackUsed), which the breakdown card shows as an unmissable warning.
+    throw new Error(`No matrix price for ${damageType} (${sizeRange}) — add a price in Settings or change the damage type`);
   }
   
   // Look for exact match
@@ -285,18 +281,10 @@ function lookupPricingMatrix(pricingMatrix, damageType, sizeRange, material, hou
     };
   }
 
-  // Final fallback
-  console.log('  ❌ FINAL FALLBACK');
-  return {
-    price: hourlyRate * 2,
-    matrixEntry: { 
-      damage_type: damageType, 
-      size_range: sizeRange, 
-      base_price: hourlyRate * 2
-    },
-    isEstimate: true,
-    fallbackReason: "Generic fallback - no suitable matrix data found"
-  };
+  // Fix 1: rows exist for this type but none can produce a price for this size
+  // (e.g. duplicate or unreadable size ranges). Never invent a price — surface
+  // it through the per-item warning path (fallbackUsed).
+  throw new Error(`Matrix rows for ${damageType} could not produce a price for ${sizeRange} — check for duplicate or unreadable size ranges in Settings`);
 }
 
 
@@ -464,6 +452,7 @@ export default function QuoteGeneration({
   const [quoteGenerated, setQuoteGenerated] = useState(false);
   const [autoSaveTriggered, setAutoSaveTriggered] = useState(false);
   const [vehicleSections, setVehicleSections] = useState([]);
+  const [unpricedItems, setUnpricedItems] = useState([]); // Fix 1: items blocked because their damage type has no matrix price
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -504,10 +493,10 @@ export default function QuoteGeneration({
   }, []);
 
   useEffect(() => {
-    if (userSettings && !generating && !quoteGenerated) {
+    if (userSettings && !generating && !quoteGenerated && !error && unpricedItems.length === 0) {
       generateQuote();
     }
-  }, [userSettings, generating, quoteGenerated]);
+  }, [userSettings, generating, quoteGenerated, error, unpricedItems]);
 
   // Auto-save once quote is generated (single-vehicle flow from analysis screen, or per-panel multi-vehicle)
   useEffect(() => {
@@ -600,6 +589,33 @@ export default function QuoteGeneration({
       const baseCost = userSettings.base_cost || 0;
       const pricingMatrix = getValidPricingEntries(userSettings.pricing_matrix || []);
       const globalSettings = userSettings._globalSettings;
+
+      // Fix 1: a damage type with no valid matrix row must never produce a price.
+      // Validate every item BEFORE any LLM call, auto-save or state change, and
+      // block generation naming the exact combination so the technician can
+      // resolve it. Interpolation, extrapolation and single-entry scaling all
+      // derive from real rows and are unaffected — they pass this check.
+      const unpriced = damageItems
+        .filter(item => {
+          const normalizedType = (item.damage_type || '').trim();
+          return !pricingMatrix.some(entry =>
+            (entry.damage_type || '').trim() === normalizedType &&
+            (getEntryBasePrice(entry, item.material) || 0) > 0
+          );
+        })
+        .map(item => ({
+          panel: item.panel || 'Unknown panel',
+          damageType: item.damage_type || '',
+          sizeRange: item.size_range || ''
+        }));
+
+      if (unpriced.length > 0) {
+        setUnpricedItems(unpriced);
+        setLineItems([]);
+        setQuoteAmount(0);
+        return;
+      }
+      setUnpricedItems([]);
 
       const calculatedLineItems = [];
       const breakdownDetails = [];
@@ -865,43 +881,13 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
 
     } catch (err) {
       console.error('Error generating quote:', err);
+      // Fix 1: no invented full-quote fallback on unexpected errors — show the
+      // error with a retry instead. Nothing is saved.
       setError('generation_failed');
-
-      const defaultHourlyRate = userSettings?.hourly_rate || 70;
-      const defaultBaseCost = userSettings?.base_cost || 0;
-
-      const fallbackItems = [
-        {
-          description: 'PDR Labour',
-          quantity: 2,
-          unit_price: defaultHourlyRate,
-          total_price: defaultHourlyRate * 2
-        }
-      ];
-
-      if (defaultBaseCost > 0) {
-        fallbackItems.unshift({
-          description: 'Base Cost / Call-out Fee',
-          quantity: 1,
-          unit_price: defaultBaseCost,
-          total_price: defaultBaseCost
-        });
-      }
-
-      setLineItems(fallbackItems);
-      setQuoteAmount(sumLineItems(fallbackItems));
-      setCalculationBreakdown([{ 
-        error: err.message, 
-        fallbackUsed: true, 
-        notes: "Global fallback due to generation error.", 
-        isEstimate: true, 
-        totalPrice: fallbackItems.reduce((sum, item) => sum + item.total_price, 0),
-        fallbackReason: "Global quote generation failed."
-      }]);
-      
+      setLineItems([]);
+      setQuoteAmount(0);
+      setCalculationBreakdown([]);
       setEstimatedTime(null);
-      setNotes('Auto-generated fallback pricing due to an error. Please review and adjust as necessary.');
-      setQuoteGenerated(true);
     } finally {
       setSending(false);
       setGenerating(false);
@@ -1010,6 +996,18 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
     return symbols[curr] || '£';
   };
 
+  // Fix 1: when damage items are blocked from pricing, show the block card in
+  // every mode — including auto-save, where the review UI never renders and the
+  // technician would otherwise stare at the loading card forever.
+  if (unpricedItems.length > 0) {
+    return (
+      <UnpricedItemsCard
+        items={unpricedItems}
+        onOpenSettings={() => navigate(createPageUrl('Settings'))}
+      />
+    );
+  }
+
   // In auto-save mode or per-panel pricing, always show a loading screen — never show the review UI
   if (autoSave || isPerPanelPricing) {
     return (
@@ -1049,7 +1047,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
               <div className="flex-1">
                 <p className="text-red-200 font-medium">Quote Generation Error</p>
                 <p className="text-red-300 text-sm mt-1">
-                  Failed to generate quote. Using fallback pricing. Please review and adjust.
+                  Quote generation failed — no prices were produced and nothing has been saved. Please retry; if it keeps failing, check your settings.
                 </p>
                 <Button
                   onClick={() => { setQuoteGenerated(false); generateQuote(); }}
@@ -1239,10 +1237,15 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
               </CardHeader>
               <CardContent className="text-sm p-4 pt-0 space-y-2">
                 {breakdown.error || breakdown.fallbackUsed ? (
-                  <p className="text-red-300">
-                    <AlertTriangle className="inline-block w-4 h-4 mr-1" />
-                    {breakdown.error || 'Fallback pricing used.'}
-                  </p>
+                  <div className="bg-red-950/60 border border-red-600 rounded-lg p-2">
+                    <p className="text-red-300 font-semibold flex items-center gap-1">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      Fallback pricing used — this price is NOT from your matrix. Review before sending.
+                    </p>
+                    {breakdown.fallbackReason && (
+                      <p className="text-red-200 text-xs mt-1">{breakdown.fallbackReason}</p>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <p><span className="font-semibold">Matrix Base:</span> {breakdown.matrixEntry?.damage_type} - {breakdown.matrixEntry?.size_range} ({getCurrencySymbol()}{breakdown.matrixEntry?.base_price?.toFixed(2)})</p>

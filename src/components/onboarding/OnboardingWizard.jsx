@@ -23,6 +23,29 @@ const STEPS = [
   { id: 'complete', title: 'Complete', section: null }
 ];
 
+// Fix 3: single source for the default matrix seeded by onboarding — used for
+// first-ever creation, records missing a matrix at wizard open, and the
+// seed-at-Finish safety net.
+const DEFAULT_ONBOARDING_MATRIX = [
+  { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
+  { damage_type: "Standard Dent", size_range: "11mm - 25mm", base_price: 90 },
+  { damage_type: "Standard Dent", size_range: "26mm - 50mm", base_price: 120 },
+  { damage_type: "Standard Dent", size_range: "51mm - 80mm", base_price: 180 },
+  { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 },
+  { damage_type: "Standard Dent", size_range: "121mm - 200mm", base_price: 300 },
+  { damage_type: "Standard Dent", size_range: "201mm - 300mm", base_price: 360 },
+  { damage_type: "Standard Dent", size_range: "301mm - 500mm", base_price: 450 },
+  { damage_type: "Standard Dent", size_range: "501mm - 750mm", base_price: 550 },
+  { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
+  { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 130 },
+  { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 170 },
+  { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 250 },
+  { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 330 },
+  { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 415 },
+  { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
+  { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 620 }
+];
+
 export default function OnboardingWizard({ user, onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({});
@@ -31,6 +54,7 @@ export default function OnboardingWizard({ user, onComplete }) {
   const [saving, setSaving] = useState(false);
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   const [returnToChecklist, setReturnToChecklist] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const { showAlert } = useAlert();
   const dialogScrollRef = React.useRef(null);
   const { isStandalone } = useInstallPrompt();
@@ -50,7 +74,14 @@ export default function OnboardingWizard({ user, onComplete }) {
       const existingSettings = await base44.entities.UserSetting.filter({ user_email: user.email });
       if (existingSettings.length > 0) {
         setSettings(existingSettings[0]);
-        setFormData(existingSettings[0]);
+        // Fix 3: seed the default matrix into ANY settings record that lacks one
+        // at wizard open — not only on first-ever creation — so pricing is never
+        // left unconfigured. Persisted with the next section save or at Finish.
+        const loaded = { ...existingSettings[0] };
+        if (!Array.isArray(loaded.pricing_matrix) || loaded.pricing_matrix.length === 0) {
+          loaded.pricing_matrix = DEFAULT_ONBOARDING_MATRIX;
+        }
+        setFormData(loaded);
       } else {
         // Initialize with defaults
         setFormData({
@@ -97,6 +128,8 @@ export default function OnboardingWizard({ user, onComplete }) {
       }
     } catch (err) {
       console.error("Failed to load settings:", err);
+      // Fix 3: a console log is not sufficient — the technician must be told.
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -267,9 +300,15 @@ export default function OnboardingWizard({ user, onComplete }) {
         skills: validateSection('skills')
       };
 
+      // Fix 3: safety net — onboarding must never complete with pricing
+      // unconfigured. Seed the default matrix at Finish if still missing.
+      const finalFormData = (!Array.isArray(formData.pricing_matrix) || formData.pricing_matrix.length === 0)
+        ? { ...formData, pricing_matrix: DEFAULT_ONBOARDING_MATRIX }
+        : formData;
+
       const dataToSave = {
         user_email: user.email,
-        ...formData,
+        ...finalFormData,
         sections_completed: sectionsCompleted,
         onboarding_completed: true
       };
@@ -288,6 +327,28 @@ export default function OnboardingWizard({ user, onComplete }) {
       setSaving(false);
     }
   };
+
+  if (loadFailed) {
+    return (
+      <Dialog open={true}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl">
+          <div className="text-center space-y-4 p-8">
+            <AlertTriangle className="w-10 h-10 text-red-400 mx-auto" />
+            <h2 className="text-xl font-bold text-white">Couldn't load your settings</h2>
+            <p className="text-slate-400 text-sm">
+              We couldn't load your account settings, so nothing is configured yet — including your pricing. Check your connection and try again.
+            </p>
+            <Button
+              onClick={() => { setLoadFailed(false); setLoading(true); loadSettings(); }}
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              Try again
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (loading) {
     return (

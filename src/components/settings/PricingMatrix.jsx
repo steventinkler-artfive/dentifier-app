@@ -83,16 +83,31 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
   };
 
   const handleRemoveEntry = (index) => {
+    const removedType = pricingMatrix[index]?.damage_type;
     const updated = pricingMatrix.filter((_, i) => i !== index);
     onChange(updated);
+    // Fix 5b: deleting the last matrix row for a custom type removes the type
+    // too — no silent leftovers in the custom list.
+    if (removedType && customDamageTypes.includes(removedType) &&
+        !updated.some(entry => entry.damage_type === removedType)) {
+      onCustomTypesChange(customDamageTypes.filter(type => type !== removedType));
+    }
     setDeleteDialogOpen(false);
     setEntryToDelete(null);
   };
 
   const handleUpdateEntry = (index, field, value) => {
+    const previousType = pricingMatrix[index]?.damage_type;
     const updated = [...pricingMatrix];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);
+    // Fix 5b: changing a row's type away from a custom type with no rows left
+    // removes the type too.
+    if (field === 'damage_type' && previousType && previousType !== value &&
+        customDamageTypes.includes(previousType) &&
+        !updated.some(entry => entry.damage_type === previousType)) {
+      onCustomTypesChange(customDamageTypes.filter(type => type !== previousType));
+    }
   };
 
   const handleAddCustomType = async () => {
@@ -271,11 +286,11 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
           {/* Matrix Entries */}
           <div className="space-y-0 divide-y divide-slate-700">
             {pricingMatrix.map((entry, index) => (
-              <div key={index} className={`py-5 first:pt-0 last:pb-0 ${(!entry.damage_type || !entry.size_range) ? 'bg-red-950/30 -mx-2 px-2 rounded-lg border border-red-800/50' : ''}`}>
-                {(!entry.damage_type || !entry.size_range) && (
+              <div key={index} className={`py-5 first:pt-0 last:pb-0 ${(!entry.damage_type || !entry.size_range || !(parseFloat(entry.base_price) > 0)) ? 'bg-red-950/30 -mx-2 px-2 rounded-lg border border-red-800/50' : ''}`}>
+                {(!entry.damage_type || !entry.size_range || !(parseFloat(entry.base_price) > 0)) && (
                   <p className="text-red-400 text-xs mb-2 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
-                    Please select a damage type and size range before saving
+                    Please select a damage type and size range, and enter a price above zero, before saving
                   </p>
                 )}
                 <div className="grid grid-cols-12 gap-2 items-end">
