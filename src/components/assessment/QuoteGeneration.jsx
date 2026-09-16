@@ -470,17 +470,18 @@ export default function QuoteGeneration({
       try {
         const t0 = performance.now();
         QT('mounted — settings reads starting');
-        const user = await base44.auth.me();
+        // 2a: auth.me and the global settings read are independent of each other,
+        // so they run in parallel; the user settings read needs the email from
+        // auth.me and therefore runs once that resolves.
+        const [user, globalSettingsList] = await Promise.all([
+          base44.auth.me(),
+          base44.entities.GlobalSetting.filter({ setting_key: 'main' })
+        ]);
         const t1 = performance.now();
-        QT('auth.me', `${(t1 - t0).toFixed(0)}ms`);
+        QT('auth.me + GlobalSetting.filter (parallel)', `${(t1 - t0).toFixed(0)}ms`);
         const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
         const t2 = performance.now();
-        QT('UserSetting.filter', `${(t2 - t1).toFixed(0)}ms`);
-        
-        // Load global settings for LLM quoting instructions
-        const globalSettingsList = await base44.entities.GlobalSetting.filter({ setting_key: 'main' });
-        const t3 = performance.now();
-        QT('GlobalSetting.filter', `${(t3 - t2).toFixed(0)}ms — settings reads total ${(t3 - t0).toFixed(0)}ms, elapsed since mount ${(t3 - mountTimeRef.current).toFixed(0)}ms`);
+        QT('UserSetting.filter', `${(t2 - t1).toFixed(0)}ms — settings reads total ${(t2 - t0).toFixed(0)}ms, elapsed since mount ${(t2 - mountTimeRef.current).toFixed(0)}ms`);
         const globalSettings = globalSettingsList.length > 0 ? globalSettingsList[0] : null;
         if (settings.length > 0) {
           console.log('📋 LOADED USER SETTINGS:', {
@@ -603,19 +604,70 @@ export default function QuoteGeneration({
       let totalEstimatedHours = 0;
       let hasEstimates = false;
 
-      for (let i = 0; i < damageItems.length; i++) {
-        const item = damageItems[i];
-        
+      // Determine repair method context once for use in both prompt and disclaimer
+      const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only');
+      const hasLimitedAccess = damageItems.some(i => i.repair_method === 'Limited Tool Access');
+      const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
+
+      // Helper: build the correct disclaimer based on repair method
+      const buildDisclaimer = () => {
+        if (hasGluePull) {
+          return 'PLEASE NOTE: This repair utilises glue pulling techniques. Whilst every care is taken, there is a small risk of minor paint surface marks or texture changes. By proceeding, the vehicle owner accepts that the technician cannot be held liable for any such issues arising from the repair process.';
+        }
+        return 'PLEASE NOTE: PDR is a non-destructive process, however pre-existing paint or panel conditions may become apparent during repair. By proceeding, the vehicle owner accepts that the technician cannot be held liable for any such pre-existing conditions.';
+      };
+
+      // 2b: the assessment notes call shares nothing with the per-item description
+      // calls, so its prompt is built and the call issued here — it runs concurrently
+      // with the item calls below and is awaited only after the line items are set.
+      let notesPromise = null;
+      let notesPromptChars = 0;
+      let notesStartTime = 0;
+      if (globalSettings?.llm_quote_instructions) {
+        const observations = getPhotoObservations(analysis?._ui, damageItems);
+        const observationsText = observations.length > 0
+          ? observations.map(o => `Photo observation (${o.panel}): ${o.observation}`).join('\n')
+          : '';
+        const damageContext = damageItems.map((item, idx) =>
+          `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.paint_type && item.paint_type !== 'Standard' ? ` | Paint type: ${item.paint_type}` : ''} | Caveat type: ${getCaveatType(item)}${item.notes ? ` | Notes: ${item.notes}` : ''}`
+        ).join('\n') + (observationsText ? `\n${observationsText}` : '');
+
+        const notesPrompt = `${globalSettings.llm_quote_instructions}
+
+---
+
+TASK: Write the customer-facing assessment notes for the following job.
+
+DAMAGE BEING REPAIRED:
+${damageContext}
+
+OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1–3 sentences of plain text. No bullet points, no headings. Do not include any disclaimer — the system adds that separately.`;
+
+        notesPromptChars = notesPrompt.length;
+        notesStartTime = performance.now();
+        QT('LLM #2 (assessment notes) start', `prompt ${notesPromptChars} chars`);
+        notesPromise = base44.integrations.Core.InvokeLLM({
+          prompt: notesPrompt,
+          model: "gemini_3_8_flash",
+          response_json_schema: {
+            type: "object",
+            properties: {
+              assessment_notes: { type: "string" }
+            },
+            required: ["assessment_notes"]
+          }
+        });
+      }
+
+      // 2b: each item's work runs in its own async function that always resolves —
+      // never rejects — with either its result or exactly today's fallback, so one
+      // failed call never affects any other. Results are matched back by item
+      // index, never by completion order.
+      const processItem = async (item, i) => {
         try {
           const calculation = calculateDamageItemPrice(item, hourlyRate, pricingMatrix);
-          
-          if (calculation.isEstimate) {
-            hasEstimates = true;
-          }
-          
-          breakdownDetails.push(calculation);
-          totalEstimatedHours += calculation.roundedHoursForTech;
-          
+          const isEstimate = calculation.isEstimate === true;
+
           // Use LLM to generate professional customer-facing description if global settings available
           if (globalSettings?.llm_quote_instructions) {
             try {
@@ -659,12 +711,17 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
                 throw new Error('Invalid LLM description');
               }
               
-              calculatedLineItems.push({
-                description: description,
-                quantity: calculation.roundedHoursForTech,
-                unit_price: hourlyRate,
-                total_price: calculation.totalPrice
-              });
+              return {
+                lineItem: {
+                  description: description,
+                  quantity: calculation.roundedHoursForTech,
+                  unit_price: hourlyRate,
+                  total_price: calculation.totalPrice
+                },
+                breakdown: calculation,
+                estimateHours: calculation.roundedHoursForTech,
+                isEstimate: isEstimate
+              };
               
             } catch (llmError) {
               console.error('LLM description generation failed, using fallback:', llmError);
@@ -681,12 +738,17 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
                 description += ' (Matte Paint Finish)';
               }
               
-              calculatedLineItems.push({
-                description: description,
-                quantity: calculation.roundedHoursForTech,
-                unit_price: hourlyRate,
-                total_price: calculation.totalPrice
-              });
+              return {
+                lineItem: {
+                  description: description,
+                  quantity: calculation.roundedHoursForTech,
+                  unit_price: hourlyRate,
+                  total_price: calculation.totalPrice
+                },
+                breakdown: calculation,
+                estimateHours: calculation.roundedHoursForTech,
+                isEstimate: isEstimate
+              };
             }
           } else {
             // No global settings - use programmatic fallback
@@ -702,38 +764,54 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
               description += ' (Matte Paint Finish)';
             }
             
-            calculatedLineItems.push({
-              description: description,
-              quantity: calculation.roundedHoursForTech,
-              unit_price: hourlyRate,
-              total_price: calculation.totalPrice
-            });
+            return {
+              lineItem: {
+                description: description,
+                quantity: calculation.roundedHoursForTech,
+                unit_price: hourlyRate,
+                total_price: calculation.totalPrice
+              },
+              breakdown: calculation,
+              estimateHours: calculation.roundedHoursForTech,
+              isEstimate: isEstimate
+            };
           }
           
         } catch (err) {
           console.error(`Error calculating item ${i + 1}:`, err);
           const fallbackHours = 2;
-          calculatedLineItems.push({
-            description: `PDR Labour - ${item.panel} Repair (Fallback)`,
-            quantity: fallbackHours,
-            unit_price: hourlyRate,
-            total_price: fallbackHours * hourlyRate
-          });
-          totalEstimatedHours += fallbackHours;
-          
-          breakdownDetails.push({
-            panel: item.panel,
-            damageType: item.damage_type,
-            sizeRange: item.size_range,
-            error: err.message,
-            fallbackUsed: true,
-            isEstimate: true,
-            totalPrice: fallbackHours * hourlyRate,
-            fallbackReason: "Individual item calculation failed."
-          });
-          hasEstimates = true;
+          return {
+            lineItem: {
+              description: `PDR Labour - ${item.panel} Repair (Fallback)`,
+              quantity: fallbackHours,
+              unit_price: hourlyRate,
+              total_price: fallbackHours * hourlyRate
+            },
+            breakdown: {
+              panel: item.panel,
+              damageType: item.damage_type,
+              sizeRange: item.size_range,
+              error: err.message,
+              fallbackUsed: true,
+              isEstimate: true,
+              totalPrice: fallbackHours * hourlyRate,
+              fallbackReason: "Individual item calculation failed."
+            },
+            estimateHours: fallbackHours,
+            isEstimate: true
+          };
         }
-      }
+      };
+
+      // Issue all per-item description calls concurrently
+      const itemResults = await Promise.all(damageItems.map((item, i) => processItem(item, i)));
+      // Match results back by item index — never by completion order
+      itemResults.forEach((result, i) => {
+        calculatedLineItems[i] = result.lineItem;
+        breakdownDetails[i] = result.breakdown;
+        totalEstimatedHours += result.estimateHours;
+        if (result.isEstimate) hasEstimates = true;
+      });
 
       if (baseCost > 0) {
         calculatedLineItems.unshift({
@@ -753,57 +831,13 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       setCalculationBreakdown(breakdownDetails);
       setEstimatedTime(calculateEstimatedTimeRange(damageItems));
       
-      // Generate customer-facing AI assessment notes
+      // Await the concurrent notes call. On failure the notes fall back to the
+      // disclaimer exactly as before — the line items above are unaffected.
       let assessmentNotes = '';
-
-      // Determine repair method context once for use in both prompt and disclaimer
-      const hasGluePull = damageItems.some(i => i.repair_method === 'Glue Pull Only');
-      const hasLimitedAccess = damageItems.some(i => i.repair_method === 'Limited Tool Access');
-      const hasStretchedMetal = damageItems.some(i => i.has_stretched_metal);
-
-      // Helper: build the correct disclaimer based on repair method
-      const buildDisclaimer = () => {
-        if (hasGluePull) {
-          return 'PLEASE NOTE: This repair utilises glue pulling techniques. Whilst every care is taken, there is a small risk of minor paint surface marks or texture changes. By proceeding, the vehicle owner accepts that the technician cannot be held liable for any such issues arising from the repair process.';
-        }
-        return 'PLEASE NOTE: PDR is a non-destructive process, however pre-existing paint or panel conditions may become apparent during repair. By proceeding, the vehicle owner accepts that the technician cannot be held liable for any such pre-existing conditions.';
-      };
-
-      if (globalSettings?.llm_quote_instructions) {
+      if (notesPromise) {
         try {
-          const observations = getPhotoObservations(analysis?._ui, damageItems);
-          const observationsText = observations.length > 0
-            ? observations.map(o => `Photo observation (${o.panel}): ${o.observation}`).join('\n')
-            : '';
-          const damageContext = damageItems.map((item, idx) =>
-            `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.paint_type && item.paint_type !== 'Standard' ? ` | Paint type: ${item.paint_type}` : ''} | Caveat type: ${getCaveatType(item)}${item.notes ? ` | Notes: ${item.notes}` : ''}`
-          ).join('\n') + (observationsText ? `\n${observationsText}` : '');
-
-          const notesPrompt = `${globalSettings.llm_quote_instructions}
-
----
-
-TASK: Write the customer-facing assessment notes for the following job.
-
-DAMAGE BEING REPAIRED:
-${damageContext}
-
-OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1–3 sentences of plain text. No bullet points, no headings. Do not include any disclaimer — the system adds that separately.`;
-
-          const tNotesStart = performance.now();
-          QT('LLM #2 (assessment notes) start', `prompt ${notesPrompt.length} chars`);
-          const notesResponse = await base44.integrations.Core.InvokeLLM({
-            prompt: notesPrompt,
-            model: "gemini_3_8_flash",
-            response_json_schema: {
-              type: "object",
-              properties: {
-                assessment_notes: { type: "string" }
-              },
-              required: ["assessment_notes"]
-            }
-          });
-          QT('LLM #2 (assessment notes) done', `prompt ${notesPrompt.length} chars, ${(performance.now() - tNotesStart).toFixed(0)}ms`);
+          const notesResponse = await notesPromise;
+          QT('LLM #2 (assessment notes) done', `prompt ${notesPromptChars} chars, ${(performance.now() - notesStartTime).toFixed(0)}ms`);
 
           const generatedNotes = notesResponse?.assessment_notes?.trim() || '';
 
