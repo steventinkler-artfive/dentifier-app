@@ -227,6 +227,7 @@ OUTPUT: JSON only. No other text.`;
 
       const response = await InvokeLLM({
         prompt,
+        model: "gemini_3_8_flash",
         file_urls: photos.length > 0 ? photos : undefined,
         response_json_schema: {
           type: "object",

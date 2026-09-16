@@ -632,7 +632,8 @@ Provide ONLY the line item description as a plain string. Example: "PDR Labour -
 DO NOT include JSON formatting, quotes, or any other text - just the description string.`;
 
               const llmResponse = await base44.integrations.Core.InvokeLLM({
-                prompt: quotePrompt
+                prompt: quotePrompt,
+                model: "gemini_3_8_flash"
               });
               
               // LLM returns plain string now
@@ -776,6 +777,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
 
           const notesResponse = await base44.integrations.Core.InvokeLLM({
             prompt: notesPrompt,
+            model: "gemini_3_8_flash",
             response_json_schema: {
               type: "object",
               properties: {
