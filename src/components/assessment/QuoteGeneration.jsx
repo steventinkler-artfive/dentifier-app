@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -430,6 +430,9 @@ function getCaveatType(damageItem) {
 
 const PER_PANEL_DISCLAIMER = `Repair carried out using standard PDR tooling and/or glue pulling techniques as appropriate to the damage. Final result dependent on paint condition and damage characteristics assessed on the day.\n\nPLEASE NOTE: PDR is a non-destructive process, however pre-existing paint or panel conditions may become apparent during repair. By proceeding, the vehicle owner accepts that the technician cannot be held liable for any such pre-existing conditions.`;
 
+// TEMPORARY timing instrumentation — log output only, no behaviour change. Remove once latency is diagnosed.
+const QT = (label, detail) => console.log(`[QUOTE-TIMING] ${label}${detail ? ` — ${detail}` : ''}`);
+
 export default function QuoteGeneration({
   customer,
   vehicle,
@@ -446,6 +449,7 @@ export default function QuoteGeneration({
   autoSave = false
 }) {
   const navigate = useNavigate();
+  const mountTimeRef = useRef(performance.now());
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
   const [lineItems, setLineItems] = useState([]);
@@ -464,11 +468,19 @@ export default function QuoteGeneration({
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        const t0 = performance.now();
+        QT('mounted — settings reads starting');
         const user = await base44.auth.me();
+        const t1 = performance.now();
+        QT('auth.me', `${(t1 - t0).toFixed(0)}ms`);
         const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+        const t2 = performance.now();
+        QT('UserSetting.filter', `${(t2 - t1).toFixed(0)}ms`);
         
         // Load global settings for LLM quoting instructions
         const globalSettingsList = await base44.entities.GlobalSetting.filter({ setting_key: 'main' });
+        const t3 = performance.now();
+        QT('GlobalSetting.filter', `${(t3 - t2).toFixed(0)}ms — settings reads total ${(t3 - t0).toFixed(0)}ms, elapsed since mount ${(t3 - mountTimeRef.current).toFixed(0)}ms`);
         const globalSettings = globalSettingsList.length > 0 ? globalSettingsList[0] : null;
         if (settings.length > 0) {
           console.log('📋 LOADED USER SETTINGS:', {
@@ -631,10 +643,13 @@ Provide ONLY the line item description as a plain string. Example: "PDR Labour -
 
 DO NOT include JSON formatting, quotes, or any other text - just the description string.`;
 
+              const tDescStart = performance.now();
+              QT('LLM #1 (item description) start', `prompt ${quotePrompt.length} chars`);
               const llmResponse = await base44.integrations.Core.InvokeLLM({
                 prompt: quotePrompt,
                 model: "gemini_3_8_flash"
               });
+              QT('LLM #1 (item description) done', `prompt ${quotePrompt.length} chars, ${(performance.now() - tDescStart).toFixed(0)}ms`);
               
               // LLM returns plain string now
               let description = typeof llmResponse === 'string' ? llmResponse.trim() : llmResponse;
@@ -775,6 +790,8 @@ ${damageContext}
 
 OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1–3 sentences of plain text. No bullet points, no headings. Do not include any disclaimer — the system adds that separately.`;
 
+          const tNotesStart = performance.now();
+          QT('LLM #2 (assessment notes) start', `prompt ${notesPrompt.length} chars`);
           const notesResponse = await base44.integrations.Core.InvokeLLM({
             prompt: notesPrompt,
             model: "gemini_3_8_flash",
@@ -786,6 +803,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
               required: ["assessment_notes"]
             }
           });
+          QT('LLM #2 (assessment notes) done', `prompt ${notesPrompt.length} chars, ${(performance.now() - tNotesStart).toFixed(0)}ms`);
 
           const generatedNotes = notesResponse?.assessment_notes?.trim() || '';
 
@@ -803,6 +821,7 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
       }
       
       setNotes(assessmentNotes);
+      QT('quote displayed', `total from mount ${(performance.now() - mountTimeRef.current).toFixed(0)}ms`);
       setQuoteGenerated(true);
       // Auto-save and navigate if onFinalSave is provided and we're not in multi-vehicle mode
       // (this is triggered from the analysis screen flow)
