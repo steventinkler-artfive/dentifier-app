@@ -522,10 +522,12 @@ export default function QuoteGeneration({
     }
   }, [autoSave, quoteGenerated, generating, lineItems, isPerPanelPricing, vehicleSections]);
 
-  useEffect(() => {
-    const total = lineItems.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
-    setQuoteAmount(total);
-  }, [lineItems]);
+  // The quote total is set synchronously at every point lineItems changes
+  // (generation, fallback, and the manual edit handlers below) — it is NOT
+  // derived via an effect, so no reader can observe a stale total relative
+  // to the line items. Same reduce the previous derived effect used: identical
+  // source and arithmetic.
+  const sumLineItems = (items) => items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
 
   const generateQuote = async () => {
     if (!userSettings) {
@@ -828,6 +830,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       }
 
       setLineItems(calculatedLineItems);
+      setQuoteAmount(sumLineItems(calculatedLineItems));
       setCalculationBreakdown(breakdownDetails);
       setEstimatedTime(calculateEstimatedTimeRange(damageItems));
       
@@ -886,6 +889,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       }
 
       setLineItems(fallbackItems);
+      setQuoteAmount(sumLineItems(fallbackItems));
       setCalculationBreakdown([{ 
         error: err.message, 
         fallbackUsed: true, 
@@ -920,12 +924,14 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
 
   const addLineItem = () => {
     const defaultHourlyRate = userSettings?.hourly_rate || 70;
-    setLineItems([...lineItems, {
+    const updated = [...lineItems, {
       description: 'PDR Labour - Custom Item',
       quantity: 1,
       unit_price: defaultHourlyRate,
       total_price: defaultHourlyRate
-    }]);
+    }];
+    setLineItems(updated);
+    setQuoteAmount(sumLineItems(updated));
   };
 
   const updateLineItem = (index, field, value) => {
@@ -939,11 +945,13 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
     }
 
     setLineItems(updated);
+    setQuoteAmount(sumLineItems(updated));
   };
 
   const removeLineItem = (index) => {
     const updated = lineItems.filter((_, i) => i !== index);
     setLineItems(updated);
+    setQuoteAmount(sumLineItems(updated));
   };
 
   const handleAddAnotherVehicle = async () => {
@@ -1160,6 +1168,7 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
                             unit_price: newPrice
                           };
                           setLineItems(updated);
+                          setQuoteAmount(sumLineItems(updated));
                         }}
                         placeholder="0"
                         className="bg-slate-600 border-slate-500 text-white font-semibold"
