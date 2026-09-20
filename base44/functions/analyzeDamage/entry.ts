@@ -41,7 +41,12 @@ function isAllowedPhotoUrl(url) {
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch (_) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     if (!user || !user.id) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
