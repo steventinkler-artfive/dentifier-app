@@ -201,11 +201,9 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                         {hasUplift && (
                           <div className={`${rowClass} pt-2 border-t border-slate-700`}>
                             <span className="text-green-300 font-medium break-words pr-1">
-                              {uplift.capped ? 'Total uplift (capped)' : 'Total uplift'}
+                              {uplift.capped ? 'Price after uplifts (capped)' : 'Price after uplifts'}
                             </span>
-                            <span className="text-right text-green-300 font-medium tabular-nums">
-                              {formatMultiplier(uplift.runningTotal / uplift.base)}
-                            </span>
+                            <span></span>
                             <span className="text-right text-green-300 font-bold tabular-nums">
                               {symbol}{uplift.runningTotal.toFixed(2)}
                             </span>
