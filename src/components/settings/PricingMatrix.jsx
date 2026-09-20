@@ -203,6 +203,29 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
   const allDamageTypes = [...CORE_DAMAGE_TYPES, ...customDamageTypes];
   const allSizeRanges = [...SIZE_RANGE_OPTIONS, ...customSizeRanges];
 
+  // Duplicate prevention: a row's dropdowns never offer a damage type +
+  // size range combination that another row already has. This covers
+  // adding rows, changing a size, and switching the damage type of an
+  // existing row — the save-time check in Settings is the backstop.
+  const sizesTakenByType = {};
+  (pricingMatrix || []).forEach(entry => {
+    if (!entry.damage_type || !entry.size_range) return;
+    (sizesTakenByType[entry.damage_type] = sizesTakenByType[entry.damage_type] || new Set()).add(entry.size_range);
+  });
+  const typesAvailableForRow = (entry) => {
+    if (!entry.size_range) return allDamageTypes;
+    return allDamageTypes.filter(type =>
+      type === entry.damage_type || !sizesTakenByType[type]?.has(entry.size_range)
+    );
+  };
+  const sizesAvailableForRow = (entry) => {
+    const taken = sizesTakenByType[entry.damage_type];
+    if (!taken) return allSizeRanges;
+    return allSizeRanges.filter(range =>
+      range === entry.size_range || !taken.has(range)
+    );
+  };
+
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader 
@@ -330,7 +353,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
-                        {allDamageTypes.map(type => (
+                        {typesAvailableForRow(entry).map(type => (
                           <SelectItem key={type} value={type} className="text-white hover:bg-slate-700">
                             {toDisplayDamageType(type)}
                           </SelectItem>
@@ -373,7 +396,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
-                        {allSizeRanges.map(range => (
+                        {sizesAvailableForRow(entry).map(range => (
                           <SelectItem key={range} value={range} className="text-white hover:bg-slate-700">
                             {range}
                           </SelectItem>

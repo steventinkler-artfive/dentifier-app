@@ -457,6 +457,28 @@ export default function Settings() {
             );
             return;
         }
+        // A second row with the same damage type AND size range would silently
+        // shadow one of the two prices at quote time — block the save and name
+        // the offending combination so the technician knows which rows to fix.
+        const seenCombinations = new Set();
+        const duplicateCombinations = [];
+        (formData.pricing_matrix || []).forEach(entry => {
+            if (!entry.damage_type || !entry.size_range) return;
+            const key = `${entry.damage_type.trim()}|${entry.size_range.trim()}`;
+            if (seenCombinations.has(key)) {
+                const label = `${toDisplayDamageType(entry.damage_type)} · ${entry.size_range}`;
+                if (!duplicateCombinations.includes(label)) duplicateCombinations.push(label);
+            } else {
+                seenCombinations.add(key);
+            }
+        });
+        if (duplicateCombinations.length > 0) {
+            await showAlert(
+                `Each damage type and size range can only have one price. Please remove the duplicate rows for: ${duplicateCombinations.join(', ')}.`,
+                "Duplicate Pricing Rows"
+            );
+            return;
+        }
         setSaving(true);
         setError(null);
         try {
