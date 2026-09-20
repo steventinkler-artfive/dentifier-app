@@ -43,9 +43,11 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
   // multipliers and the 2.5x cap are untouched; adjustedPrice and totalPrice
   // remain the authoritative figures).
   const buildUpliftSteps = (item) => {
-    const base = (item.baseSteelPrice !== undefined && item.baseSteelPrice !== null)
-      ? item.baseSteelPrice
-      : (item.basePrice || 0);
+    // Base is the material-adjusted base price the engine applies complexity
+    // to (basePrice = matrix price x material). Material is not an uplift.
+    const base = (item.basePrice !== undefined && item.basePrice !== null)
+      ? item.basePrice
+      : (item.baseSteelPrice || 0);
     const steps = [];
     let running = base;
     const push = (label, mult) => {
@@ -58,9 +60,6 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
       steps.push({ label, pctLabel: formatMultiplier(mult), amount: running, isUplift: true });
     };
     const m = item.multipliers || {};
-    if (item.material && item.material !== 'Steel' && m.material) {
-      push(`Material (${item.material === 'Aluminum' ? 'Aluminium' : item.material})`, m.material);
-    }
     if (m.repairMethod) push(`Repair Method (${item.repairMethod || 'N/A'})`, m.repairMethod);
     if (m.depth) push(`Depth (${item.depth || 'N/A'})`, m.depth);
     if (item.paintType && m.paintType) push(`Paint Type (${item.paintType})`, m.paintType);
@@ -73,9 +72,9 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
     const uncappedComplexity = [m.repairMethod, m.depth, m.bodyLine, m.stretchedMetal, m.paintType, m.notes]
       .reduce((acc, v) => acc * (v || 1.0), 1.0);
     const capped = uncappedComplexity > 2.5;
+    const uncappedTotal = running;
     const runningTotal = capped ? (running / uncappedComplexity) * 2.5 : running;
-    const hasMaterialUplift = !!(item.material && item.material !== 'Steel' && m.material && m.material !== 1.0);
-    return { base, steps, uncappedComplexity, capped, runningTotal, hasMaterialUplift };
+    return { base, steps, uncappedComplexity, capped, uncappedTotal, runningTotal };
   };
 
   // Historical invented-price markers (pre-fix records). These breakdowns carry
@@ -85,6 +84,11 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
     "No specific matrix data for this damage type",
     "Generic fallback - no suitable matrix data found"
   ];
+
+  // Two right-aligned columns: uplift percentage, then the running
+  // money value. The label column wraps under itself so long
+  // labels never drag the numbers out of line.
+  const rowClass = "grid grid-cols-[1fr_minmax(3.5rem,auto)_minmax(4.5rem,auto)] items-baseline gap-x-2 text-sm";
 
   return (
     <div className="space-y-4">
@@ -140,20 +144,28 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                   <p className="text-white font-mono text-sm">{formatMatrixEntry(item.matrixEntry)}</p>
                 </div>
 
-                {/* Base Calculation */}
+                {/* Base price — material (if any) is part of establishing the
+                    base, not a complexity uplift */}
                 {(item.baseSteelPrice !== undefined || item.basePrice !== undefined) && (
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-slate-400">Matrix Base Price:</span>
-                      <span className="text-white ml-2 font-medium">
-                        {getCurrencySymbol()}{(item.baseSteelPrice || item.basePrice)?.toFixed(2)}
+                  <div className="space-y-1">
+                    <div className={rowClass}>
+                      <span className="text-slate-300 break-words pr-1">Matrix base price</span>
+                      <span></span>
+                      <span className="text-right text-white font-medium tabular-nums">
+                        {getCurrencySymbol()}{(item.baseSteelPrice ?? item.basePrice)?.toFixed(2)}
                       </span>
                     </div>
-                    {item.aluminumMultiplier > 1 && (
-                      <div>
-                        <span className="text-slate-400">Aluminium (+35%):</span>
-                        <span className="text-white ml-2 font-medium">
-                          {getCurrencySymbol()}{item.basePrice?.toFixed(2)}
+                    {item.material && item.material !== 'Steel' &&
+                      item.baseSteelPrice !== undefined && item.basePrice !== undefined && (
+                      <div className={rowClass}>
+                        <span className="text-slate-300 break-words pr-1">
+                          {item.material === 'Aluminum' ? 'Aluminium' : item.material} panel
+                        </span>
+                        <span className="text-right text-slate-300 tabular-nums">
+                          {formatMultiplier(item.basePrice / item.baseSteelPrice)}
+                        </span>
+                        <span className="text-right text-white font-medium tabular-nums">
+                          {getCurrencySymbol()}{item.basePrice.toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -166,10 +178,6 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                   const symbol = getCurrencySymbol();
                   const upliftCount = uplift.steps.filter(s => s.isUplift).length;
                   const hasUplift = uplift.steps.some(s => s.isUplift);
-                  // Two right-aligned columns: uplift percentage, then the running
-                  // money value. The label column wraps under itself so long
-                  // labels never drag the numbers out of line.
-                  const rowClass = "grid grid-cols-[1fr_minmax(3.5rem,auto)_minmax(4.5rem,auto)] items-baseline gap-x-2 text-sm";
                   const showRounding = item.adjustedPrice !== undefined && item.totalPrice !== undefined &&
                     Number(item.totalPrice) !== Number(item.adjustedPrice);
                   if (!hasUplift) {
@@ -212,15 +220,16 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                             </span>
                           </div>
                         )}
-                        {(uplift.capped || upliftCount >= 2) && (
+                        {uplift.capped ? (
+                          <div className="text-xs text-slate-500 mt-2 space-y-0.5">
+                            <p>Uplifts capped — {symbol}{uplift.uncappedTotal.toFixed(2)} reduced to {symbol}{uplift.runningTotal.toFixed(2)}.</p>
+                            <p>A repair never costs more than 2.5 times the base price.</p>
+                          </div>
+                        ) : upliftCount >= 2 ? (
                           <p className="text-xs text-slate-500 mt-2">
-                            {uplift.capped
-                              ? (uplift.hasMaterialUplift
-                                ? 'Complexity uplifts are capped at +150%. The material uplift is applied on top.'
-                                : 'Uplifts are capped at +150%. Each uplift applies to the price above it, not the base price.')
-                              : 'Each uplift applies to the price above it, not the base price.'}
+                            Each uplift applies to the price above it, not the base price.
                           </p>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   );
