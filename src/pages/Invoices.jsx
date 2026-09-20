@@ -42,7 +42,7 @@ export default function Invoices() {
         base44.entities.Assessment.filter({ created_by: user.email, status: 'completed' }, '-created_date', LIST_CEILING + 1, 0, ASSESSMENT_LIST_FIELDS),
         base44.entities.Customer.filter({ created_by: user.email }, undefined, 10000),
         base44.entities.Vehicle.filter({ created_by: user.email }, undefined, 10000),
-        base44.entities.UserSetting.filter({ user_email: user.email })
+        base44.entities.UserSetting.filter({ user_email: user.email }, 'created_date')
       ]);
 
       setUserSettings(settingsData.length > 0 ? settingsData[0] : null);

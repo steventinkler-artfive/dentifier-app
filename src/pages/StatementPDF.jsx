@@ -29,7 +29,7 @@ export default function StatementPDF() {
         const [allAssessments, allCustomers, settings] = await Promise.all([
           base44.entities.Assessment.filter({ created_by: user.email }),
           base44.entities.Customer.filter({ created_by: user.email }),
-          base44.entities.UserSetting.filter({ user_email: user.email }),
+          base44.entities.UserSetting.filter({ user_email: user.email }, 'created_date'),
         ]);
 
         if (!isMounted) return;

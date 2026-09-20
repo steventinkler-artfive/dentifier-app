@@ -26,7 +26,7 @@ export default function Subscription() {
           navigate(createPageUrl('Dashboard'), { replace: true });
         }
         // Load UserSetting so the modal can update it
-        const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+        const settings = await base44.entities.UserSetting.filter({ user_email: user.email }, 'created_date');
         if (settings.length > 0) setUserSettings(settings[0]);
       } catch (error) {
         console.error("Failed to load user:", error);

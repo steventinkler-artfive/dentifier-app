@@ -78,7 +78,7 @@ export default function SyncManager() {
       const user = await base44.auth.me();
       if (!user) return;
 
-      const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+      const settings = await base44.entities.UserSetting.filter({ user_email: user.email }, 'created_date');
       const userSetting = Array.isArray(settings) && settings.length > 0 ? settings[0] : null;
 
       if (userSetting && userSetting.pwa_status !== 'installed') {

@@ -196,7 +196,7 @@ export default function AssessmentDetail() {
         promises.push(vehicleFetchPromise);
 
         if (currentUser && currentUser.email) {
-          const settings = await base44.entities.UserSetting.filter({ user_email: currentUser.email });
+          const settings = await base44.entities.UserSetting.filter({ user_email: currentUser.email }, 'created_date');
           promises.push(settings.length > 0 ? Promise.resolve(settings[0]) : Promise.resolve(null));
         } else {
           promises.push(Promise.resolve(null));

@@ -142,7 +142,7 @@ export default function EditQuotePage() {
       // Fetch user settings for currency
       const currentUser = await User.me();
       if (currentUser && currentUser.email) {
-        const settings = await UserSetting.filter({ user_email: currentUser.email });
+        const settings = await UserSetting.filter({ user_email: currentUser.email }, 'created_date');
         const fetchedSettings = settings.length > 0 ? settings[0] : null;
         setUserSettings(fetchedSettings);
         

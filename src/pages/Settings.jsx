@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, AlertTriangle, Loader2, Building, UserCircle, Wrench, Upload, CreditCard, Users, Mail } from "lucide-react";
 import PricingMatrix from "../components/settings/PricingMatrix";
+import { DEFAULT_PRICING_MATRIX, sortPricingMatrix } from "@/utils/defaultPricingMatrix";
+import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
 import MySubscriptionTab from "../components/settings/MySubscriptionTab";
 import BankingDetailsForm from "@/components/settings/BankingDetailsForm";
 import { isValidBanking, hasBankingErrors } from "@/utils/bankingValidation";
@@ -270,7 +272,8 @@ export default function Settings() {
             const currentUser = await User.me();
             setUser(currentUser);
 
-            const existingSettings = await UserSetting.filter({ user_email: currentUser.email });
+            // Oldest-first ordering: if a duplicate ever survives, the original record wins.
+            const existingSettings = await UserSetting.filter({ user_email: currentUser.email }, 'created_date');
             let loadedSettings = null;
 
             if (existingSettings.length > 0) {
@@ -292,28 +295,7 @@ export default function Settings() {
                     }));
                 }
                 if (pricingMatrix.length === 0) {
-                    pricingMatrix = [
-                        // Standard Dent - All 10 size ranges
-                        { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
-                        { damage_type: "Standard Dent", size_range: "11mm - 25mm", base_price: 90 },
-                        { damage_type: "Standard Dent", size_range: "26mm - 50mm", base_price: 120 },
-                        { damage_type: "Standard Dent", size_range: "51mm - 80mm", base_price: 180 },
-                        { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 },
-                        { damage_type: "Standard Dent", size_range: "121mm - 200mm", base_price: 300 },
-                        { damage_type: "Standard Dent", size_range: "201mm - 300mm", base_price: 360 },
-                        { damage_type: "Standard Dent", size_range: "301mm - 500mm", base_price: 450 },
-                        { damage_type: "Standard Dent", size_range: "501mm - 750mm", base_price: 550 },
-                        { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
-                        
-                        // Crease - First 7 size ranges
-                        { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 150 },
-                        { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 220 },
-                        { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 280 },
-                        { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 350 },
-                        { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 420 },
-                        { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
-                        { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 600 }
-                    ];
+                    pricingMatrix = DEFAULT_PRICING_MATRIX.map(row => ({ ...row }));
                 }
 
                 const tempFormData = {
@@ -396,28 +378,7 @@ export default function Settings() {
 
             } else {
                 // Initialize formData with defaults for a new user
-                const defaultPricingMatrix = [
-                    // Standard Dent - All 10 size ranges
-                    { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
-                    { damage_type: "Standard Dent", size_range: "11mm - 25mm", base_price: 90 },
-                    { damage_type: "Standard Dent", size_range: "26mm - 50mm", base_price: 120 },
-                    { damage_type: "Standard Dent", size_range: "51mm - 80mm", base_price: 180 },
-                    { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 },
-                    { damage_type: "Standard Dent", size_range: "121mm - 200mm", base_price: 300 },
-                    { damage_type: "Standard Dent", size_range: "201mm - 300mm", base_price: 360 },
-                    { damage_type: "Standard Dent", size_range: "301mm - 500mm", base_price: 450 },
-                    { damage_type: "Standard Dent", size_range: "501mm - 750mm", base_price: 550 },
-                    { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
-                    
-                    // Crease - First 7 size ranges
-                    { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 150 },
-                    { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 220 },
-                    { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 280 },
-                    { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 350 },
-                    { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 420 },
-                    { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
-                    { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 600 }
-                ];
+                const defaultPricingMatrix = DEFAULT_PRICING_MATRIX.map(row => ({ ...row }));
                 
                 const newFormData = {
                     ...formData,
@@ -480,17 +441,18 @@ export default function Settings() {
             setError("Please enter valid banking details: account name, 8-digit account number, and 6-digit sort code (e.g. 12-34-56).");
             return;
         }
-        const hasIncompletePricingRow = (formData.pricing_matrix || []).some(
-            entry => !entry.damage_type || !entry.size_range
-        );
         // Fix 5c: a zero price in the dent matrix is always an error — a free
         // repair is added as a line item on the quote, never as a matrix row.
-        const hasUnpricedRow = (formData.pricing_matrix || []).some(
-            entry => !(parseFloat(entry.base_price) > 0)
-        );
-        if (hasIncompletePricingRow || hasUnpricedRow) {
+        // The save-time block names the offending rows so the technician knows
+        // exactly which ones to fix.
+        const problemRows = (formData.pricing_matrix || [])
+            .filter(entry => !entry.damage_type || !entry.size_range || !(parseFloat(entry.base_price) > 0))
+            .map(entry => [toDisplayDamageType(entry.damage_type), entry.size_range].filter(Boolean).join(' · ') || 'an unnamed row')
+            .filter((label, idx, arr) => arr.indexOf(label) === idx);
+        if (problemRows.length > 0) {
+            const rowList = problemRows.slice(0, 3).join(', ') + (problemRows.length > 3 ? `, and ${problemRows.length - 3} more` : '');
             await showAlert(
-                "Every pricing matrix row needs a damage type, size range and a price above zero. Delete incomplete rows instead — free repairs belong in a quote's line items, not the matrix.",
+                `Every pricing matrix row needs a damage type, size range and a price above zero. Please fix: ${rowList}. Free repairs belong in a quote's line items, not the matrix.`,
                 "Pricing Matrix Incomplete"
             );
             return;
@@ -498,6 +460,10 @@ export default function Settings() {
         setSaving(true);
         setError(null);
         try {
+            // Sort the stored array at save time — never mid-typing — so the
+            // saved record and the on-screen form show identical, ordered rows.
+            const sortedMatrix = sortPricingMatrix(formData.pricing_matrix || [], formData.custom_damage_types || []);
+
             const dataToSave = {
                 user_email: user.email,
                 ...formData,
@@ -505,9 +471,9 @@ export default function Settings() {
                 available_pdr_tools: formData.available_pdr_tools || [],
                 specialized_damage_skills: formData.specialized_damage_skills || [],
                 primary_vehicle_types: formData.primary_vehicle_types || [],
-                pricing_matrix: formData.pricing_matrix || [], // NEW FIELD: Ensure it's an array
-                custom_damage_types: formData.custom_damage_types || [], // NEW FIELD
-                custom_size_ranges: formData.custom_size_ranges || [], // NEW FIELD
+                pricing_matrix: sortedMatrix,
+                custom_damage_types: formData.custom_damage_types || [],
+                custom_size_ranges: formData.custom_size_ranges || [],
                 // Ensure prefixes and numbers are not null/undefined for saving
                 quote_prefix: formData.quote_prefix || 'Q-',
                 invoice_prefix: formData.invoice_prefix || 'INV-',
@@ -517,13 +483,26 @@ export default function Settings() {
                 onboarding_completed: isOnboardingComplete(formData)
             };
 
-            if (settings && settings.id) {
-                await UserSetting.update(settings.id, dataToSave);
-            } else {
-                const newSettings = await UserSetting.create(dataToSave);
-                setSettings(newSettings); // Store the newly created settings object
+            // Update-only: ensureUserSetting is the single creator of settings
+            // records. If ours is somehow absent, ask it to create one and
+            // update the record it returns.
+            let targetId = settings && settings.id;
+            if (!targetId) {
+                const res = await base44.functions.invoke('ensureUserSetting', { user_id: user.id, email: user.email });
+                const payload = res?.data || res;
+                targetId = payload?.setting_id;
+                if (!targetId) throw new Error('Settings record could not be created');
             }
-            await loadData(); // Reload data to update settings and formData from server
+            await UserSetting.update(targetId, dataToSave);
+
+            // A save can never undo itself: the form keeps exactly what was
+            // saved. No post-save re-read replaces just-saved data, and a read
+            // returning no record is an inconsistent read — never a reason to
+            // reset the form.
+            setSettings(prev => ({ ...(prev || {}), ...dataToSave, id: targetId }));
+            setFormData(prev => ({ ...prev, pricing_matrix: sortedMatrix }));
+            savedPricingRef.current = getPricingSnapshot({ ...formData, pricing_matrix: sortedMatrix });
+            setIsDirtyPricing(false);
             await showAlert("Settings saved successfully!", "Success");
             } catch (err) {
             setError("Failed to save settings. Please try again.");

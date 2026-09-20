@@ -1,0 +1,78 @@
+{
+  "name": "Ensure Settings on Auth",
+  "description": "Seeds a UserSetting record (with the Set A default pricing matrix) when a user signs up, and self-heals a missing record on later sign-ins. Sends the welcome email on the genuine signup event only.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "app_user_auth",
+      "events": [
+        "signup",
+        "login"
+      ]
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "ensure_settings_on_auth",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "ensure_settings": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "ensureUserSetting",
+            "args": {
+              "user_id": "${ .trigger.user_id }",
+              "email": "${ .trigger.email }",
+              "event_type": "${ .trigger.event_type }"
+            }
+          },
+          "then": "check_signup",
+          "x-base44": {
+            "title": "Ensure settings record",
+            "description": "Seed with default pricing if missing"
+          }
+        }
+      },
+      {
+        "check_signup": {
+          "switch": [
+            {
+              "when": "${ .trigger.event_type == \"signup\" }",
+              "then": "send_welcome"
+            },
+            {
+              "when": "${ true }",
+              "then": "end"
+            }
+          ],
+          "x-base44": {
+            "title": "First sign-in?",
+            "description": "Welcome email on signup only"
+          }
+        }
+      },
+      {
+        "send_welcome": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendWelcomeEmailOnSignup",
+            "args": {
+              "user_id": "${ .trigger.user_id }",
+              "email": "${ .trigger.email }",
+              "event_type": "${ .trigger.event_type }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send welcome email",
+            "description": "One email, at first sign-in"
+          }
+        }
+      }
+    ]
+  }
+}

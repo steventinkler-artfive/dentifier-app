@@ -468,7 +468,7 @@ export default function QuoteGeneration({
         ]);
         const t1 = performance.now();
         QT('auth.me + GlobalSetting.filter (parallel)', `${(t1 - t0).toFixed(0)}ms`);
-        const settings = await base44.entities.UserSetting.filter({ user_email: user.email });
+        const settings = await base44.entities.UserSetting.filter({ user_email: user.email }, 'created_date');
         const t2 = performance.now();
         QT('UserSetting.filter', `${(t2 - t1).toFixed(0)}ms — settings reads total ${(t2 - t0).toFixed(0)}ms, elapsed since mount ${(t2 - mountTimeRef.current).toFixed(0)}ms`);
         const globalSettings = globalSettingsList.length > 0 ? globalSettingsList[0] : null;

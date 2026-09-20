@@ -133,7 +133,7 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
   const loadSettings = async () => {
     try {
       const currentUser = await User.me();
-      const userSettingsData = await UserSetting.filter({ user_email: currentUser.email });
+      const userSettingsData = await UserSetting.filter({ user_email: currentUser.email }, 'created_date');
       if (userSettingsData.length > 0) setUserSettings(userSettingsData[0]);
       else { setError('User settings not found. Please configure your settings first.'); return; }
       const globalSettingsData = await GlobalSetting.filter({ setting_key: 'main' });

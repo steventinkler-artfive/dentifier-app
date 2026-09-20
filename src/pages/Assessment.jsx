@@ -83,7 +83,7 @@ export default function AssessmentPage() {
   const loadUserSettings = async () => {
     try {
       const user = await base44.auth.me();
-      const settings = await UserSetting.filter({ user_email: user.email });
+      const settings = await UserSetting.filter({ user_email: user.email }, 'created_date');
       if (settings.length > 0) {
         setUserSettings(settings[0]);
       }
@@ -200,8 +200,21 @@ export default function AssessmentPage() {
         const totalAmount = vehicles.reduce((s, v) => s + (v.quote_amount || 0), 0);
 
         const currentUserData = await User.me();
-        const userSettingsList = await UserSetting.filter({ user_email: currentUserData.email });
-        const userSettingsData = userSettingsList.length > 0 ? userSettingsList[0] : null;
+        // Oldest-first ordering: if a duplicate ever survives, the original record wins.
+        const userSettingsList = await UserSetting.filter({ user_email: currentUserData.email }, 'created_date');
+        let userSettingsData = userSettingsList.length > 0 ? userSettingsList[0] : null;
+        if (!userSettingsData) {
+          // Self-heal: ensureUserSetting is the single creator of settings
+          // records. If that fails, fall back to the default quote number —
+          // the technician's work is never blocked.
+          try {
+            const res = await base44.functions.invoke('ensureUserSetting', { user_id: currentUserData.id, email: currentUserData.email });
+            const payload = res?.data || res;
+            if (payload?.setting) userSettingsData = payload.setting;
+          } catch (ensureError) {
+            console.error('Settings record unavailable; quote numbering defaulted', ensureError);
+          }
+        }
         let formattedQuoteNumber = 'Q-0001';
         if (userSettingsData) {
           const nextNum = parseInt(userSettingsData.next_quote_number) > 0 ? parseInt(userSettingsData.next_quote_number) : 1;
@@ -293,11 +306,24 @@ export default function AssessmentPage() {
       // Get current user and settings FIRST
       const currentUser = await User.me();
       
-      // Fetch the latest user settings
-      const userSettingsList = await UserSetting.filter({ user_email: currentUser.email });
+      // Fetch the latest user settings (oldest-first: the original record wins)
+      const userSettingsList = await UserSetting.filter({ user_email: currentUser.email }, 'created_date');
       let userSettings = userSettingsList.length > 0 ? userSettingsList[0] : null;
 
       let formattedQuoteNumber = 'Q-0001'; // Default fallback
+
+      if (!userSettings) {
+        // Self-heal: ensureUserSetting is the single creator of settings
+        // records. If that fails, proceed with the default quote number —
+        // the technician's work is never blocked.
+        try {
+          const res = await base44.functions.invoke('ensureUserSetting', { user_id: currentUser.id, email: currentUser.email });
+          const payload = res?.data || res;
+          if (payload?.setting) userSettings = payload.setting;
+        } catch (ensureError) {
+          console.error('Settings record unavailable; quote numbering defaulted to Q-0001', ensureError);
+        }
+      }
 
       if (userSettings) {
         // Get the current next_quote_number, default to 1 if not set or invalid
@@ -318,20 +344,6 @@ export default function AssessmentPage() {
         // Small delay to ensure the update is committed, though not strictly necessary for local DBs, good practice for remote
         await new Promise(resolve => setTimeout(resolve, 100));
         
-      } else {
-        // Create default settings if they don't exist
-        console.log('No user settings found, creating defaults and assigning Q-0001');
-        const defaultSettings = {
-          user_email: currentUser.email,
-          quote_prefix: 'Q-',
-          invoice_prefix: 'INV-',
-          next_quote_number: 2, // Next one will be Q-0002
-          next_invoice_number: 1,
-          currency: 'GBP'
-        };
-        
-        await UserSetting.create(defaultSettings);
-        formattedQuoteNumber = 'Q-0001'; // The current assessment gets the first number
       }
 
       // Now assign the generated quote number and creator email to the assessment payload

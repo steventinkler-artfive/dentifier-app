@@ -41,10 +41,15 @@ export default function TermsAcceptanceModal({ isOpen, onClose, onAccepted, sele
       if (userSettings?.id) {
         await base44.entities.UserSetting.update(userSettings.id, updateData);
       } else {
-        await base44.entities.UserSetting.create({
-          user_email: currentUser.email,
-          ...updateData,
-        });
+        // Update-only: ensureUserSetting is the single creator of settings
+        // records. Ask it to create ours, then update the record it returns.
+        // If it fails, the existing inline error shows and the checkbox
+        // state is kept for a manual retry.
+        const res = await base44.functions.invoke('ensureUserSetting', { user_id: currentUser.id, email: currentUser.email });
+        const payload = res?.data || res;
+        const ensuredId = payload?.setting_id;
+        if (!ensuredId) throw new Error('Settings record could not be created');
+        await base44.entities.UserSetting.update(ensuredId, updateData);
       }
 
       setAgreed(false);

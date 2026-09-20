@@ -101,7 +101,7 @@ export default function Reports() {
       setVehicles(vehicleLookup);
 
       // Load user settings for currency
-      const settings = await UserSetting.filter({ user_email: currentUser.email });
+      const settings = await UserSetting.filter({ user_email: currentUser.email }, 'created_date');
       if (settings.length > 0) {
         setUserSettings(settings[0]);
       }

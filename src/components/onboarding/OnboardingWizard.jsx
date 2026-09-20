@@ -12,6 +12,7 @@ import PricingQuotingForm from "./PricingQuotingForm";
 import TechnicianDetailsForm from "./TechnicianDetailsForm";
 import InstallInstructions from "./InstallInstructions";
 import { useInstallPrompt } from "./InstallPromptProvider";
+import { DEFAULT_PRICING_MATRIX } from "@/utils/defaultPricingMatrix";
 
 const STEPS = [
   { id: 'welcome', title: 'Welcome', section: null },
@@ -23,28 +24,11 @@ const STEPS = [
   { id: 'complete', title: 'Complete', section: null }
 ];
 
-// Fix 3: single source for the default matrix seeded by onboarding — used for
+// Single source for the default matrix (Set A), shared with Settings, the
+// pricing matrix reset and the backend seeding function — used for
 // first-ever creation, records missing a matrix at wizard open, and the
 // seed-at-Finish safety net.
-const DEFAULT_ONBOARDING_MATRIX = [
-  { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
-  { damage_type: "Standard Dent", size_range: "11mm - 25mm", base_price: 90 },
-  { damage_type: "Standard Dent", size_range: "26mm - 50mm", base_price: 120 },
-  { damage_type: "Standard Dent", size_range: "51mm - 80mm", base_price: 180 },
-  { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 },
-  { damage_type: "Standard Dent", size_range: "121mm - 200mm", base_price: 300 },
-  { damage_type: "Standard Dent", size_range: "201mm - 300mm", base_price: 360 },
-  { damage_type: "Standard Dent", size_range: "301mm - 500mm", base_price: 450 },
-  { damage_type: "Standard Dent", size_range: "501mm - 750mm", base_price: 550 },
-  { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
-  { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 130 },
-  { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 170 },
-  { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 250 },
-  { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 330 },
-  { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 415 },
-  { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
-  { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 620 }
-];
+const DEFAULT_ONBOARDING_MATRIX = DEFAULT_PRICING_MATRIX.map(row => ({ ...row }));
 
 export default function OnboardingWizard({ user, onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -71,7 +55,8 @@ export default function OnboardingWizard({ user, onComplete }) {
 
   const loadSettings = async () => {
     try {
-      const existingSettings = await base44.entities.UserSetting.filter({ user_email: user.email });
+      // Oldest-first ordering: if a duplicate ever survives, the original record wins.
+      const existingSettings = await base44.entities.UserSetting.filter({ user_email: user.email }, 'created_date');
       if (existingSettings.length > 0) {
         setSettings(existingSettings[0]);
         // Fix 3: seed the default matrix into ANY settings record that lacks one
@@ -105,25 +90,7 @@ export default function OnboardingWizard({ user, onComplete }) {
           available_pdr_tools: [],
           specialized_damage_skills: [],
           primary_vehicle_types: [],
-          pricing_matrix: [
-            { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
-            { damage_type: "Standard Dent", size_range: "11mm - 25mm", base_price: 90 },
-            { damage_type: "Standard Dent", size_range: "26mm - 50mm", base_price: 120 },
-            { damage_type: "Standard Dent", size_range: "51mm - 80mm", base_price: 180 },
-            { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 },
-            { damage_type: "Standard Dent", size_range: "121mm - 200mm", base_price: 300 },
-            { damage_type: "Standard Dent", size_range: "201mm - 300mm", base_price: 360 },
-            { damage_type: "Standard Dent", size_range: "301mm - 500mm", base_price: 450 },
-            { damage_type: "Standard Dent", size_range: "501mm - 750mm", base_price: 550 },
-            { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
-            { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 130 },
-            { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 170 },
-            { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 250 },
-            { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 330 },
-            { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 415 },
-            { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
-            { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 620 }
-          ]
+          pricing_matrix: DEFAULT_ONBOARDING_MATRIX.map(row => ({ ...row }))
         });
       }
     } catch (err) {
@@ -158,8 +125,14 @@ export default function OnboardingWizard({ user, onComplete }) {
         await base44.entities.UserSetting.update(settings.id, dataToSave);
         setSettings({ ...settings, ...dataToSave });
       } else {
-        const newSettings = await base44.entities.UserSetting.create(dataToSave);
-        setSettings(newSettings);
+        // Update-only: ensureUserSetting is the single creator of settings
+        // records. Ask it to create ours, then update the record it returns.
+        const res = await base44.functions.invoke('ensureUserSetting', { user_id: user.id, email: user.email });
+        const payload = res?.data || res;
+        const ensuredId = payload?.setting_id;
+        if (!ensuredId) throw new Error('Settings record could not be created');
+        await base44.entities.UserSetting.update(ensuredId, dataToSave);
+        setSettings({ ...dataToSave, id: ensuredId });
       }
     } catch (err) {
       console.error("Failed to save progress:", err);
@@ -316,7 +289,12 @@ export default function OnboardingWizard({ user, onComplete }) {
       if (settings?.id) {
         await base44.entities.UserSetting.update(settings.id, dataToSave);
       } else {
-        await base44.entities.UserSetting.create(dataToSave);
+        // Update-only: ensureUserSetting is the single creator of settings records.
+        const res = await base44.functions.invoke('ensureUserSetting', { user_id: user.id, email: user.email });
+        const payload = res?.data || res;
+        const ensuredId = payload?.setting_id;
+        if (!ensuredId) throw new Error('Settings record could not be created');
+        await base44.entities.UserSetting.update(ensuredId, dataToSave);
       }
 
       onComplete();

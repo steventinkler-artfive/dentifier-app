@@ -80,7 +80,7 @@ export default function Dashboard() {
         base44.entities.Assessment.filter({ created_by: user.email }, '-created_date'),
         base44.entities.Customer.filter({ created_by: user.email }),
         base44.entities.Vehicle.filter({ created_by: user.email }),
-        base44.entities.UserSetting.filter({ user_email: user.email })
+        base44.entities.UserSetting.filter({ user_email: user.email }, 'created_date')
       ]);
 
       const settings = settingsData.length > 0 ? settingsData[0] : null;

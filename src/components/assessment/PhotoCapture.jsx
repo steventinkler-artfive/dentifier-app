@@ -13,6 +13,7 @@ import { toDisplayDamageType, toStoredDamageType, BASE_DAMAGE_TYPES_STORED } fro
 import { getValidPricingEntries } from "@/utils/pricing";
 import { uploadImageToS3 } from "@/utils/uploadImageToS3";
 import { deleteS3ObjectsBestEffort } from "@/utils/s3Cleanup";
+import { sortBySizeNumber } from "@/utils/defaultPricingMatrix";
 
 const CAR_PANELS = [
   "Bonnet/Hood",
@@ -85,7 +86,7 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
     const loadPricingOptions = async () => {
       try {
         const currentUser = await base44.auth.me();
-        const userSettingsList = await base44.entities.UserSetting.filter({ user_email: currentUser.email });
+        const userSettingsList = await base44.entities.UserSetting.filter({ user_email: currentUser.email }, 'created_date');
         if (userSettingsList.length > 0) {
           const settings = userSettingsList[0];
           const pricingMatrix = settings.pricing_matrix || [];
@@ -260,7 +261,8 @@ export default function PhotoCapture({ initialPhotos = [], initialDamageItems = 
   const getAvailableSizeRanges = (damageType) => {
     if (!damageType) return allSizeRanges;
     const matching = pricingMatrix.filter(e => e.damage_type === damageType);
-    return matching.length > 0 ? matching.map(e => e.size_range) : allSizeRanges;
+    // Per-type filtering untouched; the offered sizes are numerically sorted.
+    return matching.length > 0 ? sortBySizeNumber(matching.map(e => e.size_range)) : allSizeRanges;
   };
 
   const handleDamageTypeChange = (itemIndex, displayValue) => {

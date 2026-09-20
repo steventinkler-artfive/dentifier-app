@@ -8,7 +8,8 @@
         "assessment_delete",
         "account_delete",
         "photo_removal",
-        "logo_removal"
+        "logo_removal",
+        "settings_duplicate_cleanup"
       ],
       "description": "Which deletion path fired this attempt"
     },
@@ -113,6 +114,11 @@
       }
     },
     "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "write": {
       "user_condition": {
         "role": "admin"
       }

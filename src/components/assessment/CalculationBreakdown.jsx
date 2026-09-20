@@ -39,6 +39,35 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
     return 'Matrix entry data unavailable';
   };
 
+  // Running money value at each uplift step (display only — compounding, the
+  // multipliers and the 2.5x cap are untouched; adjustedPrice and totalPrice
+  // remain the authoritative figures).
+  const buildUpliftSteps = (item) => {
+    const base = (item.baseSteelPrice !== undefined && item.baseSteelPrice !== null)
+      ? item.baseSteelPrice
+      : (item.basePrice || 0);
+    const steps = [];
+    let running = base;
+    const push = (label, mult, pctLabel) => {
+      if (!mult || mult === 1.0) return;
+      running *= mult;
+      steps.push({ label, pctLabel: pctLabel || formatMultiplier(mult), amount: running });
+    };
+    const m = item.multipliers || {};
+    if (item.material && item.material !== 'Steel') {
+      const pctLabel = item.material === 'HS Steel' ? '+25%' : item.material === 'Aluminum' ? '+35%' : formatMultiplier(m.material);
+      push(`Material (${item.material === 'Aluminum' ? 'Aluminium' : item.material})`, m.material, pctLabel);
+    }
+    if (m.repairMethod) push(`Repair Method (${item.repairMethod || 'N/A'})`, m.repairMethod);
+    if (m.depth) push(`Depth (${item.depth || 'N/A'})`, m.depth);
+    if (item.paintType && m.paintType) push(`Paint Type (${item.paintType})`, m.paintType);
+    if (item.affectsBodyLine && m.bodyLine) push('Body Line', m.bodyLine);
+    if (item.hasStretchedMetal && m.stretchedMetal) push('Stretched Metal', m.stretchedMetal);
+    if (m.notes && m.notes !== 1.0) push('Special Notes', m.notes);
+    const totalComplexity = (m.totalComplexity || 1.0) * (m.material || 1.0);
+    return { base, steps, total: running, totalComplexity };
+  };
+
   // Historical invented-price markers (pre-fix records). These breakdowns carry
   // a fabricated matrix entry, so they must render the warning branch — never
   // the green-ticked "MATRIX ENTRY USED" display. Data is untouched.
@@ -122,88 +151,36 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                 )}
 
                 {/* Multipliers */}
-                {item.multipliers && (
-                  <div className="p-3 bg-slate-900 rounded">
-                    <p className="text-xs text-slate-400 font-medium mb-2">MULTIPLIERS APPLIED:</p>
-                    <div className="space-y-1 text-sm">
-                      {item.material && item.material !== 'Steel' && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-300">
-                            Material ({item.material === 'Aluminum' ? 'Aluminium' : item.material}):
-                          </span>
-                          <span className="text-white font-medium">
-                            {item.material === 'HS Steel' ? '+25%' : item.material === 'Aluminum' ? '+35%' : formatMultiplier(item.multipliers.material)}
-                          </span>
-                        </div>
-                      )}
-                      {item.multipliers.repairMethod && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-300">
-                            Repair Method ({item.repairMethod || 'N/A'}):
-                          </span>
-                          <span className="text-white font-medium">
-                            {formatMultiplier(item.multipliers.repairMethod)}
-                          </span>
-                        </div>
-                      )}
-                      {item.multipliers.depth && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-300">
-                            Depth ({item.depth || 'N/A'}):
-                          </span>
-                          <span className="text-white font-medium">
-                            {formatMultiplier(item.multipliers.depth)}
-                          </span>
-                        </div>
-                      )}
-                      {item.paintType && item.multipliers.paintType && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-300">
-                            Paint Type ({item.paintType}):
-                          </span>
-                          <span className="text-white font-medium">
-                            {formatMultiplier(item.multipliers.paintType)}
-                          </span>
-                        </div>
-                      )}
-                      {item.affectsBodyLine && item.multipliers.bodyLine && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-300">Body Line:</span>
-                          <span className="text-white font-medium">
-                            {formatMultiplier(item.multipliers.bodyLine)}
-                          </span>
-                        </div>
-                      )}
-                      {item.hasStretchedMetal && item.multipliers.stretchedMetal && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-300">Stretched Metal:</span>
-                          <span className="text-white font-medium">
-                            {formatMultiplier(item.multipliers.stretchedMetal)}
-                          </span>
-                        </div>
-                      )}
-                      {item.multipliers.notes && item.multipliers.notes !== 1.0 && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-300">Special Notes:</span>
-                          <span className="text-white font-medium">
-                            {formatMultiplier(item.multipliers.notes)}
-                          </span>
-                        </div>
-                      )}
-                      {item.multipliers.totalComplexity && (() => {
-                        const total = item.multipliers.totalComplexity * (item.multipliers.material || 1.0);
-                        return total !== 1.0 ? (
+                {item.multipliers && (() => {
+                  const uplift = buildUpliftSteps(item);
+                  const symbol = getCurrencySymbol();
+                  return (
+                    <div className="p-3 bg-slate-900 rounded">
+                      <p className="text-xs text-slate-400 font-medium mb-2">MULTIPLIERS APPLIED:</p>
+                      <div className="space-y-1 text-sm">
+                        {uplift.steps.length === 0 && (
+                          <p className="text-slate-400">No uplift</p>
+                        )}
+                        {uplift.steps.map((s, i) => (
+                          <div key={i} className="flex justify-between">
+                            <span className="text-slate-300">{s.label}:</span>
+                            <span className="text-white font-medium">
+                              {s.pctLabel} → {symbol}{s.amount.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                        {uplift.totalComplexity !== 1.0 && (
                           <div className="flex justify-between pt-2 border-t border-slate-700">
                             <span className="text-green-300 font-medium">Total Uplift:</span>
                             <span className="text-green-300 font-bold">
-                              {formatMultiplier(total)}
+                              {formatMultiplier(uplift.totalComplexity)} → {symbol}{Math.min(uplift.total, uplift.base * 2.5).toFixed(2)}
                             </span>
                           </div>
-                        ) : null;
-                      })()}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Final Calculation */}
                 <div className="p-3 bg-green-900/20 rounded border border-green-700/50">

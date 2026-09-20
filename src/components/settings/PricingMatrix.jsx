@@ -17,6 +17,7 @@ import {
 import { Plus, Trash2, AlertCircle, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { toDisplayDamageType } from "@/utils/damageTypeDisplay";
+import { DEFAULT_PRICING_MATRIX, getSizeSortNumber } from "@/utils/defaultPricingMatrix";
 
 const CORE_DAMAGE_TYPES = ["Standard Dent", "Crease"];
 
@@ -33,28 +34,8 @@ const SIZE_RANGE_OPTIONS = [
   "751mm - 1000mm (or larger)"
 ];
 
-const DEFAULT_PRICING_MATRIX = [
-  // Standard Dent - All 10 size ranges
-  { damage_type: "Standard Dent", size_range: "up to 10mm", base_price: 60 },
-  { damage_type: "Standard Dent", size_range: "11mm - 25mm", base_price: 90 },
-  { damage_type: "Standard Dent", size_range: "26mm - 50mm", base_price: 120 },
-  { damage_type: "Standard Dent", size_range: "51mm - 80mm", base_price: 180 },
-  { damage_type: "Standard Dent", size_range: "81mm - 120mm", base_price: 240 },
-  { damage_type: "Standard Dent", size_range: "121mm - 200mm", base_price: 300 },
-  { damage_type: "Standard Dent", size_range: "201mm - 300mm", base_price: 360 },
-  { damage_type: "Standard Dent", size_range: "301mm - 500mm", base_price: 450 },
-  { damage_type: "Standard Dent", size_range: "501mm - 750mm", base_price: 550 },
-  { damage_type: "Standard Dent", size_range: "751mm - 1000mm (or larger)", base_price: 650 },
-  
-  // Crease - First 7 size ranges
-  { damage_type: "Crease", size_range: "11mm - 25mm", base_price: 130 },
-  { damage_type: "Crease", size_range: "26mm - 50mm", base_price: 170 },
-  { damage_type: "Crease", size_range: "51mm - 80mm", base_price: 250 },
-  { damage_type: "Crease", size_range: "81mm - 120mm", base_price: 330 },
-  { damage_type: "Crease", size_range: "121mm - 200mm", base_price: 415 },
-  { damage_type: "Crease", size_range: "201mm - 300mm", base_price: 500 },
-  { damage_type: "Crease", size_range: "301mm - 500mm", base_price: 620 }
-];
+// The default matrix (Set A) lives in @/utils/defaultPricingMatrix — shared
+// with Settings, onboarding and the backend seeding function.
 
 export default function PricingMatrix({ pricingMatrix, customDamageTypes, customSizeRanges = [], onChange, onCustomTypesChange, onCustomSizeRangesChange, currency, worksOnAluminum }) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -67,6 +48,42 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [priceBuffer, setPriceBuffer] = useState({ index: null, value: '', original: 0 });
   const { showAlert, showConfirm } = useAlert();
+
+  // "Added by you": judged on the damage type + size combination against the
+  // consolidated default (Set A) — a default row with an edited price is
+  // never labelled.
+  const defaultRowSet = new Set(DEFAULT_PRICING_MATRIX.map(r => `${r.damage_type}|${r.size_range}`));
+  const isAddedByUser = (entry) =>
+    !!entry.damage_type && !!entry.size_range && !defaultRowSet.has(`${entry.damage_type}|${entry.size_range}`);
+
+  // Interior size gaps per damage type: standard size options with no row,
+  // strictly between that type's lowest and highest priced sizes. Omissions
+  // above the highest or below the lowest are never flagged. Display only —
+  // nothing is filled or cleaned up.
+  const getInteriorGaps = (matrix) => {
+    const byType = {};
+    (matrix || []).forEach(e => {
+      if (!e.damage_type || !e.size_range) return;
+      (byType[e.damage_type] = byType[e.damage_type] || []).push(e);
+    });
+    const gaps = [];
+    Object.entries(byType).forEach(([type, rows]) => {
+      const sizeNums = rows.map(r => getSizeSortNumber(r.size_range)).filter(n => Number.isFinite(n));
+      if (sizeNums.length < 2) return;
+      const min = Math.min(...sizeNums);
+      const max = Math.max(...sizeNums);
+      const present = new Set(rows.map(r => r.size_range));
+      const missing = SIZE_RANGE_OPTIONS.filter(opt => {
+        const n = getSizeSortNumber(opt);
+        return n > min && n < max && !present.has(opt);
+      });
+      if (missing.length > 0) gaps.push({ type, missing });
+    });
+    return gaps;
+  };
+
+  const gapsBeforeChange = (matrix) =>
+    new Set(getInteriorGaps(matrix).map(g => `${g.type}|${g.missing.join(',')}`));
 
   const getCurrencySymbol = (curr) => {
     const symbols = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$' };
@@ -287,6 +304,9 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
           <div className="space-y-0 divide-y divide-slate-700">
             {pricingMatrix.map((entry, index) => (
               <div key={index} className={`py-5 first:pt-0 last:pb-0 ${(!entry.damage_type || !entry.size_range || !(parseFloat(entry.base_price) > 0)) ? 'bg-red-950/30 -mx-2 px-2 rounded-lg border border-red-800/50' : ''}`}>
+                {isAddedByUser(entry) && (
+                  <p className="text-blue-300 text-xs mb-2">Added by you</p>
+                )}
                 {(!entry.damage_type || !entry.size_range || !(parseFloat(entry.base_price) > 0)) && (
                   <p className="text-red-400 text-xs mb-2 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
@@ -326,12 +346,25 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
                     <Label className="text-slate-400 text-xs">Size Range</Label>
                     <Select
                       value={entry.size_range}
-                      onValueChange={(value) => {
+                      onValueChange={async (value) => {
                         if (value === "__add_custom_size__") {
                           setIsAddingCustomSizeRange(true);
-                        } else {
-                          handleUpdateEntry(index, 'size_range', value);
+                          return;
                         }
+                        // Warn — never block — when the change opens a size
+                        // gap inside this type's own price range.
+                        const before = gapsBeforeChange(pricingMatrix);
+                        const newGaps = getInteriorGaps(
+                          pricingMatrix.map((e, i) => i === index ? { ...e, size_range: value } : e)
+                        ).filter(g => !before.has(`${g.type}|${g.missing.join(',')}`));
+                        if (newGaps.length > 0) {
+                          const confirmed = await showConfirm(
+                            `Changing this size leaves a gap in your price range for ${newGaps.map(g => toDisplayDamageType(g.type)).join(', ')}. Quotes in the gap will be interpolated from the neighbouring prices. Continue?`,
+                            "Size Gap"
+                          );
+                          if (!confirmed) return;
+                        }
+                        handleUpdateEntry(index, 'size_range', value);
                       }}
                     >
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-9">
@@ -393,6 +426,25 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
               </div>
             ))}
           </div>
+
+          {/* Interior size gap warnings — display only, nothing is filled */}
+          {(() => {
+            const gaps = getInteriorGaps(pricingMatrix);
+            if (gaps.length === 0) return null;
+            return (
+              <div className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 space-y-1">
+                <p className="text-amber-300 text-xs font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Size gaps in your price ranges
+                </p>
+                {gaps.map(g => (
+                  <p key={g.type} className="text-amber-200/90 text-xs">
+                    {toDisplayDamageType(g.type)}: no price for {g.missing.join(', ')}. Quotes in these sizes will be interpolated from the neighbouring prices.
+                  </p>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Add Custom Type Modal */}
           {isAddingCustomType && (
@@ -494,6 +546,18 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
             <AlertDialogDescription className="text-slate-400">
               Are you sure you want to delete this pricing entry? This action cannot be undone.
             </AlertDialogDescription>
+            {(() => {
+              if (entryToDelete === null || entryToDelete === undefined) return null;
+              const before = gapsBeforeChange(pricingMatrix);
+              const newGaps = getInteriorGaps(pricingMatrix.filter((_, i) => i !== entryToDelete))
+                .filter(g => !before.has(`${g.type}|${g.missing.join(',')}`));
+              if (newGaps.length === 0) return null;
+              return (
+                <p className="text-amber-300 text-sm mt-3">
+                  Heads up: deleting this entry leaves a size gap in your price range for {newGaps.map(g => toDisplayDamageType(g.type)).join(', ')}. Quotes in the gap will be interpolated from the neighbouring prices.
+                </p>
+              );
+            })()}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700">
