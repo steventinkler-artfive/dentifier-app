@@ -48,15 +48,18 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
       : (item.basePrice || 0);
     const steps = [];
     let running = base;
-    const push = (label, mult, pctLabel) => {
-      if (!mult || mult === 1.0) return;
+    const push = (label, mult) => {
+      if (!mult) return;
+      if (mult === 1.0) {
+        steps.push({ label, pctLabel: 'no uplift', amount: running, isUplift: false });
+        return;
+      }
       running *= mult;
-      steps.push({ label, pctLabel: pctLabel || formatMultiplier(mult), amount: running });
+      steps.push({ label, pctLabel: formatMultiplier(mult), amount: running, isUplift: true });
     };
     const m = item.multipliers || {};
-    if (item.material && item.material !== 'Steel') {
-      const pctLabel = item.material === 'HS Steel' ? '+25%' : item.material === 'Aluminum' ? '+35%' : formatMultiplier(m.material);
-      push(`Material (${item.material === 'Aluminum' ? 'Aluminium' : item.material})`, m.material, pctLabel);
+    if (item.material && item.material !== 'Steel' && m.material) {
+      push(`Material (${item.material === 'Aluminum' ? 'Aluminium' : item.material})`, m.material);
     }
     if (m.repairMethod) push(`Repair Method (${item.repairMethod || 'N/A'})`, m.repairMethod);
     if (m.depth) push(`Depth (${item.depth || 'N/A'})`, m.depth);
@@ -64,8 +67,14 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
     if (item.affectsBodyLine && m.bodyLine) push('Body Line', m.bodyLine);
     if (item.hasStretchedMetal && m.stretchedMetal) push('Stretched Metal', m.stretchedMetal);
     if (m.notes && m.notes !== 1.0) push('Special Notes', m.notes);
-    const totalComplexity = (m.totalComplexity || 1.0) * (m.material || 1.0);
-    return { base, steps, total: running, totalComplexity };
+    // The engine caps the complexity product (excluding material) at 2.5 and
+    // stores the capped value, so recompute the uncapped product to know
+    // whether the cap actually bit.
+    const uncappedComplexity = [m.repairMethod, m.depth, m.bodyLine, m.stretchedMetal, m.paintType, m.notes]
+      .reduce((acc, v) => acc * (v || 1.0), 1.0);
+    const capped = uncappedComplexity > 2.5;
+    const runningTotal = capped ? (running / uncappedComplexity) * 2.5 : running;
+    return { base, steps, uncappedComplexity, capped, runningTotal };
   };
 
   // Historical invented-price markers (pre-fix records). These breakdowns carry
@@ -141,7 +150,7 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                     </div>
                     {item.aluminumMultiplier > 1 && (
                       <div>
-                        <span className="text-slate-400">Aluminium (x1.35):</span>
+                        <span className="text-slate-400">Aluminium (+35%):</span>
                         <span className="text-white ml-2 font-medium">
                           {getCurrencySymbol()}{item.basePrice?.toFixed(2)}
                         </span>
@@ -154,28 +163,45 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                 {item.multipliers && (() => {
                   const uplift = buildUpliftSteps(item);
                   const symbol = getCurrencySymbol();
+                  const upliftCount = uplift.steps.filter(s => s.isUplift).length;
+                  const hasUplift = uplift.steps.some(s => s.isUplift);
+                  // Two right-aligned columns: uplift percentage, then the running
+                  // money value. The label column wraps under itself so long
+                  // labels never drag the numbers out of line.
+                  const rowClass = "grid grid-cols-[1fr_minmax(3.5rem,auto)_minmax(4.5rem,auto)] items-baseline gap-x-2 text-sm";
                   return (
                     <div className="p-3 bg-slate-900 rounded">
                       <p className="text-xs text-slate-400 font-medium mb-2">MULTIPLIERS APPLIED:</p>
-                      <div className="space-y-1 text-sm">
+                      <div className="space-y-1">
                         {uplift.steps.length === 0 && (
-                          <p className="text-slate-400">No uplift</p>
+                          <p className="text-slate-400 text-sm">No uplift</p>
                         )}
                         {uplift.steps.map((s, i) => (
-                          <div key={i} className="flex justify-between">
-                            <span className="text-slate-300">{s.label}:</span>
-                            <span className="text-white font-medium">
-                              {s.pctLabel} → {symbol}{s.amount.toFixed(2)}
-                            </span>
+                          <div key={i} className={rowClass}>
+                            <span className={`break-words pr-1 ${s.isUplift ? 'text-slate-300' : 'text-slate-400'}`}>{s.label}</span>
+                            <span className={`text-right tabular-nums ${s.isUplift ? 'text-slate-300' : 'text-slate-500'}`}>{s.pctLabel}</span>
+                            <span className={`text-right tabular-nums font-medium ${s.isUplift ? 'text-white' : 'text-slate-400'}`}>{symbol}{s.amount.toFixed(2)}</span>
                           </div>
                         ))}
-                        {uplift.totalComplexity !== 1.0 && (
-                          <div className="flex justify-between pt-2 border-t border-slate-700">
-                            <span className="text-green-300 font-medium">Total Uplift:</span>
-                            <span className="text-green-300 font-bold">
-                              {formatMultiplier(uplift.totalComplexity)} → {symbol}{Math.min(uplift.total, uplift.base * 2.5).toFixed(2)}
+                        {hasUplift && (
+                          <div className={`${rowClass} pt-2 border-t border-slate-700`}>
+                            <span className="text-green-300 font-medium break-words pr-1">
+                              {uplift.capped ? 'Total uplift (capped)' : 'Total uplift'}
+                            </span>
+                            <span className="text-right text-green-300 font-medium tabular-nums">
+                              {formatMultiplier(uplift.runningTotal / uplift.base)}
+                            </span>
+                            <span className="text-right text-green-300 font-bold tabular-nums">
+                              {symbol}{uplift.runningTotal.toFixed(2)}
                             </span>
                           </div>
+                        )}
+                        {(uplift.capped || upliftCount >= 2) && (
+                          <p className="text-xs text-slate-500 mt-2">
+                            {uplift.capped
+                              ? 'Uplifts are capped at +150%. Each uplift applies to the price above it, not the base price.'
+                              : 'Each uplift applies to the price above it, not the base price.'}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -185,17 +211,18 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                 {/* Final Calculation */}
                 <div className="p-3 bg-green-900/20 rounded border border-green-700/50">
                   <div className="space-y-1 text-sm">
-                    {item.adjustedPrice && (
+                    {item.adjustedPrice !== undefined && item.totalPrice !== undefined &&
+                      Number(item.totalPrice) !== Number(item.adjustedPrice) && (
                       <div className="flex justify-between">
-                        <span className="text-slate-300">Price (before rounding):</span>
-                        <span className="text-white">
-                          {getCurrencySymbol()}{item.adjustedPrice.toFixed(2)}
+                        <span className="text-slate-300">Rounded to nearest {getCurrencySymbol()}5</span>
+                        <span className="text-white font-medium tabular-nums">
+                          {getCurrencySymbol()}{item.totalPrice.toFixed(2)}
                         </span>
                       </div>
                     )}
                     {item.totalPrice !== undefined && (
                       <div className="flex justify-between pt-2 border-t border-green-700/30">
-                        <span className="text-green-300 font-semibold">Final Customer Price:</span>
+                        <span className="text-green-300 font-semibold">Final customer price</span>
                         <span className="text-green-300 font-bold text-lg">
                           {getCurrencySymbol()}{item.totalPrice.toFixed(2)} ✓
                         </span>
