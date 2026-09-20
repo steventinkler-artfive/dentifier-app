@@ -351,15 +351,17 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
                           setIsAddingCustomSizeRange(true);
                           return;
                         }
-                        // Warn — never block — when the change opens a size
-                        // gap inside this type's own price range.
+                        // Warn — never block — when the change removes a size
+                        // from this type's priced range: it disappears from
+                        // the quoting screen's dropdown.
                         const before = gapsBeforeChange(pricingMatrix);
                         const newGaps = getInteriorGaps(
                           pricingMatrix.map((e, i) => i === index ? { ...e, size_range: value } : e)
                         ).filter(g => !before.has(`${g.type}|${g.missing.join(',')}`));
                         if (newGaps.length > 0) {
+                          const g = newGaps[0];
                           const confirmed = await showConfirm(
-                            `Changing this size leaves a gap in your price range for ${newGaps.map(g => toDisplayDamageType(g.type)).join(', ')}. Quotes in the gap will be interpolated from the neighbouring prices. Continue?`,
+                            `${toDisplayDamageType(g.type)} will have no price for ${g.missing.join(', ')}. That size will no longer be available when quoting. Continue?`,
                             "Size Gap"
                           );
                           if (!confirmed) return;
@@ -544,20 +546,22 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Confirm Deletion</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-400">
-              Are you sure you want to delete this pricing entry? This action cannot be undone.
+              {(() => {
+                if (entryToDelete === null || entryToDelete === undefined) {
+                  return "Are you sure you want to delete this pricing entry? This action cannot be undone.";
+                }
+                // Deleting removes that size from the quoting screen's
+                // dropdown — say so plainly.
+                const before = gapsBeforeChange(pricingMatrix);
+                const newGaps = getInteriorGaps(pricingMatrix.filter((_, i) => i !== entryToDelete))
+                  .filter(g => !before.has(`${g.type}|${g.missing.join(',')}`));
+                if (newGaps.length === 0) {
+                  return "Are you sure you want to delete this pricing entry? This action cannot be undone.";
+                }
+                const g = newGaps[0];
+                return `${toDisplayDamageType(g.type)} will have no price for ${g.missing.join(', ')}. That size will no longer be available when quoting. Continue?`;
+              })()}
             </AlertDialogDescription>
-            {(() => {
-              if (entryToDelete === null || entryToDelete === undefined) return null;
-              const before = gapsBeforeChange(pricingMatrix);
-              const newGaps = getInteriorGaps(pricingMatrix.filter((_, i) => i !== entryToDelete))
-                .filter(g => !before.has(`${g.type}|${g.missing.join(',')}`));
-              if (newGaps.length === 0) return null;
-              return (
-                <p className="text-amber-300 text-sm mt-3">
-                  Heads up: deleting this entry leaves a size gap in your price range for {newGaps.map(g => toDisplayDamageType(g.type)).join(', ')}. Quotes in the gap will be interpolated from the neighbouring prices.
-                </p>
-              );
-            })()}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700">
