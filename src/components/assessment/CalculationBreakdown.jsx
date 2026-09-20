@@ -74,7 +74,8 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
       .reduce((acc, v) => acc * (v || 1.0), 1.0);
     const capped = uncappedComplexity > 2.5;
     const runningTotal = capped ? (running / uncappedComplexity) * 2.5 : running;
-    return { base, steps, uncappedComplexity, capped, runningTotal };
+    const hasMaterialUplift = !!(item.material && item.material !== 'Steel' && m.material && m.material !== 1.0);
+    return { base, steps, uncappedComplexity, capped, runningTotal, hasMaterialUplift };
   };
 
   // Historical invented-price markers (pre-fix records). These breakdowns carry
@@ -199,7 +200,9 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                         {(uplift.capped || upliftCount >= 2) && (
                           <p className="text-xs text-slate-500 mt-2">
                             {uplift.capped
-                              ? 'Uplifts are capped at +150%. Each uplift applies to the price above it, not the base price.'
+                              ? (uplift.hasMaterialUplift
+                                ? 'Complexity uplifts are capped at +150%. The material uplift is applied on top.'
+                                : 'Uplifts are capped at +150%. Each uplift applies to the price above it, not the base price.')
                               : 'Each uplift applies to the price above it, not the base price.'}
                           </p>
                         )}
