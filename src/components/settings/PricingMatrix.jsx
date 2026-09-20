@@ -464,7 +464,7 @@ export default function PricingMatrix({ pricingMatrix, customDamageTypes, custom
                 </p>
                 {gaps.map(g => (
                   <p key={g.type} className="text-amber-200/90 text-xs">
-                    {toDisplayDamageType(g.type)}: no price for {g.missing.join(', ')}. Quotes in these sizes will be interpolated from the neighbouring prices.
+                    {toDisplayDamageType(g.type)}: no price for {g.missing.join(', ')}. That size won't be available when quoting until you price it.
                   </p>
                 ))}
               </div>
