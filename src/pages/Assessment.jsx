@@ -210,7 +210,9 @@ export default function AssessmentPage() {
           try {
             const res = await base44.functions.invoke('ensureUserSetting', { user_id: currentUserData.id, email: currentUserData.email });
             const payload = res?.data || res;
-            if (payload?.setting) userSettingsData = payload.setting;
+            // The function returns only the record id — read our own record
+            // through the SDK (ownership enforced), never a body from the wire.
+            if (payload?.setting_id) userSettingsData = await UserSetting.get(payload.setting_id);
           } catch (ensureError) {
             console.error('Settings record unavailable; quote numbering defaulted', ensureError);
           }
@@ -319,7 +321,9 @@ export default function AssessmentPage() {
         try {
           const res = await base44.functions.invoke('ensureUserSetting', { user_id: currentUser.id, email: currentUser.email });
           const payload = res?.data || res;
-          if (payload?.setting) userSettings = payload.setting;
+          // The function returns only the record id — read our own record
+          // through the SDK (ownership enforced), never a body from the wire.
+          if (payload?.setting_id) userSettings = await UserSetting.get(payload.setting_id);
         } catch (ensureError) {
           console.error('Settings record unavailable; quote numbering defaulted to Q-0001', ensureError);
         }

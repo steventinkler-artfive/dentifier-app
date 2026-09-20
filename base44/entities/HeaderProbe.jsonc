@@ -1,0 +1,40 @@
+{
+  "name": "HeaderProbe",
+  "type": "object",
+  "properties": {
+    "payload": {
+      "type": "string",
+      "description": "Redacted header-set JSON captured by the temporary ensureUserSetting probe. Values are default-deny redacted; only allowlisted header names keep values."
+    }
+  },
+  "required": [
+    "payload"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "write": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

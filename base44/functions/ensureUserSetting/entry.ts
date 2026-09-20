@@ -32,6 +32,23 @@ export default async function(req) {
         const base44 = createClientFromRequest(req);
         const body = await req.json().catch(() => ({}));
 
+        // TEMPORARY OBSERVATION PROBE — for the workflow-auth marker
+        // verification. Captures the header NAMES of every invocation
+        // (values default-deny redacted; only transport-level fields keep
+        // values). Remove this block and the HeaderProbe entity once the
+        // marker question is settled.
+        try {
+            const headers = {};
+            for (const [k, v] of req.headers) {
+                headers[k] = ['host', 'user-agent', 'content-type', 'content-length'].includes(k) ? v : '[redacted]';
+            }
+            await base44.asServiceRole.entities.HeaderProbe.create({
+                payload: JSON.stringify({ at: new Date().toISOString(), body_keys: Object.keys(body || {}), headers })
+            });
+        } catch (probeError) {
+            console.error('HeaderProbe capture failed:', probeError);
+        }
+
         // Two callers:
         // 1. The auth workflow (service context, no user token) — passes the
         //    trigger's email; we verify it belongs to a real app user.
@@ -91,12 +108,14 @@ export default async function(req) {
 
         const existing = await findExisting();
         if (existing.length > 0) {
+            // SECURITY: no record body is ever returned — the caller gets the
+            // record id only. Authenticated callers read their own record
+            // through the SDK, which enforces ownership.
             return Response.json({
                 status: 'exists',
                 created: false,
                 setting_id: existing[0].id,
-                duplicate_count: existing.length,
-                setting: existing[0]
+                duplicate_count: existing.length
             });
         }
 
@@ -151,8 +170,7 @@ export default async function(req) {
             status: 'created',
             created: true,
             setting_id: primary.id,
-            duplicate_count: finalRecords.length,
-            setting: primary
+            duplicate_count: finalRecords.length
         });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
