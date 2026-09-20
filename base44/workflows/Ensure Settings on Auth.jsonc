@@ -15,7 +15,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "ensure_settings_on_auth",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
@@ -27,7 +27,8 @@
             "args": {
               "user_id": "${ .trigger.user_id }",
               "email": "${ .trigger.email }",
-              "event_type": "${ .trigger.event_type }"
+              "event_type": "${ .trigger.event_type }",
+              "workflow_secret": "d334ffdb81046beec0fce69d904559e1f83d0f357a5122707b1e68b40fa9a18b"
             }
           },
           "then": "check_signup",

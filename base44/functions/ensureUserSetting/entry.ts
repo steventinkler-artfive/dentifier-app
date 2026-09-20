@@ -32,22 +32,14 @@ export default async function(req) {
         const base44 = createClientFromRequest(req);
         const body = await req.json().catch(() => ({}));
 
-        // TEMPORARY OBSERVATION PROBE — for the workflow-auth marker
-        // verification. Captures the header NAMES of every invocation
-        // (values default-deny redacted; only transport-level fields keep
-        // values). Remove this block and the HeaderProbe entity once the
-        // marker question is settled.
-        try {
-            const headers = {};
-            for (const [k, v] of req.headers) {
-                headers[k] = ['host', 'user-agent', 'content-type', 'content-length'].includes(k) ? v : '[redacted]';
-            }
-            await base44.asServiceRole.entities.HeaderProbe.create({
-                payload: JSON.stringify({ at: new Date().toISOString(), body_keys: Object.keys(body || {}), headers })
-            });
-        } catch (probeError) {
-            console.error('HeaderProbe capture failed:', probeError);
-        }
+        // Shared secret presented by the auth workflow's invoke args.
+        // Header-based markers were tested and REJECTED as a gate:
+        // x-workflow-run and arbitrary custom headers pass verbatim
+        // through the platform dispatcher to this function, so any
+        // external caller can forge them. The secret travels in the
+        // body between server-side components only — it exists nowhere
+        // in browser-shipped code.
+        const WORKFLOW_SHARED_SECRET = 'd334ffdb81046beec0fce69d904559e1f83d0f357a5122707b1e68b40fa9a18b';
 
         // Two callers:
         // 1. The auth workflow (service context, no user token) — passes the
@@ -68,6 +60,11 @@ export default async function(req) {
         }
 
         if (!email) {
+            // SECURITY GATE: unauthenticated seeding is reserved for the
+            // auth workflow alone — it must present the shared secret.
+            if (body?.workflow_secret !== WORKFLOW_SHARED_SECRET) {
+                return Response.json({ error: 'Forbidden' }, { status: 403 });
+            }
             email = (body?.email || '').toString().trim();
             if (!email) {
                 return Response.json({ error: 'Email required' }, { status: 400 });
