@@ -170,13 +170,19 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                   // money value. The label column wraps under itself so long
                   // labels never drag the numbers out of line.
                   const rowClass = "grid grid-cols-[1fr_minmax(3.5rem,auto)_minmax(4.5rem,auto)] items-baseline gap-x-2 text-sm";
+                  const showRounding = item.adjustedPrice !== undefined && item.totalPrice !== undefined &&
+                    Number(item.totalPrice) !== Number(item.adjustedPrice);
+                  if (!hasUplift) {
+                    return (
+                      <div className="p-3 bg-slate-900 rounded">
+                        <p className="text-slate-400 text-sm">No uplifts applied</p>
+                      </div>
+                    );
+                  }
                   return (
                     <div className="p-3 bg-slate-900 rounded">
                       <p className="text-xs text-slate-400 font-medium mb-2">MULTIPLIERS APPLIED:</p>
                       <div className="space-y-1">
-                        {uplift.steps.length === 0 && (
-                          <p className="text-slate-400 text-sm">No uplift</p>
-                        )}
                         {uplift.steps.map((s, i) => (
                           <div key={i} className={rowClass}>
                             <span className={`break-words pr-1 ${s.isUplift ? 'text-slate-300' : 'text-slate-400'}`}>{s.label}</span>
@@ -197,6 +203,15 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                             </span>
                           </div>
                         )}
+                        {showRounding && (
+                          <div className={rowClass}>
+                            <span className="text-slate-300 break-words pr-1">Rounded to nearest {symbol}5</span>
+                            <span></span>
+                            <span className="text-right text-white font-medium tabular-nums">
+                              {symbol}{item.totalPrice.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                         {(uplift.capped || upliftCount >= 2) && (
                           <p className="text-xs text-slate-500 mt-2">
                             {uplift.capped
@@ -214,17 +229,8 @@ export default function CalculationBreakdown({ breakdownData = [], currency = 'G
                 {/* Final Calculation */}
                 <div className="p-3 bg-green-900/20 rounded border border-green-700/50">
                   <div className="space-y-1 text-sm">
-                    {item.adjustedPrice !== undefined && item.totalPrice !== undefined &&
-                      Number(item.totalPrice) !== Number(item.adjustedPrice) && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-300">Rounded to nearest {getCurrencySymbol()}5</span>
-                        <span className="text-white font-medium tabular-nums">
-                          {getCurrencySymbol()}{item.totalPrice.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
                     {item.totalPrice !== undefined && (
-                      <div className="flex justify-between pt-2 border-t border-green-700/30">
+                      <div className="flex justify-between">
                         <span className="text-green-300 font-semibold">Final customer price</span>
                         <span className="text-green-300 font-bold text-lg">
                           {getCurrencySymbol()}{item.totalPrice.toFixed(2)} ✓
