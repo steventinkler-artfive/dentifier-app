@@ -399,19 +399,6 @@ function calculateDamageItemPrice(damageItem, hourlyRate, pricingMatrix) {
   };
 }
 
-/**
- * Determines the outcome-caveat type for a damage item.
- * Computed in code so the notes LLM never infers hedging from depth or
- * repair method on its own — the prompt consumes this value verbatim.
- */
-function getCaveatType(damageItem) {
-  if (damageItem.has_stretched_metal) return 'stretched_metal';
-  if (damageItem.repair_method === 'Limited Tool Access') return 'limited_access';
-  if (damageItem.depth === 'Deep / Sharp') return 'deep_depth';
-  if (damageItem.depth === 'Medium') return 'medium_depth';
-  return 'none';
-}
-
 // ============================================================================
 // REACT COMPONENT
 // ============================================================================
@@ -636,45 +623,18 @@ export default function QuoteGeneration({
       };
 
       // 2b: the assessment notes call shares nothing with the per-item description
-      // calls, so its prompt is built and the call issued here — it runs concurrently
-      // with the item calls below and is awaited only after the line items are set.
+      // calls, so it is issued here — it runs concurrently with the item calls
+      // below and is awaited only after the line items are set.
       let notesPromise = null;
-      let notesPromptChars = 0;
-      let notesStartTime = 0;
       if (globalSettings?.llm_quote_instructions) {
         const observations = getPhotoObservations(analysis?._ui, damageItems);
-        const observationsText = observations.length > 0
-          ? observations.map(o => `Photo observation (${o.panel}): ${o.observation}`).join('\n')
-          : '';
-        const damageContext = damageItems.map((item, idx) =>
-          `${idx + 1}. Panel: ${item.panel} | Type: ${toDisplayDamageType(item.damage_type)}${item.depth && (item.depth === 'Medium' || item.depth === 'Deep / Sharp') ? ` | Depth: ${item.depth}` : ''}${item.affects_body_line ? ' | Body line: yes' : ''}${item.has_stretched_metal ? ' | Stretched metal: yes' : ''}${item.repair_method && item.repair_method !== 'Good Tool Access' ? ` | Repair method: ${item.repair_method}` : ''}${item.paint_type && item.paint_type !== 'Standard' ? ` | Paint type: ${item.paint_type}` : ''} | Caveat type: ${getCaveatType(item)}${item.notes ? ` | Notes: ${item.notes}` : ''}`
-        ).join('\n') + (observationsText ? `\n${observationsText}` : '');
-
-        const notesPrompt = `${globalSettings.llm_quote_instructions}
-
----
-
-TASK: Write the customer-facing assessment notes for the following job.
-
-DAMAGE BEING REPAIRED:
-${damageContext}
-
-OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1–3 sentences of plain text. No bullet points, no headings. Do not include any disclaimer — the system adds that separately.`;
-
-        notesPromptChars = notesPrompt.length;
-        notesStartTime = performance.now();
-        QT('LLM #2 (assessment notes) start', `prompt ${notesPromptChars} chars`);
-        notesPromise = base44.integrations.Core.InvokeLLM({
-          prompt: notesPrompt,
-          model: "gemini_3_8_flash",
-          response_json_schema: {
-            type: "object",
-            properties: {
-              assessment_notes: { type: "string" }
-            },
-            required: ["assessment_notes"]
-          }
-        });
+        // LLM call relocated server-side (generateAssessmentNotes) — prompt,
+        // response schema, model pin and QUOTE-TIMING logs moved byte-for-byte;
+        // the payload is strictly validated before the LLM is invoked.
+        notesPromise = base44.functions.invoke("generateAssessmentNotes", {
+          damageItems,
+          observations
+        }).then(res => res.data);
       }
 
       // 2b: each item's work runs in its own async function that always resolves —
@@ -689,37 +649,25 @@ OUTPUT: Return a JSON object with a single field "assessment_notes" containing 1
           // Use LLM to generate professional customer-facing description if global settings available
           if (globalSettings?.llm_quote_instructions) {
             try {
-              const llmQuoteInstructions = globalSettings.llm_quote_instructions;
-              
-              const quotePrompt = `${llmQuoteInstructions}
-
-INPUT DATA FOR THIS SINGLE DAMAGE ITEM:
-
-Panel: ${item.panel}
-Damage Type: ${toDisplayDamageType(item.damage_type)}
-Size Range: ${item.size_range}
-Depth: ${item.depth || 'Shallow'}
-Material: ${item.material === 'Aluminum' ? 'Aluminium' : item.material || 'Steel'}
-Repair Method: ${item.repair_method || 'Good Tool Access'}
-Paint Type: ${item.paint_type || 'Standard'}
-affects_body_line: ${item.affects_body_line ? 'true' : 'false'}
-has_stretched_metal: ${item.has_stretched_metal ? 'true' : 'false'}
-aluminium_panel: ${item.material === 'Aluminum' ? 'true' : 'false'}
-Technician's Additional Notes: ${item.notes || 'None'}
-FINAL CALCULATED PRICE: ${getCurrencySymbol()}${calculation.totalPrice.toFixed(2)} (DO NOT MODIFY)
-
-REQUIRED OUTPUT:
-Provide ONLY the line item description as a plain string. Example: "PDR Labour - Rear Door Round Dent Repair (51mm - 80mm, Medium, Body Line Area)"
-
-DO NOT include JSON formatting, quotes, or any other text - just the description string.`;
-
-              const tDescStart = performance.now();
-              QT('LLM #1 (item description) start', `prompt ${quotePrompt.length} chars`);
-              const llmResponse = await base44.integrations.Core.InvokeLLM({
-                prompt: quotePrompt,
-                model: "gemini_3_8_flash"
-              });
-              QT('LLM #1 (item description) done', `prompt ${quotePrompt.length} chars, ${(performance.now() - tDescStart).toFixed(0)}ms`);
+              // LLM call relocated server-side (generateItemDescription) — prompt,
+              // model pin and QUOTE-TIMING logs moved byte-for-byte; the payload
+              // is strictly validated before the LLM is invoked.
+              const llmResponse = (await base44.functions.invoke("generateItemDescription", {
+                item: {
+                  panel: item.panel,
+                  damage_type: item.damage_type,
+                  size_range: item.size_range,
+                  depth: item.depth,
+                  material: item.material,
+                  repair_method: item.repair_method,
+                  paint_type: item.paint_type,
+                  affects_body_line: item.affects_body_line,
+                  has_stretched_metal: item.has_stretched_metal,
+                  notes: item.notes
+                },
+                calculated_price: calculation.totalPrice,
+                currency
+              })).data;
               
               // LLM returns plain string now
               let description = typeof llmResponse === 'string' ? llmResponse.trim() : llmResponse;
@@ -856,7 +804,6 @@ DO NOT include JSON formatting, quotes, or any other text - just the description
       if (notesPromise) {
         try {
           const notesResponse = await notesPromise;
-          QT('LLM #2 (assessment notes) done', `prompt ${notesPromptChars} chars, ${(performance.now() - notesStartTime).toFixed(0)}ms`);
 
           const generatedNotes = notesResponse?.assessment_notes?.trim() || '';
 

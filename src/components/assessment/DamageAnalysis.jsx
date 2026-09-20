@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { InvokeLLM } from "@/integrations/Core";
 import { base44 } from "@/api/base44Client";
 import { User, UserSetting, GlobalSetting } from "@/entities/all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,81 +165,16 @@ export default function DamageAnalysis({ photos, damageItems, vehicle, onAnalysi
     setError(null);
     try {
       if (!damageItems || damageItems.length === 0) throw new Error('No damage items provided for analysis');
-      const analysisInstructions = globalSettings?.llm_analysis_instructions || '';
-
-      const vehicleInfo = vehicle
-        ? `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.color ? ` (${vehicle.color})` : ''}`
-        : 'Vehicle details not provided';
-
-      const damageDescription = damageItems.map((item, index) => {
-        const parts = [`Item ${index}: Panel = ${item.panel}`];
-        if (item.damage_type) parts.push(`Type: ${item.damage_type}`);
-        if (item.size_range) parts.push(`Size: ${item.size_range}`);
-        parts.push(`Count: ${item.dent_count || 1} dent(s)`);
-        if (item.material) parts.push(`Material: ${item.material}`);
-        if (item.repair_method) parts.push(`Repair Method: ${item.repair_method}`);
-        if (item.depth) parts.push(`Depth: ${item.depth}`);
-        if (item.affects_body_line) parts.push(`Affects Body Line: Yes`);
-        if (item.has_stretched_metal) parts.push(`Stretched Metal: Yes`);
-        if (item.notes) parts.push(`Notes: ${item.notes}`);
-        return parts.join(' | ');
-      }).join('\n');
-
       const totalDentsFromData = damageItems.reduce((sum, item) => sum + (item.dent_count || 1), 0);
 
-      const prompt = `You are Dentifier, an AI assistant for PDR technicians. Your job is to provide a brief, valuable second opinion based on BOTH the photos AND the technician's manual inputs.
-
-VEHICLE: ${vehicleInfo}
-
-TECHNICIAN-ENTERED DAMAGE DATA:
-${damageDescription}
-
-PHOTOS: ${photos.length} photo(s) provided.
-
-YOUR TASK — respond in JSON with exactly these two fields:
-
-1. "confidence_check": ONE short sentence (max 20 words) comparing what's visible in the photos to the entered inputs.
-   - If photos match inputs: "Photos appear consistent with the selected inputs."
-   - If photos suggest shallower AND technician-entered depth is 'Deep/Sharp': "Photos suggest the damage may be shallower than selected — worth reviewing before proceeding."
-   - If photos suggest shallower AND technician-entered depth is 'Shallow' or 'Medium': "Photos appear consistent with the selected inputs."
-   - If photos suggest deeper AND technician-entered depth is 'Shallow': "Photos suggest the damage may be deeper than selected — worth reviewing before proceeding."
-   - If photos suggest deeper AND technician-entered depth is 'Medium' or 'Deep/Sharp': "Photos appear consistent with the selected inputs."
-   - If no photos: "No photos provided — analysis based on manual inputs only."
-   - DO NOT repeat the full damage description. ONE sentence only.
-
-2. "photo_observations": An object where each key is the item index as a string (e.g. "0", "1", "2") and the value is ONE sentence describing where the damage is located in the photo for THAT specific item.
-   For EACH item, follow these rules strictly:
-   - The damage location described must be attributed to the panel selected by the technician for that item. For example: "The dent is located towards the front edge of the [SELECTED PANEL]."
-   - The damage location described in photo_observation must be attributed to [SELECTED PANEL]. You may reference an adjacent panel as a landmark to describe position (e.g. "near the leading edge, close to the wing" or "towards the boot") but must never state or imply that the damage itself is located on a panel other than [SELECTED PANEL].
-   - If you cannot confidently associate the available photos with a specific item's panel, that item's observation must be exactly: "No additional observations from photo analysis."
-   - If no photo was provided at all, set every item's observation to "No additional observations from photo analysis."
-   - ONE sentence per item only.
-
-   UK ENGLISH — use UK vehicle terminology throughout:
-   - "Bonnet" not "Hood"
-   - "Boot" not "Trunk"
-   - "Wing" not "Fender"
-   - "Windscreen" not "Windshield"
-   - "Rear quarter panel" not "Quarter panel"
-
-OUTPUT: JSON only. No other text.`;
-
-      const response = await InvokeLLM({
-        prompt,
-        model: "gemini_3_8_flash",
-        file_urls: photos.length > 0 ? photos : undefined,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            confidence_check: { type: "string" },
-            photo_observations: {
-              type: "object",
-              additionalProperties: { type: "string" }
-            }
-          },
-          required: ["confidence_check", "photo_observations"]
-        }
-      });
+      // LLM call relocated server-side (analyzeDamage) — prompt, response schema
+      // and model pin moved byte-for-byte; the payload is strictly validated
+      // before the LLM is invoked.
+      const response = (await base44.functions.invoke("analyzeDamage", {
+        damageItems,
+        vehicle: vehicle || null,
+        photos: photos || []
+      })).data;
 
       // Compute confidence score and risk flags programmatically
       const confidenceScore = computeConfidenceScore(damageItems);
