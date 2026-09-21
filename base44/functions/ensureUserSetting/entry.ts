@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { secrets } from 'base44:runtime';
 
 // MIRRORED CONSTANT — READ THIS BEFORE EDITING.
 // The Set A default pricing matrix below is DUPLICATED in the frontend module
@@ -38,8 +39,11 @@ export default async function(req) {
         // through the platform dispatcher to this function, so any
         // external caller can forge them. The secret travels in the
         // body between server-side components only — it exists nowhere
-        // in browser-shipped code.
-        const WORKFLOW_SHARED_SECRET = 'd334ffdb81046beec0fce69d904559e1f83d0f357a5122707b1e68b40fa9a18b';
+        // in browser-shipped code. The value lives in Base44 Secrets
+        // (WORKFLOW_SHARED_SECRET) and is read here, inside the handler, on
+        // each invocation — never hardcoded in the repo, and never read at
+        // module top level, so a missing secret fails this request only.
+        const WORKFLOW_SHARED_SECRET = secrets.get("WORKFLOW_SHARED_SECRET");
 
         // Two callers:
         // 1. The auth workflow (service context, no user token) — passes the
