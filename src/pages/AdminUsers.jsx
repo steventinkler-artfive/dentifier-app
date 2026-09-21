@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Plus, Edit2, Trash2, Key, Mail, Ban, CheckCircle, ClipboardList } from "lucide-react";
+import { Loader2, Users, Info, Search, Calendar, CreditCard, DollarSign, CheckCircle2, ChevronDown, ArrowLeft, Edit2, Trash2, Key, Mail, Ban, CheckCircle, ClipboardList } from "lucide-react";
 import { useAlert } from "@/components/ui/CustomAlert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -25,10 +25,8 @@ export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOption, setFilterOption] = useState("all");
   const [expandedUsers, setExpandedUsers] = useState({});
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "user", subscription_tier: "starter" });
   const [resettingPassword, setResettingPassword] = useState(null);
   const [togglingStatus, setTogglingStatus] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -139,26 +137,6 @@ export default function AdminUsers() {
       await showAlert("Failed to update subscription tier", "Error");
     } finally {
       setSaving(null);
-    }
-  };
-
-  const handleAddUser = async () => {
-    if (!newUser.full_name || !newUser.email) {
-      await showAlert("Please fill in all required fields", "Error");
-      return;
-    }
-
-    try {
-      // Send invitation
-      await base44.users.inviteUser(newUser.email, newUser.role);
-
-      await loadUsers();
-      setShowAddDialog(false);
-      setNewUser({ full_name: "", email: "", role: "user", subscription_tier: "starter", is_beta_tester: false });
-      await showAlert("Invitation sent successfully.", "Success");
-    } catch (error) {
-      console.error("Failed to add user:", error);
-      await showAlert("Failed to add user: " + error.message, "Error");
     }
   };
 
@@ -477,7 +455,7 @@ export default function AdminUsers() {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Search, Filter, and Add User Button */}
+      {/* Search and Filters */}
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -525,13 +503,6 @@ export default function AdminUsers() {
             return `${labels[filterOption] || 'Filtered'} · ${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''}`;
           })()}
         </span>
-        <Button
-          onClick={() => setShowAddDialog(true)}
-          className="bg-rose-600 hover:bg-rose-700 text-white font-semibold whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add User
-        </Button>
       </div>
 
       <div className="space-y-4">
@@ -755,74 +726,6 @@ export default function AdminUsers() {
         );
         })}
       </div>
-
-      {/* Add User Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-            <DialogDescription className="text-slate-400">
-              Create a new user account with specified details and tier
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Name</Label>
-              <Input
-                value={newUser.full_name}
-                onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
-                placeholder="John Smith"
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={newUser.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                placeholder="john@example.com"
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="user" className="text-white">User</SelectItem>
-                  <SelectItem value="admin" className="text-white">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Subscription Tier</Label>
-              <Select value={newUser.subscription_tier} onValueChange={(value) => setNewUser({ ...newUser, subscription_tier: value })}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="starter" className="text-white">Starter</SelectItem>
-                  <SelectItem value="professional" className="text-white">Professional</SelectItem>
-                  <SelectItem value="founder" className="text-white">Founder</SelectItem>
-                  <SelectItem value="early_bird" className="text-white">Early Bird</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)} className="bg-slate-800 border-slate-700 text-white">
-              Cancel
-            </Button>
-            <Button onClick={handleAddUser} className="bg-rose-600 hover:bg-rose-700 text-white">
-              Add User
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteModal} onOpenChange={(open) => { if (!isDeletingUser) setShowDeleteModal(open); }}>
