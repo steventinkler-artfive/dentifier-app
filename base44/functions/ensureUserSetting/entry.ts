@@ -66,7 +66,10 @@ export default async function(req) {
         if (!email) {
             // SECURITY GATE: unauthenticated seeding is reserved for the
             // auth workflow alone — it must present the shared secret.
-            if (body?.workflow_secret !== WORKFLOW_SHARED_SECRET) {
+            // Fail closed: a missing or empty stored secret must never
+            // satisfy the comparison — an absent caller secret would
+            // otherwise match it.
+            if (!WORKFLOW_SHARED_SECRET || body?.workflow_secret !== WORKFLOW_SHARED_SECRET) {
                 return Response.json({ error: 'Forbidden' }, { status: 403 });
             }
             email = (body?.email || '').toString().trim();

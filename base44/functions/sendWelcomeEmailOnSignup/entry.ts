@@ -21,7 +21,9 @@ export default async function(req) {
         // There is no authenticated bypass: nothing legitimately calls this
         // function directly, so any request without the secret is rejected.
         const WORKFLOW_SHARED_SECRET = secrets.get("WORKFLOW_SHARED_SECRET");
-        if ((body?.workflow_secret || '') !== WORKFLOW_SHARED_SECRET) {
+        // Fail closed: a missing or empty stored secret must never satisfy
+        // the comparison — an absent caller secret would otherwise match it.
+        if (!WORKFLOW_SHARED_SECRET || (body?.workflow_secret || '') !== WORKFLOW_SHARED_SECRET) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
