@@ -65,7 +65,7 @@
               "user_id": "${ .trigger.user_id }",
               "email": "${ .trigger.email }",
               "event_type": "${ .trigger.event_type }",
-              "workflow_secret": "Y8cfe5a51f6fd31365ae0308b71f3772cf46e104f3c44541eb668f2c1affbdb69"
+              "workflow_secret": "8cfe5a51f6fd31365ae0308b71f3772cf46e104f3c44541eb668f2c1affbdb69"
             }
           },
           "then": "end",
