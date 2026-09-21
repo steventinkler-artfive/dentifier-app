@@ -1,16 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { secrets } from 'base44:runtime';
 
 // Sends the welcome email on the genuine signup auth event. This is a NEW
 // function (distinct from sendWelcomeEmail, which is keyed to the legacy
 // automation payload layer and fired on UserSetting record creation).
-// The auth workflow passes { user_id, email, event_type } — the email is
-// always taken from the auth trigger, never from untrusted input, and the
-// function only sends when event_type is "signup" so later logins never
+// The auth workflow passes { user_id, email, event_type, workflow_secret } —
+// the email is always taken from the auth trigger, never from untrusted input,
+// and the function only sends when event_type is "signup" so later logins never
 // re-send it.
 export default async function(req) {
     try {
         const base44 = createClientFromRequest(req);
         const body = await req.json().catch(() => ({}));
+
+        // SECURITY GATE: the only legitimate caller is the auth workflow,
+        // which presents WORKFLOW_SHARED_SECRET in its invoke args. The value
+        // lives in Base44 Secrets and is read here, inside the handler, on
+        // each invocation — never hardcoded in the repo, and never read at
+        // module top level, so a missing secret fails this request only.
+        // There is no authenticated bypass: nothing legitimately calls this
+        // function directly, so any request without the secret is rejected.
+        const WORKFLOW_SHARED_SECRET = secrets.get("WORKFLOW_SHARED_SECRET");
+        if ((body?.workflow_secret || '') !== WORKFLOW_SHARED_SECRET) {
+            return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
 
         const email = (body?.email || '').toString().trim();
         const eventType = (body?.event_type || '').toString();

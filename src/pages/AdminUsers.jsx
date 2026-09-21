@@ -152,20 +152,10 @@ export default function AdminUsers() {
       // Send invitation
       await base44.users.inviteUser(newUser.email, newUser.role);
 
-      // Send welcome email
-      try {
-        await base44.functions.invoke('sendWelcomeEmail', {
-          email: newUser.email,
-          fullName: newUser.full_name
-        });
-      } catch (emailError) {
-        console.error("Failed to send welcome email:", emailError);
-      }
-
       await loadUsers();
       setShowAddDialog(false);
       setNewUser({ full_name: "", email: "", role: "user", subscription_tier: "starter", is_beta_tester: false });
-      await showAlert("Invitation sent successfully! Welcome email also sent.", "Success");
+      await showAlert("Invitation sent successfully.", "Success");
     } catch (error) {
       console.error("Failed to add user:", error);
       await showAlert("Failed to add user: " + error.message, "Error");

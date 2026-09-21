@@ -30,46 +30,13 @@ export default function Dashboard() {
   const [vehiclesMap, setVehiclesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadingUserSettings, setLoadingUserSettings] = useState(true);
-  const [welcomeEmailSent, setWelcomeEmailSent] = useState(false);
   const [user, setUser] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
-    checkAndSendWelcomeEmail();
   }, []);
-
-  const checkAndSendWelcomeEmail = async () => {
-    try {
-      const user = await base44.auth.me();
-      const sessionKey = `welcome_email_sent_${user.id}`;
-      
-      // Check if welcome email was already sent in this browser session
-      if (sessionStorage.getItem(sessionKey)) {
-        return;
-      }
-
-      // Check if user joined recently (within last 5 minutes = new user)
-      const userCreatedDate = new Date(user.created_date);
-      const now = new Date();
-      const minutesSinceCreation = (now - userCreatedDate) / (1000 * 60);
-
-      if (minutesSinceCreation <= 5 && !welcomeEmailSent) {
-        // Send welcome email
-        await base44.functions.invoke('sendWelcomeEmail', {
-          email: user.email,
-          fullName: user.full_name
-        });
-        
-        // Mark as sent in session storage
-        sessionStorage.setItem(sessionKey, 'true');
-        setWelcomeEmailSent(true);
-      }
-    } catch (error) {
-      console.error('Failed to send welcome email:', error);
-    }
-  };
 
   const loadDashboardData = async () => {
     try {
