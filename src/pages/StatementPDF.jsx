@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, ArrowLeft } from "lucide-react";
 import ClientStatementPDF from "@/components/reports/ClientStatementPDF";
 import { base44 } from "@/api/base44Client";
+import { fetchLogoDataUrl } from "@/utils/logoFetch";
 
 export default function StatementPDF() {
   const [searchParams] = useSearchParams();
@@ -16,11 +17,11 @@ export default function StatementPDF() {
   const [customer, setCustomer] = useState(null);
   const [userSettings, setUserSettings] = useState(null);
   const [logoDisplayUrl, setLogoDisplayUrl] = useState(null);
+  const [isProfessional, setIsProfessional] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    let blobUrl = null;
 
     const load = async () => {
       try {
@@ -42,16 +43,14 @@ export default function StatementPDF() {
         setCustomer(cust);
         setUserSettings(s);
 
-        // Fetch logo as blob for cross-origin safety (same as QuotePDF page)
-        if (s?.business_logo_url) {
-          try {
-            const r = await fetch(s.business_logo_url);
-            if (r.ok) {
-              const blob = await r.blob();
-              blobUrl = URL.createObjectURL(blob);
-              if (isMounted) setLogoDisplayUrl(blobUrl);
-            }
-          } catch (_) {}
+        // Professional tier: own logo with backend-proxy fallback; total
+        // failure renders business-name text (never the Dentifier mark).
+        // Starter tier keeps the Dentifier mark path unchanged.
+        const isPro = user.subscription_tier === 'professional';
+        if (isMounted) setIsProfessional(isPro);
+        if (isPro && s?.business_logo_url) {
+          const dataUrl = await fetchLogoDataUrl(s.business_logo_url);
+          if (isMounted) setLogoDisplayUrl(dataUrl);
         }
 
         // Set document title for print filename
@@ -70,7 +69,6 @@ export default function StatementPDF() {
 
     return () => {
       isMounted = false;
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
   }, []);
 
@@ -110,6 +108,7 @@ export default function StatementPDF() {
           periodLabel={periodLabel}
           currency={userSettings?.currency || "GBP"}
           logoDisplayUrl={logoDisplayUrl}
+          isProfessional={isProfessional}
         />
       </div>
     </div>

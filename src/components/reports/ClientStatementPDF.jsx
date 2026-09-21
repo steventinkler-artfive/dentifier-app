@@ -7,7 +7,7 @@ const getCurrencySymbol = (currency) => {
   return symbols[currency] || "£";
 };
 
-export default function ClientStatementPDF({ assessments, customer, userSettings, periodLabel, currency = "GBP", logoDisplayUrl }) {
+export default function ClientStatementPDF({ assessments, customer, userSettings, periodLabel, currency = "GBP", logoDisplayUrl, isProfessional = false }) {
   const sym = getCurrencySymbol(currency);
   const fmt = (amount) => `${sym}${(amount || 0).toFixed(2)}`;
 
@@ -35,14 +35,25 @@ export default function ClientStatementPDF({ assessments, customer, userSettings
       {/* Header — logo left, title right (mirrors QuotePDFContent) */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "32px" }}>
         <div>
-          <img
-            src={userSettings?.business_logo_url || logoDisplayUrl || DEFAULT_DENTIFIER_LOGO}
-            alt="Business Logo"
-            style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
-            onError={(e) => { e.target.src = DEFAULT_DENTIFIER_LOGO; }}
-          />
-          {!userSettings?.business_logo_url && (
-            <h1 style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}>{businessName}</h1>
+          {isProfessional ? (
+            logoDisplayUrl ? (
+              <img
+                src={logoDisplayUrl}
+                alt="Business Logo"
+                style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
+              />
+            ) : (
+              <h1 style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}>{businessName}</h1>
+            )
+          ) : (
+            <>
+              <img
+                src={DEFAULT_DENTIFIER_LOGO}
+                alt="Dentifier Logo"
+                style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
+              />
+              <h1 style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}>{businessName}</h1>
+            </>
           )}
         </div>
         <div style={{ textAlign: "right" }}>

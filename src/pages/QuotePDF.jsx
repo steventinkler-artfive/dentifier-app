@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, ArrowLeft, Share2, Loader2 } from "lucide-react";
 import QuotePDFContent from "@/components/pdf/QuotePDFContent";
 import { base44 } from "@/api/base44Client";
+import { fetchLogoDataUrl } from "@/utils/logoFetch";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
@@ -60,7 +61,6 @@ export default function QuotePDF() {
 
   useEffect(() => {
     let isMounted = true;
-    let currentLogoBlobUrl = null;
 
     const loadDetails = async () => {
       if (!assessmentId) {
@@ -98,19 +98,12 @@ export default function QuotePDF() {
           if (settings) {
             setUserSettings(settings);
 
-            // Fetch logo as blob for cross-origin safe rendering (html2canvas / print)
+            // Fetch logo with backend-proxy fallback (survives CDN/CORS failures).
+            // Total failure falls back to the raw URL for a plain <img> attempt;
+            // the component renders business-name text if that also fails.
             if (settings.business_logo_url) {
-              try {
-                const logoResponse = await fetch(settings.business_logo_url);
-                if (logoResponse.ok) {
-                  const blob = await logoResponse.blob();
-                  const blobUrl = URL.createObjectURL(blob);
-                  currentLogoBlobUrl = blobUrl;
-                  if (isMounted) setLogoDisplayUrl(blobUrl);
-                }
-              } catch (e) {
-                if (isMounted) setLogoDisplayUrl(settings.business_logo_url);
-              }
+              const dataUrl = await fetchLogoDataUrl(settings.business_logo_url);
+              if (isMounted) setLogoDisplayUrl(dataUrl || settings.business_logo_url);
             }
 
             // Set document title
@@ -152,9 +145,6 @@ export default function QuotePDF() {
 
     return () => { 
       isMounted = false; 
-      if (currentLogoBlobUrl) {
-        URL.revokeObjectURL(currentLogoBlobUrl);
-      }
     };
   }, [assessmentId]);
 

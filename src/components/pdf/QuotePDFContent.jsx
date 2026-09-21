@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { CreditCard } from "lucide-react";
 import { getVatContext } from "@/utils/vatSnapshot";
 
@@ -26,6 +26,9 @@ export default function QuotePDFContent({
   isProfessional = false,
 }) {
   const paymentButtonRef = useRef(null);
+  // Professional-tier logo error state: a failed image load renders the
+  // business-name text instead of a broken image — never the Dentifier mark.
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
 
   useEffect(() => {
     if (paymentButtonRef.current && onPaymentButtonRendered) {
@@ -126,11 +129,12 @@ export default function QuotePDFContent({
       >
         <div>
           {isProfessional ? (
-            isSafeUrl(userSettings?.business_logo_url) ? (
+            !logoLoadFailed && (isSafeUrl(logoDisplayUrl) || isSafeUrl(userSettings?.business_logo_url)) ? (
               <img
                 src={isSafeUrl(logoDisplayUrl) ? logoDisplayUrl : userSettings.business_logo_url}
                 alt="Business Logo"
                 crossOrigin="anonymous"
+                onError={() => setLogoLoadFailed(true)}
                 style={{ maxHeight: "110px", maxWidth: "200px", width: "auto", height: "auto", marginBottom: "8px" }}
               />
             ) : (
