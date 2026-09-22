@@ -63,7 +63,8 @@ export default async function(req) {
             for (const v of assessment.vehicles) {
                 if (!v.vehicle_id) continue;
                 try {
-                    const results = await base44.asServiceRole.entities.Vehicle.filter({ id: v.vehicle_id });
+                    // RLS-enforced fetch: a foreign or deleted vehicle ID simply returns nothing.
+                    const results = await base44.entities.Vehicle.filter({ id: v.vehicle_id });
                     const veh = results[0];
                     if (veh) {
                         vehiclesData[veh.id] = {
