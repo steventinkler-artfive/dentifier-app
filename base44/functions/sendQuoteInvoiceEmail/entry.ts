@@ -9,6 +9,42 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // ---- Sending limit: quotes, invoices and statements combined, per account ----
+    // TEMPORARY TEST LIMITS — after limit testing is confirmed, set HOURLY_LIMIT back to 50.
+    const HOURLY_LIMIT = 2;
+    const DAILY_LIMIT = 150;
+
+    const now = Date.now();
+    const hourAgo = new Date(now - 60 * 60 * 1000);
+    const dayAgo = new Date(now - 24 * 60 * 60 * 1000);
+
+    // The send log is admin-only (regular users cannot read, change or delete their own
+    // records), so these reads run with service role — scoped strictly to the
+    // authenticated user's email from their token, never from request input.
+    const recentSends = await base44.asServiceRole.entities.EmailSendLog.filter({
+      user_email: user.email,
+      created_date: { $gte: dayAgo.toISOString() }
+    });
+    const hourSends = recentSends.filter(s => new Date(s.created_date) >= hourAgo);
+
+    const londonTime = (d) => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(d);
+    const londonDay = (d) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' }).format(d);
+
+    if (hourSends.length >= HOURLY_LIMIT || recentSends.length >= DAILY_LIMIT) {
+      const hourlyBlocked = hourSends.length >= HOURLY_LIMIT;
+      const window = hourlyBlocked ? hourSends : recentSends;
+      const oldest = Math.min(...window.map(s => new Date(s.created_date).getTime()));
+      const retryAt = new Date(oldest + (hourlyBlocked ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000));
+      const when = londonDay(retryAt) === londonDay(new Date())
+        ? `at ${londonTime(retryAt)}`
+        : `tomorrow at ${londonTime(retryAt)}`;
+      const friendly = hourlyBlocked
+        ? `You've reached the sending limit of ${HOURLY_LIMIT} emails per hour. Nothing was sent. You can send again ${when}. If you need to send more, email hello@dentifierpro.com.`
+        : `You've reached the daily sending limit of ${DAILY_LIMIT} emails. Nothing was sent. You can send again ${when}. If you need to send more, email hello@dentifierpro.com.`;
+      // success:false (HTTP 200) so the app's existing error display shows this message verbatim
+      return Response.json({ success: false, rate_limited: true, error: friendly, retry_at: retryAt.toISOString() });
+    }
+
     const {
       type,
       to,
@@ -185,6 +221,19 @@ Deno.serve(async (req) => {
     if (!resendResponse.ok) {
       console.error('Resend error:', resendResult);
       return Response.json({ error: resendResult.message || 'Failed to send email' }, { status: 500 });
+    }
+
+    // Record the send for the per-account limit (statements leave no other trace,
+    // so the log is the single counter for all three document types), then prune
+    // this account's log entries older than 24h. Bookkeeping only — never fail a
+    // send that already went out.
+    try {
+      const isStatement = !assessment_id && customer_id && Array.isArray(assessment_ids) && assessment_ids.length > 0;
+      const docTypeForLog = isStatement ? 'statement' : (type === 'invoice' ? 'invoice' : 'quote');
+      await base44.asServiceRole.entities.EmailSendLog.create({ user_email: user.email, doc_type: docTypeForLog });
+      await base44.asServiceRole.entities.EmailSendLog.deleteMany({ user_email: user.email, created_date: { $lt: dayAgo.toISOString() } });
+    } catch (logError) {
+      console.error('Send log write failed:', logError);
     }
 
     return Response.json({ success: true, id: resendResult.id });

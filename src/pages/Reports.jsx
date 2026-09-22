@@ -1031,7 +1031,7 @@ export default function Reports() {
         initialMessage={emailModalDefaults.message}
         onSend={handleSendStatementEmail}
         isSending={isSendingEmail}
-        docType="quote"
+        docType="statement"
         contactEmail={userSettings?.contact_email}
       />
     </div>

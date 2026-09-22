@@ -46,7 +46,7 @@ export default function EmailModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
           <h2 className="text-white text-lg font-semibold">
-            Email {docType === "invoice" ? "Invoice" : "Quote"}
+            Email {docType === "invoice" ? "Invoice" : docType === "statement" ? "Statement" : "Quote"}
           </h2>
           <button
             onClick={onClose}

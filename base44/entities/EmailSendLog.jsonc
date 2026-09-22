@@ -1,0 +1,45 @@
+{
+  "name": "EmailSendLog",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the account that sent the email (quotes, invoices and statements all count together)."
+    },
+    "doc_type": {
+      "type": "string",
+      "enum": [
+        "quote",
+        "invoice",
+        "statement"
+      ],
+      "description": "Kind of document that was emailed."
+    }
+  },
+  "required": [
+    "user_email",
+    "doc_type"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
