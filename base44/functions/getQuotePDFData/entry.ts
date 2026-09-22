@@ -24,10 +24,7 @@ export default async function(req) {
             assessment = results.length > 0 ? results[0] : null;
         } catch (error) {
             console.error('Assessment fetch error:', error.message);
-            return Response.json({
-                error: 'Assessment not found',
-                details: error.message
-            }, { status: 404 });
+            return Response.json({ error: 'Assessment not found' }, { status: 404 });
         }
 
         if (!assessment) {
@@ -178,10 +175,7 @@ export default async function(req) {
             } : null,
         });
     } catch (error) {
-        console.error('Outer error:', error.message);
-        return Response.json({
-            error: error.message,
-            stack: error.stack
-        }, { status: 500 });
+        console.error('Outer error:', error.message, error.stack);
+        return Response.json({ error: 'Failed to load quote data' }, { status: 500 });
     }
 }
