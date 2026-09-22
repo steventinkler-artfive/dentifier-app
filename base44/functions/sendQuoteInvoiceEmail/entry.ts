@@ -10,8 +10,7 @@ Deno.serve(async (req) => {
     }
 
     // ---- Sending limit: quotes, invoices and statements combined, per account ----
-    // TEMPORARY TEST LIMITS — after limit testing is confirmed, set HOURLY_LIMIT back to 50.
-    const HOURLY_LIMIT = 2;
+    const HOURLY_LIMIT = 50;
     const DAILY_LIMIT = 150;
 
     const now = Date.now();

@@ -29,6 +29,7 @@ import { jsPDF } from "jspdf";
 import { base44 } from "@/api/base44Client";
 import ClientStatementPDF from "@/components/reports/ClientStatementPDF";
 import EmailModal from "@/components/EmailModal";
+import { useAlert } from "@/components/ui/CustomAlert";
 import { getVatContext } from "@/utils/vatSnapshot";
 
 export default function Reports() {
@@ -60,6 +61,7 @@ export default function Reports() {
   });
 
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   // CSV export format selector
   const [csvFormat, setCsvFormat] = useState('standard'); // 'standard' | 'xero' | 'quickbooks'
@@ -351,6 +353,8 @@ export default function Reports() {
       if (response.data?.success) {
         setEmailModalOpen(false);
         alert(`Statement emailed to ${to}`);
+      } else if (response.data?.rate_limited) {
+        await showAlert(response.data?.error, "Sending limit reached");
       } else {
         alert(response.data?.error || "Failed to send email.");
       }

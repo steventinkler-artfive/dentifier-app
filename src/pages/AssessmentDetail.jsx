@@ -677,7 +677,7 @@ export default function AssessmentDetail() {
         }
         await showAlert(`${isInvoice ? 'Invoice' : 'Quote'} emailed successfully to ${to}`, 'Email Sent');
       } else {
-        await showAlert(response.data?.error || 'Failed to send email. Please try again.', 'Error');
+        await showAlert(response.data?.error || 'Failed to send email. Please try again.', response.data?.rate_limited ? 'Sending limit reached' : 'Error');
       }
     } catch (error) {
       console.error('Error sending email:', error);
